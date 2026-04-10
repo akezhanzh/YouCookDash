@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouCook — Procurement Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:      #0f1117;
+    --surf:    #1a1d27;
+    --surf2:   #20243a;
+    --border:  #2a2d3e;
+    --accent:  #6c63ff;
+    --milana:  #22c55e;
+    --osmanov: #f59e0b;
+    --red:     #ef4444;
+    --text:    #e2e8f0;
+    --muted:   #64748b;
+    --font:    'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; }
+  .page { max-width: 1440px; margin: 0 auto; padding: 24px; }
+
+  /* Header */
+  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+  .header h1 span { color: var(--accent); }
+  .header-meta { color: var(--muted); font-size: 11px; margin-top: 4px; }
+  .badge { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; font-size: 11px; color: var(--muted); }
+
+  /* Supplier legend pills */
+  .sup-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .sup-milana  { background: rgba(34,197,94,.12);  color: var(--milana);  border: 1px solid rgba(34,197,94,.3); }
+  .sup-osmanov { background: rgba(245,158,11,.12); color: var(--osmanov); border: 1px solid rgba(245,158,11,.3); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+
+  /* Grids */
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 20px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-32{ display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 20px; }
+  .g-full { margin-bottom: 20px; }
+
+  /* Card */
+  .card { background: var(--surf); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: var(--muted); margin-bottom: 10px; }
+  .card-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+  .card-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
+  .card-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-top: 8px; }
+  .delta-red    { background: rgba(239,68,68,.15);  color: var(--red); }
+  .delta-green  { background: rgba(34,197,94,.15);  color: var(--milana); }
+  .delta-amber  { background: rgba(245,158,11,.15); color: var(--osmanov); }
+  .delta-purple { background: rgba(108,99,255,.15); color: #a78bfa; }
+
+  /* Section label */
+  .sec { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .sec::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  /* Charts */
+  .ch      { position: relative; height: 260px; }
+  .ch-tall { position: relative; height: 360px; }
+  .ch-sm   { position: relative; height: 200px; }
+
+  /* Tables */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 7px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.025); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; font-family: monospace; font-size: 12px; }
+
+  /* Supplier tag in tables */
+  .tag-m { background: rgba(34,197,94,.12);  color: var(--milana);  padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .tag-o { background: rgba(245,158,11,.12); color: var(--osmanov); padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+
+  /* Pill badges */
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+  .pill-red   { background: rgba(239,68,68,.18);  color: #f87171; }
+  .pill-amber { background: rgba(245,158,11,.18); color: #fbbf24; }
+  .pill-green { background: rgba(34,197,94,.18);  color: #4ade80; }
+
+  /* Progress bar */
+  .bar-bg   { background: var(--border); border-radius: 4px; height: 6px; }
+  .bar-fill { height: 6px; border-radius: 4px; }
+
+  /* Comparison rows */
+  .cmp-row { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .cmp-row:last-child { border-bottom: none; }
+  .cmp-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .cmp-name { font-size: 12px; font-weight: 500; }
+  .cmp-price { font-size: 13px; font-weight: 700; font-family: monospace; min-width: 90px; text-align: right; }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--surf); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media(max-width:900px) { .grid-4{grid-template-columns:repeat(2,1fr)} .grid-2,.grid-3,.grid-32{grid-template-columns:1fr} }
+  @media(max-width:500px) { .grid-4{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <h1>YouCook <span>Procurement</span></h1>
+      <p class="header-meta">9 накладных · 2 поставщика · 04.03 — 08.04.2026</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span class="sup-pill sup-milana"><span class="dot" style="background:var(--milana)"></span>ИП МИЛАНА · Ақтау</span>
+      <span class="sup-pill sup-osmanov"><span class="dot" style="background:var(--osmanov)"></span>ИП Османов · Алматы</span>
+      <span class="badge" id="ts">—</span>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="grid-4">
+    <div class="card">
+      <div class="card-title">💰 Общие расходы</div>
+      <div class="card-value">3 450 030 ₸</div>
+      <div class="card-sub">за 35 дней · 9 накладных</div>
+      <div class="card-delta delta-amber">690 006 ₸/нед среднее</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏢 Поставщики</div>
+      <div class="card-value">2</div>
+      <div class="card-sub">МИЛАНА 2 923 335 ₸ · Османов 526 695 ₸</div>
+      <div class="card-delta delta-green">МИЛАНА 8 накл · Османов 1 накл</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🗺️ Закуп по городам</div>
+      <div class="card-value">2</div>
+      <div class="card-sub">Ақтау 2 923 335 ₸ · Алматы 526 695 ₸</div>
+      <div class="card-delta delta-green">Ақтау 84.7% · Алматы 15.3%</div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚠️ Ценовые аномалии</div>
+      <div class="card-value" style="color:var(--red)">5</div>
+      <div class="card-sub">перец +300% · колбаса +173% · геркулес +71%</div>
+      <div class="card-delta delta-red">Требуют проверки</div>
+    </div>
+  </div>
+
+  <!-- SPEND TIMELINE + SUPPLIER SPLIT -->
+  <div class="grid-3">
+    <div class="card">
+      <div class="sec">Расходы по накладным</div>
+      <div class="ch"><canvas id="spendChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="sec">Доля поставщиков</div>
+      <div class="ch-sm"><canvas id="supPieChart"></canvas></div>
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--milana)"></span>ИП МИЛАНА (Ақтау)</span>
+          <span style="font-family:monospace;font-size:12px;">2 923 335 ₸</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill" style="width:84.7%;background:var(--milana)"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--osmanov)"></span>ИП Османов (Алматы)</span>
+          <span style="font-family:monospace;font-size:12px;">526 695 ₸</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill" style="width:15.3%;background:var(--osmanov)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP SKU + ANOMALIES CHART -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="sec">Топ-15 SKU по сумме закупок</div>
+      <div class="ch-tall"><canvas id="skuChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="sec">Ценовые аномалии · мин vs макс</div>
+      <div class="ch-tall"><canvas id="anomalyChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CROSS-SUPPLIER COMPARISON -->
+  <div class="card g-full">
+    <div class="sec">Сравнение цен между поставщиками</div>
+    <div id="crossPrices">
+      <div class="cmp-row">
+        <div>
+          <div class="cmp-name">Яйцо куриное</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">шт · 2 поставщика</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--muted);">ИП МИЛАНА</div>
+          <div class="cmp-price" style="color:var(--milana)">72 ₸</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--muted);">ИП Османов</div>
+          <div class="cmp-price" style="color:var(--osmanov)">87.5 ₸</div>
+        </div>
+        <div style="text-align:right">
+          <span class="pill pill-amber">+21.5%</span>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">МИЛАНА дешевле</div>
+          <div style="font-size:10px;color:var(--red);font-weight:600;">−16 740 ₸/мес</div>
+        </div>
+      </div>
+      <div style="padding:20px 0;color:var(--muted);font-size:11px;text-align:center;">
+        Добавляйте накладных — появятся новые пересечения для сравнения
+      </div>
+    </div>
+  </div>
+
+  <!-- ANOMALIES TABLE -->
+  <div class="card g-full">
+    <div class="sec">Детализация ценовых аномалий</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>SKU</th><th>Ед.</th>
+          <th class="num">Мин ₸</th><th class="num">Макс ₸</th>
+          <th class="num">Разброс</th><th>Поставщиков</th><th>Статус</th>
+        </tr></thead>
+        <tbody id="anomTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ALL INVOICES -->
+  <div class="card g-full">
+    <div class="sec">Все накладные</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>№</th><th>Поставщик</th><th>Город</th><th>Дата</th>
+          <th class="num">Сумма ₸</th><th class="num">Позиций</th><th>Доля</th>
+        </tr></thead>
+        <tbody id="invTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SUSPICIOUS -->
+  <div class="card g-full">
+    <div class="sec">Подозрительно высокие цены за единицу</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>SKU</th><th>Ед.</th>
+          <th class="num">Цена ₸/ед</th><th class="num">Итого ₸</th>
+          <th>Поставщик</th><th>Доля бюджета</th>
+        </tr></thead>
+        <tbody id="suspTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const TOTAL = 3450030;
+const MILANA_COLOR  = '#22c55e';
+const OSMANOV_COLOR = '#f59e0b';
+const GRID   = 'rgba(255,255,255,0.06)';
+const TICK   = '#64748b';
+const FONT   = { family: "'Segoe UI', system-ui, sans-serif", size: 11 };
+const TOOLTIP_BG = '#1e2235';
+
+const invoices = [
+  ["59",        "ИП МИЛАНА",  "Ақтау",  "04.03.2026",  94736, 10],
+  ["64",        "ИП МИЛАНА",  "Ақтау",  "06.03.2026", 653943, 23],
+  ["72",        "ИП МИЛАНА",  "Ақтау",  "08.03.2026", 984835, 43],
+  ["74",        "ИП МИЛАНА",  "Ақтау",  "11.03.2026",  91068,  5],
+  ["76",        "ИП МИЛАНА",  "Ақтау",  "12.03.2026",  98341,  5],
+  ["85",        "ИП МИЛАНА",  "Ақтау",  "18.03.2026", 382141, 14],
+  ["43",        "ИП Османов", "Алматы", "03.04.2026", 526695, 24],
+  ["101",       "ИП МИЛАНА",  "Ақтау",  "07.04.2026", 123610,  7],
+  ["102",       "ИП МИЛАНА",  "Ақтау",  "08.04.2026", 494661, 12],
+];
+
+const topSku = [
+  ["сливки 1 л",           288000, 1],
+  ["масло подсолн. 5л",    258300, 1],
+  ["Яйцо куриное",         164340, 2],
+  ["масло фритюрное 10л",  153000, 1],
+  ["рис баракат",          126000, 1],
+  ["мука Патша 25кг",      105000, 1],
+  ["сыр гауда",             97234, 1],
+  ["мука в/с 25кг",         92900, 1],
+  ["творог",                91000, 1],
+  ["Креветки 16/20",        87500, 1],
+  ["творог 5кг",            75000, 1],
+  ["тостер хлеб",           74969, 1],
+  ["черный перец",          67500, 1],
+  ["томат",                 66400, 1],
+  ["Мука дані нан",         63000, 1],
+];
+
+const anomalies = [
+  ["черный перец",             "шт",  750,    3000,    300.0, 1],
+  ["колбаса копчёная (0.5кг)", "шт",  970,    2650.09, 173.2, 1],
+  ["геркулес",                 "кг",  350,    600,      71.4, 1],
+  ["Яйцо куриное",             "шт",   72,     87.5,    21.5, 2],
+  ["мука в/с 25кг",            "шт", 7500,   8800,      17.3, 1],
+];
+
+const suspicious = [
+  ["тряпка для пола",            "шт",   19000, 19000,  "ИП МИЛАНА",  "Ақтау"],
+  ["свит чили 5.4",              "шт",   11500, 23000,  "ИП МИЛАНА",  "Ақтау"],
+  ["майонез 10кг",               "шт",    9500, 28500,  "ИП МИЛАНА",  "Ақтау"],
+  ["Разрыхлитель нурафен 250г",  "пачка", 9000, 45000,  "ИП МИЛАНА",  "Ақтау"],
+  ["масло фритюрное 10л",        "шт",    9000, 63000,  "ИП МИЛАНА",  "Ақтау"],
+  ["мука в/с 25кг",              "шт",    8800, 92900,  "ИП МИЛАНА",  "Ақтау"],
+  ["мука Патша 25кг",            "шт",    7500, 90000,  "ИП МИЛАНА",  "Ақтау"],
+  ["сыр Гауда",                  "кг",    5500, 97234,  "ИП МИЛАНА",  "Ақтау"],
+  ["Креветки 16/20",             "кг",    4375, 87500,  "ИП Османов", "Алматы"],
+  ["лаучиу соус",                "шт",    5000, 25000,  "ИП МИЛАНА",  "Ақтау"],
+];
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const fmt  = n => Math.round(n).toLocaleString('ru-RU');
+const fmtD = n => n.toFixed(1);
+function supTag(name) {
+  const isO = name.includes('Осман');
+  return `<span class="${isO ? 'tag-o' : 'tag-m'}">${isO ? 'Алматы' : 'Ақтау'}</span>`;
+}
+function supColor(name) { return name.includes('Осман') ? OSMANOV_COLOR : MILANA_COLOR; }
+
+// ── SPEND TIMELINE ────────────────────────────────────────────────────────────
+new Chart(document.getElementById('spendChart'), {
+  type: 'bar',
+  data: {
+    labels: invoices.map(d => d[3]),
+    datasets: [{
+      label: 'Сумма ₸',
+      data: invoices.map(d => d[4]),
+      backgroundColor: invoices.map(d => d[1].includes('Осман')
+        ? 'rgba(245,158,11,0.8)' : 'rgba(34,197,94,0.75)'),
+      borderColor: invoices.map(d => d[1].includes('Осман') ? OSMANOV_COLOR : MILANA_COLOR),
+      borderWidth: 1, borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: TOOLTIP_BG,
+        callbacks: { label: c => ` ${fmt(c.raw)} ₸  (${invoices[c.dataIndex][1]})` } }
+    },
+    scales: {
+      x: { grid: { color: GRID }, ticks: { color: TICK, font: FONT } },
+      y: { grid: { color: GRID }, ticks: { color: TICK, font: FONT, callback: v => fmt(v) }, beginAtZero: true }
+    }
+  }
+});
+
+// ── SUPPLIER PIE ──────────────────────────────────────────────────────────────
+new Chart(document.getElementById('supPieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['ИП МИЛАНА (Ақтау)', 'ИП Османов (Алматы)'],
+    datasets: [{ data: [2923335, 526695],
+      backgroundColor: [MILANA_COLOR, OSMANOV_COLOR], borderWidth: 0, hoverOffset: 6 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '68%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: TOOLTIP_BG,
+        callbacks: { label: c => ` ${fmt(c.raw)} ₸ (${(c.raw/TOTAL*100).toFixed(1)}%)` } }
+    }
+  }
+});
+
+// ── TOP SKU ───────────────────────────────────────────────────────────────────
+new Chart(document.getElementById('skuChart'), {
+  type: 'bar',
+  data: {
+    labels: topSku.map(d => d[0]),
+    datasets: [{
+      label: '₸', data: topSku.map(d => d[1]),
+      backgroundColor: topSku.map(d =>
+        d[2] > 1 ? 'rgba(108,99,255,0.85)' : 'rgba(34,197,94,0.65)'),
+      borderWidth: 0, borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: TOOLTIP_BG,
+        callbacks: { label: c => ` ${fmt(c.raw)} ₸${topSku[c.dataIndex][2]>1?' · 2 поставщика':''}` } }
+    },
+    scales: {
+      x: { grid:{color:GRID}, ticks:{color:TICK,font:FONT,callback:v=>fmt(v)}, beginAtZero:true },
+      y: { grid:{display:false}, ticks:{color:TICK,font:{...FONT,size:10}} }
+    }
+  }
+});
+
+// ── ANOMALY CHART ─────────────────────────────────────────────────────────────
+new Chart(document.getElementById('anomalyChart'), {
+  type: 'bar',
+  data: {
+    labels: anomalies.map(d => d[0]),
+    datasets: [
+      { label: 'Мин ₸', data: anomalies.map(d => d[2]),
+        backgroundColor: 'rgba(34,197,94,0.75)', borderColor: MILANA_COLOR, borderWidth:1, borderRadius:4 },
+      { label: 'Макс ₸', data: anomalies.map(d => d[3]),
+        backgroundColor: 'rgba(239,68,68,0.75)', borderColor: '#ef4444', borderWidth:1, borderRadius:4 }
+    ]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display:true, labels:{color:'#94a3b8',font:FONT,boxWidth:12,boxHeight:12} },
+      tooltip: { backgroundColor: TOOLTIP_BG, callbacks:{label:c=>` ${fmt(c.raw)} ₸`} }
+    },
+    scales: {
+      x: { grid:{color:GRID}, ticks:{color:TICK,font:FONT,callback:v=>fmt(v)}, beginAtZero:true },
+      y: { grid:{display:false}, ticks:{color:TICK,font:{...FONT,size:10}} }
+    }
+  }
+});
+
+// ── ANOMALIES TABLE ───────────────────────────────────────────────────────────
+const anomTbody = document.getElementById('anomTbody');
+anomalies.forEach((r, i) => {
+  const [name, unit, mn, mx, spread, sups] = r;
+  const cls  = spread > 50 ? 'pill-red' : spread > 10 ? 'pill-amber' : 'pill-green';
+  const lbl  = spread > 50 ? '🔴 КРИТИЧНО' : spread > 10 ? '🟡 ПРОВЕРИТЬ' : '🟢 НОРМА';
+  const bw   = Math.min(100, spread / 2);
+  const bcol = spread > 50 ? '#ef4444' : spread > 10 ? '#f59e0b' : '#22c55e';
+  const supBadge = sups > 1
+    ? '<span class="tag-o" style="margin-left:4px">2 поставщика</span>'
+    : '';
+  anomTbody.innerHTML += `<tr>
+    <td style="color:var(--muted)">${i+1}</td>
+    <td>${name}${supBadge}</td>
+    <td>${unit}</td>
+    <td class="num" style="color:var(--milana)">${fmt(mn)} ₸</td>
+    <td class="num" style="color:var(--red)">${fmt(mx)} ₸</td>
+    <td class="num"><strong style="color:${bcol}">+${spread}%</strong></td>
+    <td><div class="bar-bg" style="width:90px"><div class="bar-fill" style="width:${bw}%;background:${bcol}"></div></div></td>
+    <td><span class="pill ${cls}">${lbl}</span></td>
+  </tr>`;
+});
+
+// ── INVOICES TABLE ────────────────────────────────────────────────────────────
+const invTbody = document.getElementById('invTbody');
+invoices.forEach(r => {
+  const [inv, sup, city, date, sum, lines] = r;
+  const isO  = sup.includes('Осман');
+  const pct  = (sum / TOTAL * 100).toFixed(1);
+  const bw   = Math.min(100, parseFloat(pct) * 1.5);
+  const col  = isO ? OSMANOV_COLOR : MILANA_COLOR;
+  invTbody.innerHTML += `<tr>
+    <td><strong>№${inv}</strong></td>
+    <td><span class="${isO?'tag-o':'tag-m'}">${sup}</span></td>
+    <td style="color:var(--muted)">${city}</td>
+    <td>${date}</td>
+    <td class="num"><strong style="color:${sum>900000?'#ef4444':col}">${fmt(sum)} ₸</strong></td>
+    <td class="num">${lines}</td>
+    <td>
+      <div style="display:flex;align-items:center;gap:7px;">
+        <div class="bar-bg" style="width:110px"><div class="bar-fill" style="width:${bw}%;background:${col}"></div></div>
+        <span style="color:var(--muted);font-size:10px">${pct}%</span>
+      </div>
+    </td>
+  </tr>`;
+});
+
+// ── SUSPICIOUS TABLE ──────────────────────────────────────────────────────────
+const suspTbody = document.getElementById('suspTbody');
+suspicious.forEach((r, i) => {
+  const [name, unit, price, total, sup, city] = r;
+  const pct = (total / TOTAL * 100).toFixed(1);
+  const bw  = Math.min(100, parseFloat(pct) * 5);
+  const isO = sup.includes('Осман');
+  suspTbody.innerHTML += `<tr>
+    <td style="color:var(--muted)">${i+1}</td>
+    <td>${name}</td>
+    <td>${unit}</td>
+    <td class="num"><strong style="color:${price>10000?'#ef4444':'#f59e0b'}">${fmt(price)} ₸</strong></td>
+    <td class="num">${fmt(total)} ₸</td>
+    <td><span class="${isO?'tag-o':'tag-m'}">${sup}</span></td>
+    <td>
+      <div style="display:flex;align-items:center;gap:7px;">
+        <div class="bar-bg" style="width:80px"><div class="bar-fill" style="width:${bw}%;background:linear-gradient(90deg,var(--accent),#a78bfa)"></div></div>
+        <span style="color:var(--muted);font-size:10px">${pct}%</span>
+      </div>
+    </td>
+  </tr>`;
+});
+
+// ── TIMESTAMP ─────────────────────────────────────────────────────────────────
+document.getElementById('ts').textContent =
+  new Date().toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
+</script>
+</body>
+</html>
