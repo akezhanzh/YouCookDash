@@ -1,0 +1,9 @@
+# Игнорировать всё
+*
+
+# Кроме docs/ (GitHub Pages)
+!docs/
+!docs/**
+
+# И этого файла
+!.gitignore
