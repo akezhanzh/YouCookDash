@@ -121,6 +121,28 @@
   /* Category badge */
   .cat-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
 
+  /* Modal */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:#1a1d27; border:1px solid #2a2d3e; border-radius:16px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; padding:24px; position:relative; animation:fadeIn .15s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
+  .modal-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,.08); border:none; color:#94a3b8; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; }
+  .modal-close:hover { background:rgba(255,255,255,.15); color:#e2e8f0; }
+  .modal-title { font-size:17px; font-weight:700; margin-bottom:4px; }
+  .modal-spread { display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:16px; }
+  .modal-section { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.9px; color:#6366f1; margin:16px 0 8px; }
+  .modal-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .modal-table th { color:#64748b; font-size:10px; font-weight:700; text-transform:uppercase; padding:5px 8px; border-bottom:1px solid #2a2d3e; text-align:left; }
+  .modal-table td { padding:8px 8px; border-bottom:1px solid rgba(255,255,255,.04); }
+  .modal-table tr:last-child td { border-bottom:none; }
+  .modal-trend { display:flex; align-items:center; gap:10px; padding:12px; border-radius:10px; margin-top:8px; font-size:12px; }
+  .trend-up   { background:rgba(239,68,68,.1);  border:1px solid rgba(239,68,68,.25);  color:#fca5a5; }
+  .trend-down { background:rgba(34,197,94,.1);  border:1px solid rgba(34,197,94,.25);  color:#86efac; }
+  .trend-mix  { background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); color:#fcd34d; }
+  .modal-explain { background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.2); border-radius:10px; padding:12px; font-size:12px; color:#c7d2fe; margin-top:10px; line-height:1.6; }
+  .alert-item { cursor:pointer; transition:filter .15s; }
+  .alert-item:hover { filter:brightness(1.15); }
+
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: var(--surf); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -312,6 +334,15 @@
   </div>
 
 </div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const TOTAL = 3450029;
@@ -407,6 +438,14 @@ const crossSupplier = [
   ["Яйцо куриное", "МИЛАНА", 72.0, "Индивидуальный Предприниматель Османов", 87.5, 21.5, "МИЛАНА"]
 ];
 
+const anomalyDetail = {
+  "Яйцо куриное": [{"inv":"64","date":"06.03.2026","sup":"МИЛАНА","price":72.0,"qty":720.0,"total":51840}, {"inv":"72","date":"08.03.2026","sup":"МИЛАНА","price":75.0,"qty":1080.0,"total":81000}, {"inv":"00000000043","date":"03.04.2026","sup":"Индивидуальный Предприниматель Османов","price":87.5,"qty":360.0,"total":31500}],
+  "геркулес": [{"inv":"64","date":"06.03.2026","sup":"МИЛАНА","price":600.0,"qty":10.0,"total":6000}, {"inv":"72","date":"08.03.2026","sup":"МИЛАНА","price":350.0,"qty":10.0,"total":3500}],
+  "колбаса копченная (0,5кг)": [{"inv":"64","date":"06.03.2026","sup":"МИЛАНА","price":2650.09,"qty":10.54,"total":27931}, {"inv":"72","date":"08.03.2026","sup":"МИЛАНА","price":970.0,"qty":31.0,"total":30070}],
+  "мука высший сорт 25 кг": [{"inv":"59","date":"04.03.2026","sup":"МИЛАНА","price":8800.0,"qty":4.0,"total":35200}, {"inv":"64","date":"06.03.2026","sup":"МИЛАНА","price":7500.0,"qty":3.0,"total":22500}],
+  "черный перец": [{"inv":"72","date":"08.03.2026","sup":"МИЛАНА","price":3000.0,"qty":10.0,"total":30000}, {"inv":"101","date":"07.04.2026","sup":"МИЛАНА","price":750.0,"qty":50.0,"total":37500}]
+};
+
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 const fmt  = n => Math.round(n).toLocaleString('ru-RU');
 const fmtD = n => n.toFixed(1);
@@ -442,6 +481,92 @@ function supColor(name) {
 }
 function isOsman(name) { return name.includes('Осман') || name.includes('Osman'); }
 
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(skuName) {
+  const detail = anomalyDetail[skuName];
+  if (!detail) return;
+
+  const anom = anomalies.find(a => skuName.includes(a[0]) || a[0].includes(skuName.split(' ')[0]));
+  const spread = anom ? anom[4] : 0;
+  const unit   = anom ? anom[1] : 'шт';
+
+  // Направление цены
+  const sorted = [...detail].sort((a,b) => a.date.localeCompare(b.date));
+  const firstPrice = sorted[0].price;
+  const lastPrice  = sorted[sorted.length-1].price;
+  const direction  = lastPrice > firstPrice ? 'up' : lastPrice < firstPrice ? 'down' : 'stable';
+  const suppliers  = new Set(detail.map(o => o.sup)).size;
+
+  // Объяснение
+  let explain = '';
+  if (suppliers > 1) {
+    const prices = [...new Set(detail.map(o => `${o.sup}: ${fmt(o.price)} ₸`))];
+    explain = `Этот товар закупался у разных поставщиков по разной цене. ${prices.join(', ')}. Всегда берите у того, кто дешевле.`;
+  } else if (direction === 'up') {
+    const pct = Math.round((lastPrice - firstPrice) / firstPrice * 100);
+    explain = `⚠️ Цена растёт: с ${fmt(firstPrice)} ₸ до ${fmt(lastPrice)} ₸ (+${pct}%). Рекомендуем уточнить у поставщика причину — возможно смена фасовки, сезонный рост или повышение отпускной цены.`;
+  } else if (direction === 'down') {
+    const pct = Math.round((firstPrice - lastPrice) / firstPrice * 100);
+    explain = `✅ Цена снизилась: с ${fmt(firstPrice)} ₸ до ${fmt(lastPrice)} ₸ (-${pct}%). Аномалия зафиксирована из-за большого разброса в истории. Текущая цена ниже — это хорошо.`;
+  } else {
+    explain = `Цена колеблется в пределах нормы. Наблюдайте за динамикой.`;
+  }
+
+  // Цвет spread
+  const spreadCls = spread > 50 ? 'background:rgba(239,68,68,.2);color:#f87171' : spread > 10 ? 'background:rgba(245,158,11,.2);color:#fbbf24' : 'background:rgba(34,197,94,.2);color:#4ade80';
+  const trendCls  = direction === 'up' ? 'trend-up' : direction === 'down' ? 'trend-down' : 'trend-mix';
+  const trendIcon = direction === 'up' ? '📈' : direction === 'down' ? '📉' : '➡️';
+  const trendText = direction === 'up'
+    ? `Цена РАСТЁТ: ${fmt(firstPrice)} → ${fmt(lastPrice)} ₸`
+    : direction === 'down'
+    ? `Цена СНИЗИЛАСЬ: ${fmt(firstPrice)} → ${fmt(lastPrice)} ₸`
+    : `Цена стабильна: ${fmt(firstPrice)} ₸`;
+
+  // Строки таблицы
+  const rows = detail.map(o => {
+    const priceColor = o.price === Math.max(...detail.map(d=>d.price)) ? '#f87171' :
+                       o.price === Math.min(...detail.map(d=>d.price)) ? '#4ade80' : '#e2e8f0';
+    const isO = o.sup.includes('Осман') || o.sup.includes('Osman');
+    return `<tr>
+      <td>${o.date}</td>
+      <td><strong>№${o.inv}</strong></td>
+      <td><span class="${isO?'tag-o':'tag-m'}" style="font-size:10px">${o.sup}</span></td>
+      <td class="num"><strong style="color:${priceColor}">${fmt(o.price)} ₸</strong></td>
+      <td class="num" style="color:#94a3b8">${o.qty} ${unit}</td>
+      <td class="num" style="color:#94a3b8">${fmt(o.total)} ₸</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-title">${skuName}</div>
+    <span class="modal-spread" style="${spreadCls}">Разброс цен: +${spread}%</span>
+
+    <div class="modal-section">История по накладным</div>
+    <table class="modal-table">
+      <thead><tr>
+        <th>Дата</th><th>Накладная</th><th>Поставщик</th>
+        <th class="num">Цена/ед</th><th class="num">Кол-во</th><th class="num">Итого</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <div class="modal-trend ${trendCls}" style="margin-top:14px">
+      <span style="font-size:20px">${trendIcon}</span>
+      <strong>${trendText}</strong>
+    </div>
+
+    <div class="modal-explain">${explain}</div>
+  `;
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
 // ── ALERT STRIP ───────────────────────────────────────────────────────────────
 (function buildAlerts() {
   const strip = document.getElementById('alertStrip');
@@ -453,7 +578,8 @@ function isOsman(name) { return name.includes('Осман') || name.includes('Os
       cls: 'alert-red',
       icon: '🔴',
       title: `Критично: ${critical[0][0]}`,
-      sub: `Цена выросла на +${critical[0][4]}% (${fmt(critical[0][2])} → ${fmt(critical[0][3])} ₸)`
+      sub: `Разброс цен +${critical[0][4]}% (${fmt(critical[0][2])} ↔ ${fmt(critical[0][3])} ₸) · нажмите для деталей`,
+      sku: critical[0][0]
     });
   }
 
@@ -462,8 +588,9 @@ function isOsman(name) { return name.includes('Осман') || name.includes('Os
     alerts.push({
       cls: 'alert-amber',
       icon: '🟡',
-      title: `Проверить цены: ${warn.length} позиции`,
-      sub: warn.slice(0,2).map(a => `${a[0]} +${a[4]}%`).join(' · ')
+      title: `Проверить: ${warn[0][0]}`,
+      sub: `+${warn[0][4]}% разброс цен · нажмите для деталей`,
+      sku: warn[0][0]
     });
   }
 
@@ -474,19 +601,21 @@ function isOsman(name) { return name.includes('Осман') || name.includes('Os
       cls: 'alert-blue',
       icon: '💡',
       title: `Экономия: ${cs[0]}`,
-      sub: `${cs[6]} дешевле на ${cs[5]}% · ~${fmt(saving)} ₸/мес потенциал`
+      sub: `${cs[6]} дешевле на ${cs[5]}% · ~${fmt(saving)} ₸/мес потенциал · нажмите для деталей`,
+      sku: cs[0]
     });
   }
 
   alerts.push({
     cls: 'alert-green',
     icon: '✅',
-    title: `Активных поставщиков: 2`,
-    sub: `МИЛАНА (Ақтау) · Osmanов (Алматы) · всё в порядке`
+    title: `Поставщики в норме`,
+    sub: `МИЛАНА (Ақтау) · Osmanов (Алматы) · 2 активных`
   });
 
   alerts.forEach(a => {
-    strip.innerHTML += `<div class="alert-item ${a.cls}">
+    const clickAttr = a.sku ? `onclick="openModal(${JSON.stringify(a.sku)})"` : '';
+    strip.innerHTML += `<div class="alert-item ${a.cls}" ${clickAttr}>
       <span class="alert-icon">${a.icon}</span>
       <div class="alert-text"><strong>${a.title}</strong><span>${a.sub}</span></div>
     </div>`;
