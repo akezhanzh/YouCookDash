@@ -483,7 +483,16 @@ function isOsman(name) { return name.includes('Осман') || name.includes('Os
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 function openModal(skuName) {
-  const detail = anomalyDetail[skuName];
+  // Точный поиск, затем частичный
+  let detail = anomalyDetail[skuName];
+  let matchedKey = skuName;
+  if (!detail) {
+    matchedKey = Object.keys(anomalyDetail).find(k =>
+      k.toLowerCase().includes(skuName.toLowerCase().slice(0, 8)) ||
+      skuName.toLowerCase().includes(k.toLowerCase().slice(0, 8))
+    );
+    detail = matchedKey ? anomalyDetail[matchedKey] : null;
+  }
   if (!detail) return;
 
   const anom = anomalies.find(a => skuName.includes(a[0]) || a[0].includes(skuName.split(' ')[0]));
@@ -614,11 +623,12 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); }
   });
 
   alerts.forEach(a => {
-    const clickAttr = a.sku ? `onclick="openModal(${JSON.stringify(a.sku)})"` : '';
-    strip.innerHTML += `<div class="alert-item ${a.cls}" ${clickAttr}>
-      <span class="alert-icon">${a.icon}</span>
-      <div class="alert-text"><strong>${a.title}</strong><span>${a.sub}</span></div>
-    </div>`;
+    const div = document.createElement('div');
+    div.className = `alert-item ${a.cls}`;
+    div.innerHTML = `<span class="alert-icon">${a.icon}</span>
+      <div class="alert-text"><strong>${a.title}</strong><span>${a.sub}</span></div>`;
+    if (a.sku) div.addEventListener('click', () => openModal(a.sku));
+    strip.appendChild(div);
   });
 })();
 
