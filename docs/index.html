@@ -231,7 +231,7 @@
     <div class="tbl-wrap">
       <table>
         <thead><tr>
-          <th>№</th><th>Поставщик</th><th>Город</th><th>Дата</th>
+          <th>Поставщик</th><th>Город</th><th>Дата</th>
           <th class="num">Сумма ₸</th><th class="num">Позиций</th><th>Доля</th>
         </tr></thead>
         <tbody id="invTbody"></tbody>
@@ -454,7 +454,6 @@ invoices.forEach(r => {
   const bw   = Math.min(100, parseFloat(pct) * 1.5);
   const col  = isO ? OSMANOV_COLOR : MILANA_COLOR;
   invTbody.innerHTML += `<tr>
-    <td><strong>№${inv}</strong></td>
     <td><span class="${isO?'tag-o':'tag-m'}">${sup}</span></td>
     <td style="color:var(--muted)">${city}</td>
     <td>${date}</td>
