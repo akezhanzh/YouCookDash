@@ -189,16 +189,16 @@
       <div class="ch"><canvas id="spendChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="sec">Доля поставщиков</div>
+      <div class="sec">Доля по городам</div>
       <div class="ch-sm"><canvas id="supPieChart"></canvas></div>
       <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--milana)"></span>ИП МИЛАНА (Ақтау)</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--milana)"></span>Ақтау</span>
           <span style="font-family:monospace;font-size:12px;">2 923 335 ₸</span>
         </div>
         <div class="bar-bg"><div class="bar-fill" style="width:84.7%;background:var(--milana)"></div></div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--osmanov)"></span>ИП Osmanов (Алматы)</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--osmanov)"></span>Алматы</span>
           <span style="font-family:monospace;font-size:12px;">526 695 ₸</span>
         </div>
         <div class="bar-bg"><div class="bar-fill" style="width:15.3%;background:var(--osmanov)"></div></div>
@@ -525,7 +525,7 @@ new Chart(document.getElementById('spendChart'), {
 new Chart(document.getElementById('supPieChart'), {
   type: 'doughnut',
   data: {
-    labels: ['ИП МИЛАНА (Ақтау)', 'ИП Osmanов (Алматы)'],
+    labels: ['Ақтау', 'Алматы'],
     datasets: [{ data: [2923335, 526695],
       backgroundColor: [MILANA_COLOR, OSMANOV_COLOR], borderWidth: 0, hoverOffset: 6 }]
   },
