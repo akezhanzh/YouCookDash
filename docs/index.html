@@ -63,18 +63,14 @@
   .alert-text span   { font-size: 10px; opacity: .8; }
 
   /* Filter bar */
-  .filter-bar { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:16px 20px; background:var(--surf); border:1px solid var(--border); border-radius:14px; margin-bottom:20px; }
-  .filter-group { display:flex; flex-direction:column; gap:5px; }
-  .filter-label { font-size:10px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); font-weight:700; }
-  .filter-input { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:7px 12px; color:var(--text); font-size:12px; outline:none; min-width:130px; }
-  .filter-input:focus { border-color:var(--accent); }
-  .filter-pills { display:flex; gap:6px; flex-wrap:wrap; }
-  .filter-pill { padding:5px 12px; border-radius:20px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--bg); color:var(--muted); transition:all .15s; white-space:nowrap; }
-  .filter-pill.active { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .filter-reset { padding:7px 14px; border-radius:8px; background:transparent; border:1px solid var(--border); color:var(--muted); font-size:12px; cursor:pointer; transition:all .15s; align-self:flex-end; }
-  .filter-reset:hover { border-color:var(--red); color:var(--red); }
-  .filter-active { font-size:10px; color:var(--accent); font-weight:700; align-self:center; }
-  .sku-chart-card { margin-bottom:20px; }
+  .fbar { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; padding:14px 16px; background:var(--surf); border:1px solid var(--border); border-radius:12px; margin-bottom:16px; }
+  .fbar-group { display:flex; flex-direction:column; gap:4px; }
+  .fbar-lbl { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:700; }
+  .fbar-inp { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:7px 10px; color:var(--text); font-size:12px; outline:none; min-width:120px; }
+  .fbar-inp:focus { border-color:var(--accent); }
+  .fbar-inp option { background:var(--surf); color:var(--text); }
+  .fbar-reset { padding:7px 12px; border-radius:8px; background:transparent; border:1px solid var(--border); color:var(--muted); cursor:pointer; font-size:13px; align-self:flex-end; transition:all .15s; }
+  .fbar-reset:hover { border-color:var(--red); color:var(--red); }
 
   /* Grids */
   .grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; margin-bottom: 20px; }
@@ -248,32 +244,33 @@
   </div>
 
   <!-- FILTER BAR -->
-  <div class="filter-bar">
-    <div class="filter-group">
-      <span class="filter-label">От</span>
-      <input type="date" id="fFrom" class="filter-input" onchange="applyFilters()">
+  <div class="fbar">
+    <div class="fbar-group">
+      <label class="fbar-lbl">От</label>
+      <input type="date" id="fFrom" class="fbar-inp" onchange="runFilter()">
     </div>
-    <div class="filter-group">
-      <span class="filter-label">До</span>
-      <input type="date" id="fTo" class="filter-input" onchange="applyFilters()">
+    <div class="fbar-group">
+      <label class="fbar-lbl">До</label>
+      <input type="date" id="fTo" class="fbar-inp" onchange="runFilter()">
     </div>
-    <div class="filter-group">
-      <span class="filter-label">Поставщик / Город</span>
-      <div class="filter-pills" id="supPills"></div>
+    <div class="fbar-group">
+      <label class="fbar-lbl">Поставщик</label>
+      <select id="fSup" class="fbar-inp" onchange="runFilter()">
+        <option value="">Все</option>
+      </select>
     </div>
-    <div class="filter-group" style="flex:1;min-width:180px">
-      <span class="filter-label">Товар (SKU) — для графика цены</span>
-      <input type="text" id="fSku" class="filter-input" placeholder="Начни вводить товар..." list="skuDatalist" oninput="onSkuInput()" style="width:100%">
-      <datalist id="skuDatalist"></datalist>
+    <div class="fbar-group" style="flex:1;min-width:200px">
+      <label class="fbar-lbl">Товар — история цены</label>
+      <input type="text" id="fSku" class="fbar-inp" placeholder="Введи товар..." list="skuDL" oninput="runSkuChart()" style="width:100%">
+      <datalist id="skuDL"></datalist>
     </div>
-    <button class="filter-reset" onclick="resetFilters()">✕ Сброс</button>
-    <span class="filter-active" id="filterActive" style="display:none">● Фильтр активен</span>
+    <button class="fbar-reset" onclick="resetFilter()">✕ Сброс</button>
   </div>
 
-  <!-- SKU PRICE HISTORY CHART -->
-  <div class="card sku-chart-card" id="skuChartCard" style="display:none">
-    <div class="sec" id="skuChartTitle">История цены</div>
-    <div class="ch"><canvas id="chartSkuPrice"></canvas></div>
+  <!-- SKU PRICE CHART -->
+  <div class="card" id="skuCard" style="display:none;margin-bottom:16px">
+    <div class="sec" id="skuCardTitle">История цены</div>
+    <div class="ch"><canvas id="skuCanvas"></canvas></div>
   </div>
 
   <!-- ALERT STRIP -->
@@ -1470,274 +1467,164 @@ fetch('/api/me').then(r=>r.json()).then(d=>{
   if(d.admin) document.getElementById('adminLink').style.display='';
 }).catch(()=>{});
 
-// ── FILTER ENGINE ─────────────────────────────────────────────────────────────
+// ── FILTER ────────────────────────────────────────────────────────────────────
 const CAT_MAP_JS=[['яйцо','Яйца'],['сливки','Молочные'],['творог','Молочные'],['молоко','Молочные'],['сыр','Молочные'],['масло растительное','Масло/жиры'],['подсолнечн','Масло/жиры'],['масло','Масло/жиры'],['маргарин','Масло/жиры'],['майонез','Масло/жиры'],['мясо','Мясо'],['говядина','Мясо'],['свинина','Мясо'],['колбас','Мясо'],['сосиск','Мясо'],['курица','Птица'],['бройлер','Птица'],['рыба','Рыба/морепродукты'],['горбуша','Рыба/морепродукты'],['хлеб','Хлеб/выпечка'],['батон','Хлеб/выпечка'],['мука','Сухие продукты'],['рис','Сухие продукты'],['греча','Сухие продукты'],['геркулес','Сухие продукты'],['крупа','Сухие продукты'],['макарон','Сухие продукты'],['соль','Специи/соусы'],['сахар','Специи/соусы'],['перец','Специи/соусы'],['приправ','Специи/соусы'],['соус','Специи/соусы'],['томат','Специи/соусы'],['картофел','Овощи/фрукты'],['морковь','Овощи/фрукты'],['лук','Овощи/фрукты'],['капуст','Овощи/фрукты'],['огурец','Овощи/фрукты'],['помидор','Овощи/фрукты'],['фрукт','Овощи/фрукты'],['яблок','Овощи/фрукты'],['банан','Овощи/фрукты'],['пакет','Упаковка'],['контейнер','Упаковка'],['мешок','Упаковка'],['перчатк','Хозяйство']];
 function getCatJS(n){const l=(n||'').toLowerCase();for(const[k,c]of CAT_MAP_JS)if(l.includes(k))return c;return'Прочее';}
 
-let _fFrom='', _fTo='', _fSups=new Set(), _fSkuQuery='', _chartSkuInst=null;
+let _skuChart=null;
 
-// Build supplier/city pills from ALL_LINES
-(function buildPills(){
-  const sups=new Set(), cities=new Set();
-  ALL_LINES.forEach(l=>{sups.add(l[1]);cities.add(l[2]);});
-  const container=document.getElementById('supPills');
-  // Supplier pills
-  sups.forEach(s=>{
-    const b=document.createElement('button');
-    b.className='filter-pill'; b.textContent=s; b.dataset.val=s; b.dataset.type='sup';
-    b.onclick=()=>togglePill(b);
-    container.appendChild(b);
-  });
-  // City pills
-  cities.forEach(c=>{
-    const b=document.createElement('button');
-    b.className='filter-pill'; b.textContent='📍'+c; b.dataset.val=c; b.dataset.type='city';
-    b.onclick=()=>togglePill(b);
-    container.appendChild(b);
-  });
-  // Build SKU datalist
-  const skus=new Set(ALL_LINES.map(l=>l[0]));
-  const dl=document.getElementById('skuDatalist');
-  skus.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});
-})();
+// Populate dropdowns after page loads
+window.addEventListener('DOMContentLoaded', function() {
+  // Supplier select
+  const sel=document.getElementById('fSup');
+  if(sel){
+    const sups=[...new Set(ALL_LINES.map(l=>l[1]))].sort();
+    sups.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  }
+  // SKU datalist
+  const dl=document.getElementById('skuDL');
+  if(dl){
+    const skus=[...new Set(ALL_LINES.map(l=>l[0]))].sort();
+    skus.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});
+  }
+});
 
-function togglePill(btn){
-  btn.classList.toggle('active');
-  _fSups.clear();
-  document.querySelectorAll('.filter-pill.active').forEach(b=>{_fSups.add(b.dataset.val);});
-  applyFilters();
-}
-
-function onSkuInput(){
-  _fSkuQuery=document.getElementById('fSku').value.trim().toLowerCase();
-  updateSkuChart();
-  updateFilterBadge();
-}
-
-function getFilteredLines(){
-  return ALL_LINES.filter(([sku,sup,city,date])=>{
-    if(_fFrom && date<_fFrom) return false;
-    if(_fTo   && date>_fTo)   return false;
-    if(_fSups.size && !_fSups.has(sup) && !_fSups.has(city)) return false;
+function _filterLines(){
+  const from=document.getElementById('fFrom').value;
+  const to  =document.getElementById('fTo').value;
+  const sup =document.getElementById('fSup').value;
+  return ALL_LINES.filter(([,s,,date])=>{
+    if(from && date<from) return false;
+    if(to   && date>to)   return false;
+    if(sup  && s!==sup)   return false;
     return true;
   });
 }
 
-// invoices row: [invId, sup, city, dispDate, amt, lineCount, rawDate]
-function getFilteredInvs(){
-  return invoices.filter(([,,city,,,, rawDate, sup],...rest)=>{
-    // handle both old (6 elem) and new (7 elem) formats
-    const inv=invoices[0];
-    return true; // will filter below
-  });
-  // Proper filter:
-}
-// Correct filtered invoices
-function filtInvs(){
-  return invoices.filter(row=>{
-    const sup=row[1], city=row[2], rawDate=row[6]||'';
-    if(_fFrom && rawDate<_fFrom) return false;
-    if(_fTo   && rawDate>_fTo)   return false;
-    if(_fSups.size && !_fSups.has(sup) && !_fSups.has(city)) return false;
-    return true;
-  });
-}
-
-function applyFilters(){
-  _fFrom=document.getElementById('fFrom').value;
-  _fTo  =document.getElementById('fTo').value;
-  const lines=getFilteredLines();
-  const invs =filtInvs();
-  updateKPIs(lines,invs);
-  updateCatChartFiltered(lines);
-  updateTopSkuFiltered(lines);
-  updateFreqFiltered(lines);
-  updateWeeklyFiltered(lines);
-  updateSkuChart();
-  updateFilterBadge();
-}
-
-function resetFilters(){
-  _fFrom='';_fTo='';_fSups.clear();_fSkuQuery='';
-  document.getElementById('fFrom').value='';
-  document.getElementById('fTo').value='';
-  document.getElementById('fSku').value='';
-  document.querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active'));
-  document.getElementById('skuChartCard').style.display='none';
-  applyFilters();
-}
-
-function updateFilterBadge(){
-  const active=_fFrom||_fTo||_fSups.size||_fSkuQuery;
-  document.getElementById('filterActive').style.display=active?'':'none';
-}
-
-// ── KPI UPDATE ─────────────────────────────────────────────────────────────────
-function fmtK(n){return Math.abs(n)>=1e6?(n/1e6).toFixed(1)+'M':fmt(n);}
-
-function updateKPIs(lines,invs){
+function runFilter(){
+  const lines=_filterLines();
+  // KPI
   const total=lines.reduce((s,l)=>s+l[6],0);
   const invSet=new Set(lines.map(l=>l[7]));
   const n=invSet.size;
-
-  // Supplier breakdown
-  const supTot={},supInvs={};
-  lines.forEach(([sku,sup,city,date,price,qty,lineTotal,invId])=>{
-    supTot[sup]=(supTot[sup]||0)+lineTotal;
-    if(!supInvs[sup])supInvs[sup]=new Set();
-    supInvs[sup].add(invId);
-  });
-  const supEntries=Object.entries(supTot).sort((a,b)=>b[1]-a[1]);
-
-  // City breakdown
+  const supTot={},supInv={};
+  lines.forEach(([sku,sup,,,,,t,id])=>{supTot[sup]=(supTot[sup]||0)+t;if(!supInv[sup])supInv[sup]=new Set();supInv[sup].add(id);});
+  const sE=Object.entries(supTot).sort((a,b)=>b[1]-a[1]);
   const cityTot={};
-  lines.forEach(([,,city,,,, lineTotal])=>{cityTot[city]=(cityTot[city]||0)+lineTotal;});
-  const cityEntries=Object.entries(cityTot).sort((a,b)=>b[1]-a[1]);
-  const citySum=cityEntries.reduce((s,[,v])=>s+v,0);
-
-  // Date range
+  lines.forEach(([,,city,,,, t])=>{cityTot[city]=(cityTot[city]||0)+t;});
+  const cE=Object.entries(cityTot).sort((a,b)=>b[1]-a[1]);
+  const cs=cE.reduce((s,[,v])=>s+v,0);
   const dates=lines.map(l=>l[3]).filter(Boolean).sort();
   const nDays=dates.length>=2?Math.max(1,(new Date(dates[dates.length-1])-new Date(dates[0]))/864e5):1;
-  const weekAvg=Math.round(total/Math.max(1,nDays/7));
-
-  // Category
-  const catTot={};
-  lines.forEach(([sku,,,,,, lineTotal])=>{const c=getCatJS(sku);catTot[c]=(catTot[c]||0)+lineTotal;});
-  const topCat=Object.entries(catTot).sort((a,b)=>b[1]-a[1])[0];
-
-  document.getElementById('kpiTotal').textContent=fmt(total)+' ₸';
-  document.getElementById('kpiPeriod').textContent=`за ${Math.round(nDays)} дней · ${n} накладных`;
-  document.getElementById('kpiWeekAvg').textContent=fmt(weekAvg)+' ₸/нед среднее';
-  document.getElementById('kpiSupCount').textContent=supEntries.length;
-  document.getElementById('kpiSupDetail').textContent=supEntries.slice(0,2).map(([s,v])=>`${s} ${fmt(v)} ₸`).join(' · ')||'—';
-  document.getElementById('kpiSupInv').textContent=supEntries.slice(0,2).map(([s])=>`${s} ${supInvs[s]?.size||0} накл`).join(' · ')||'—';
-  document.getElementById('kpiCityCount').textContent=cityEntries.length;
-  document.getElementById('kpiCityDetail').textContent=cityEntries.slice(0,2).map(([c,v])=>`${c} ${fmt(v)} ₸`).join(' · ')||'—';
-  document.getElementById('kpiCityPct').textContent=cityEntries.slice(0,2).map(([c,v])=>`${c} ${citySum?Math.round(v/citySum*100):0}%`).join(' · ')||'—';
-  document.getElementById('kpiAvg').textContent=n?fmt(Math.round(total/n))+' ₸':'—';
-  document.getElementById('kpiAvgNote').textContent=`по ${n} накладным`;
-  document.getElementById('kpiTopCat').textContent=topCat?`топ: ${topCat[0]} · ${total?Math.round(topCat[1]/total*100):0}%`:'—';
-}
-
-// ── CHART UPDATES ──────────────────────────────────────────────────────────────
-function updateCatChartFiltered(lines){
-  if(!window.chartCat)return;
   const catTot={};
   lines.forEach(([sku,,,,,, t])=>{const c=getCatJS(sku);catTot[c]=(catTot[c]||0)+t;});
-  const sorted=Object.entries(catTot).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  chartCat.data.labels=sorted.map(x=>x[0]);
-  chartCat.data.datasets[0].data=sorted.map(x=>x[1]);
-  chartCat.update('none');
+  const topCat=Object.entries(catTot).sort((a,b)=>b[1]-a[1])[0];
+
+  const $=id=>document.getElementById(id);
+  if($('kpiTotal'))    $('kpiTotal').textContent=fmt(total)+' ₸';
+  if($('kpiPeriod'))   $('kpiPeriod').textContent=`за ${Math.round(nDays)} дней · ${n} накладных`;
+  if($('kpiWeekAvg'))  $('kpiWeekAvg').textContent=fmt(Math.round(total/Math.max(1,nDays/7)))+' ₸/нед среднее';
+  if($('kpiSupCount')) $('kpiSupCount').textContent=sE.length;
+  if($('kpiSupDetail'))$('kpiSupDetail').textContent=sE.slice(0,2).map(([s,v])=>`${s} ${fmt(v)} ₸`).join(' · ')||'—';
+  if($('kpiSupInv'))   $('kpiSupInv').textContent=sE.slice(0,2).map(([s])=>`${s} ${supInv[s]?.size||0} накл`).join(' · ')||'—';
+  if($('kpiCityCount'))$('kpiCityCount').textContent=cE.length;
+  if($('kpiCityDetail'))$('kpiCityDetail').textContent=cE.slice(0,2).map(([c,v])=>`${c} ${fmt(v)} ₸`).join(' · ')||'—';
+  if($('kpiCityPct'))  $('kpiCityPct').textContent=cE.slice(0,2).map(([c,v])=>`${c} ${cs?Math.round(v/cs*100):0}%`).join(' · ')||'—';
+  if($('kpiAvg'))      $('kpiAvg').textContent=n?fmt(Math.round(total/n))+' ₸':'—';
+  if($('kpiAvgNote'))  $('kpiAvgNote').textContent=`по ${n} накладных`;
+  if($('kpiTopCat'))   $('kpiTopCat').textContent=topCat?`топ: ${topCat[0]} · ${total?Math.round(topCat[1]/total*100):0}%`:'—';
+
+  // Charts
+  if(window.chartCat){
+    const d=Object.entries(catTot).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    chartCat.data.labels=d.map(x=>x[0]);
+    chartCat.data.datasets[0].data=d.map(x=>x[1]);
+    chartCat.update('none');
+  }
+  if(window.chartTopSku){
+    const skuTot={};
+    lines.forEach(([sku,,,,,, t])=>{skuTot[sku]=(skuTot[sku]||0)+t;});
+    const d=Object.entries(skuTot).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    chartTopSku.data.labels=d.map(([s])=>s.length>18?s.slice(0,17)+'…':s);
+    chartTopSku.data.datasets[0].data=d.map(([,v])=>v);
+    chartTopSku.update('none');
+  }
+  if(window.chartFreq){
+    const sc={};
+    lines.forEach(([sku,,,,,,,id])=>{if(!sc[sku])sc[sku]=new Set();sc[sku].add(id);});
+    const d=Object.entries(sc).sort((a,b)=>b[1].size-a[1].size).slice(0,8);
+    chartFreq.data.labels=d.map(([s])=>s.length>14?s.slice(0,13)+'…':s);
+    chartFreq.data.datasets[0].data=d.map(([s])=>sc[s].size);
+    chartFreq.update('none');
+  }
+  if(window.chartWeekly){
+    const wk={};
+    lines.forEach(([,sup,city,date,,,t])=>{
+      if(!date)return;
+      const d=new Date(date),mn=new Date(d);mn.setDate(d.getDate()-((d.getDay()+6)%7));
+      const k=mn.toISOString().slice(0,10);
+      if(!wk[k])wk[k]={m:0,o:0};
+      if(sup.toUpperCase().includes('МИЛАН'))wk[k].m+=t;else wk[k].o+=t;
+    });
+    const s=Object.entries(wk).sort((a,b)=>a[0]<b[0]?-1:1);
+    chartWeekly.data.labels=s.map(([k])=>{const d=new Date(k);return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;});
+    chartWeekly.data.datasets[0].data=s.map(([,v])=>v.m);
+    chartWeekly.data.datasets[1].data=s.map(([,v])=>v.o);
+    chartWeekly.update('none');
+  }
+  runSkuChart();
 }
 
-function updateTopSkuFiltered(lines){
-  if(!window.chartTopSku)return;
-  const skuTot={};
-  lines.forEach(([sku,,,,,, t])=>{skuTot[sku]=(skuTot[sku]||0)+t;});
-  const sorted=Object.entries(skuTot).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  chartTopSku.data.labels=sorted.map(([s])=>s.length>18?s.slice(0,17)+'…':s);
-  chartTopSku.data.datasets[0].data=sorted.map(([,v])=>v);
-  chartTopSku.update('none');
-}
-
-function updateFreqFiltered(lines){
-  if(!window.chartFreq)return;
-  const skuCnt={},skuPrc={};
-  lines.forEach(([sku,,,,price,qty, t,invId])=>{
-    if(!skuCnt[sku])skuCnt[sku]=new Set();
-    skuCnt[sku].add(invId);
-    if(!skuPrc[sku])skuPrc[sku]=[];
-    if(price>0)skuPrc[sku].push(price);
-  });
-  const sorted=Object.entries(skuCnt).sort((a,b)=>b[1].size-a[1].size).slice(0,8);
-  chartFreq.data.labels=sorted.map(([s])=>s.length>14?s.slice(0,13)+'…':s);
-  chartFreq.data.datasets[0].data=sorted.map(([s])=>skuCnt[s].size);
-  chartFreq.update('none');
-}
-
-function updateWeeklyFiltered(lines){
-  if(!window.chartWeekly)return;
-  const weeks={};
-  lines.forEach(([sku,sup,city,date,,,total])=>{
-    if(!date)return;
-    const d=new Date(date);
-    const monday=new Date(d);monday.setDate(d.getDate()-((d.getDay()+6)%7));
-    const key=monday.toISOString().slice(0,10);
-    if(!weeks[key])weeks[key]={milana:0,osmanov:0};
-    if(sup.toUpperCase().includes('МИЛАН')||city.toUpperCase().includes('АҚТАУ'))
-      weeks[key].milana+=total;
-    else
-      weeks[key].osmanov+=total;
-  });
-  const sorted=Object.entries(weeks).sort((a,b)=>a[0]<b[0]?-1:1);
-  const labels=sorted.map(([k])=>{const d=new Date(k);return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;});
-  chartWeekly.data.labels=labels;
-  chartWeekly.data.datasets[0].data=sorted.map(([,v])=>v.milana);
-  chartWeekly.data.datasets[1].data=sorted.map(([,v])=>v.osmanov);
-  chartWeekly.update('none');
+function resetFilter(){
+  document.getElementById('fFrom').value='';
+  document.getElementById('fTo').value='';
+  document.getElementById('fSup').value='';
+  document.getElementById('fSku').value='';
+  document.getElementById('skuCard').style.display='none';
+  runFilter();
 }
 
 // ── SKU PRICE HISTORY ─────────────────────────────────────────────────────────
-function updateSkuChart(){
-  const q=_fSkuQuery;
-  const card=document.getElementById('skuChartCard');
+function runSkuChart(){
+  const q=(document.getElementById('fSku').value||'').trim().toLowerCase();
+  const card=document.getElementById('skuCard');
   if(!q){card.style.display='none';return;}
-
-  const matched=ALL_LINES.filter(l=>l[0].toLowerCase().includes(q));
-  if(!matched.length){card.style.display='none';return;}
-
-  // Apply date/supplier filters too
-  const filtered=matched.filter(([sku,sup,city,date])=>{
-    if(_fFrom && date<_fFrom) return false;
-    if(_fTo   && date>_fTo)   return false;
-    if(_fSups.size && !_fSups.has(sup) && !_fSups.has(city)) return false;
+  const from=document.getElementById('fFrom').value;
+  const to  =document.getElementById('fTo').value;
+  const sup =document.getElementById('fSup').value;
+  const lines=ALL_LINES.filter(([sku,s,,date])=>{
+    if(!sku.toLowerCase().includes(q))return false;
+    if(from && date<from)return false;
+    if(to   && date>to)  return false;
+    if(sup  && s!==sup)  return false;
     return true;
   });
-
+  if(!lines.length){card.style.display='none';return;}
   card.style.display='';
-  const skuName=matched[0][0];
-  document.getElementById('skuChartTitle').textContent=`История цены: ${skuName}`;
-
-  // Group by date + supplier
-  const byDateSup={};
-  filtered.forEach(([sku,sup,city,date,price])=>{
+  document.getElementById('skuCardTitle').textContent='История цены: '+lines[0][0];
+  const byDS={};
+  lines.forEach(([,s,,date,price])=>{
     if(!date||!price)return;
-    const key=date;
-    if(!byDateSup[key])byDateSup[key]={};
-    if(!byDateSup[key][sup])byDateSup[key][sup]=[];
-    byDateSup[key][sup].push(price);
+    if(!byDS[date])byDS[date]={};
+    if(!byDS[date][s])byDS[date][s]=[];
+    byDS[date][s].push(price);
   });
-
-  const allDates=Object.keys(byDateSup).sort();
-  const allSups=[...new Set(filtered.map(l=>l[1]))];
+  const dates=Object.keys(byDS).sort();
+  const sups=[...new Set(lines.map(l=>l[1]))];
   const colors=['#6366f1','#22c55e','#f59e0b','#ef4444','#8b5cf6'];
-
-  const datasets=allSups.map((sup,i)=>({
-    label:sup,
-    data:allDates.map(d=>{
-      const prices=byDateSup[d]?.[sup];
-      return prices?prices.reduce((s,p)=>s+p,0)/prices.length:null;
-    }),
-    borderColor:colors[i%colors.length],
-    backgroundColor:colors[i%colors.length]+'33',
-    tension:.3,spanGaps:true,pointRadius:5,pointHoverRadius:7,
-    fill:false,borderWidth:2,
+  const datasets=sups.map((s,i)=>({
+    label:s,
+    data:dates.map(d=>{const p=byDS[d]?.[s];return p?p.reduce((a,b)=>a+b,0)/p.length:null;}),
+    borderColor:colors[i%5],backgroundColor:colors[i%5]+'33',
+    tension:.3,spanGaps:true,pointRadius:5,fill:false,borderWidth:2,
   }));
-
-  if(_chartSkuInst){_chartSkuInst.destroy();}
-  _chartSkuInst=new Chart(document.getElementById('chartSkuPrice'),{
+  if(_skuChart){_skuChart.destroy();}
+  _skuChart=new Chart(document.getElementById('skuCanvas'),{
     type:'line',
-    data:{labels:allDates.map(d=>{const[y,m,day]=d.split('-');return`${day}.${m}.${y}`;}),datasets},
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{labels:{color:TICK,font:FONT}},
-        tooltip:{backgroundColor:TOOLTIP_BG,callbacks:{label:c=>`${c.dataset.label}: ${c.raw?c.raw.toFixed(0)+' ₸/'+filtered.find(l=>l[1]===c.dataset.label)?.[5]?.toString()||'ед':'—'}`}}
-      },
-      scales:{
-        x:{grid:{color:GRID},ticks:{color:TICK,font:FONT}},
-        y:{grid:{color:GRID},ticks:{color:TICK,font:FONT,callback:v=>fmt(v)+' ₸'}}
-      }
+    data:{labels:dates.map(d=>{const[y,m,day]=d.split('-');return`${day}.${m}`;}).concat(),datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:TICK,font:FONT}},tooltip:{backgroundColor:TOOLTIP_BG,callbacks:{label:c=>`${c.dataset.label}: ${c.raw?Math.round(c.raw)+' ₸':'—'}`}}},
+      scales:{x:{grid:{color:GRID},ticks:{color:TICK,font:FONT}},y:{grid:{color:GRID},ticks:{color:TICK,font:FONT,callback:v=>fmt(v)+' ₸'}}}
     }
   });
 }
