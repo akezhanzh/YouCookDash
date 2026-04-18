@@ -404,15 +404,10 @@
   <div class="card g-full">
     <div class="sec" style="flex-wrap:wrap;gap:8px;">
       История цен по товарам
-      <span class="sec-sub">/ день за днём</span>
-      <div style="display:flex;gap:4px;margin-left:8px;">
-        <button class="ph-period-btn active" onclick="phSetPeriod(this,'7')">7д</button>
-        <button class="ph-period-btn" onclick="phSetPeriod(this,'30')">30д</button>
-        <button class="ph-period-btn" onclick="phSetPeriod(this,'all')">Все</button>
-      </div>
+      <span class="sec-sub">/ день за днём · фильтр сверху применяется</span>
       <div style="display:flex;gap:6px;align-items:center;margin-left:auto;">
         <input id="phSearch" type="text" placeholder="Поиск товара..." oninput="phRender()"
-          style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;outline:none;width:200px;">
+          style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;outline:none;width:220px;">
         <button onclick="document.getElementById('phSearch').value='';phRender()"
           style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;">✕</button>
       </div>
@@ -1397,6 +1392,7 @@ function runFilter(){
     chartWeekly.update('none');
   }
   runSkuChart();
+  phRender();
 }
 
 function resetFilter(){
@@ -1454,56 +1450,54 @@ function runSkuChart(){
 }
 
 // ── PRICE HISTORY TABLE ───────────────────────────────────────────────────────
-(function phInit() {
+// Pre-compute deltas across ALL history (not affected by filter period)
+(function() {
   const byKey = {};
-  ALL_LINES.forEach(([sku, sup, city, date, price, qty]) => {
-    const k = sku + '|||' + sup;
+  ALL_LINES.forEach(([sku, sup, , date, price]) => {
+    const k = sku + '||' + sup;
     if (!byKey[k]) byKey[k] = [];
-    byKey[k].push({ sku, sup, date, price, qty });
+    byKey[k].push({ date, price });
   });
-
-  const all = [];
-  Object.values(byKey).forEach(entries => {
+  window._phDelta = {};
+  Object.entries(byKey).forEach(([k, entries]) => {
     entries.sort((a, b) => a.date < b.date ? -1 : 1);
     entries.forEach((e, i) => {
       const prev = i > 0 ? entries[i - 1].price : null;
-      const delta = (prev && prev > 0) ? ((e.price - prev) / prev * 100) : null;
-      all.push({ ...e, delta });
+      const d = (prev && prev > 0) ? (e.price - prev) / prev * 100 : null;
+      window._phDelta[k + '||' + e.date] = d;
     });
   });
-
-  all.sort((a, b) => b.date < a.date ? -1 : b.date > a.date ? 1 : a.sku.localeCompare(b.sku));
-  window._phAll = all;
-
-  const dates = all.map(r => r.date).filter(Boolean);
-  window._phMaxDate = dates.length ? dates.reduce((a, b) => a > b ? a : b) : null;
-  window._phPeriod = '7';
   window._phSort = { col: 'date', dir: -1 };
   phRender();
 })();
 
 function phRender() {
+  const sort = window._phSort || { col: 'date', dir: -1 };
+  const delta = window._phDelta || {};
   const q = (document.getElementById('phSearch').value || '').trim().toLowerCase();
-  const period = window._phPeriod || '7';
-  const maxDate = window._phMaxDate;
-  const { col, dir } = window._phSort;
 
-  let rows = window._phAll;
+  // Use the same filtered data as the rest of the dashboard (Power BI: one filter context)
+  const seen = new Set();
+  let rows = _filterLines()
+    .map(([sku, sup, , date, price, qty]) => ({
+      sku, sup, date,
+      price: +price || 0,
+      qty:   +qty   || 0,
+      delta: delta[sku + '||' + sup + '||' + date] ?? null
+    }))
+    .filter(r => {
+      const k = r.sku + r.sup + r.date;
+      if (seen.has(k)) return false;
+      seen.add(k); return true;
+    });
 
-  // Period filter only when not searching — search scans all history
-  if (!q && period !== 'all' && maxDate) {
-    const days = parseInt(period, 10);
-    const cutoff = new Date(maxDate);
-    cutoff.setDate(cutoff.getDate() - days + 1);
-    const cutStr = cutoff.toISOString().slice(0, 10);
-    rows = rows.filter(r => r.date >= cutStr);
-  }
+  if (q) rows = rows.filter(r =>
+    r.sku.toLowerCase().includes(q) || r.sup.toLowerCase().includes(q)
+  );
 
-  if (q) rows = rows.filter(r => r.sku.toLowerCase().includes(q) || r.sup.toLowerCase().includes(q));
-
-  rows = [...rows].sort((a, b) => {
-    let av = a[col], bv = b[col];
-    if (col === 'price' || col === 'qty') { av = +av || 0; bv = +bv || 0; }
+  const { col, dir } = sort;
+  rows.sort((a, b) => {
+    const av = a[col], bv = b[col];
     if (av < bv) return dir;
     if (av > bv) return -dir;
     return 0;
@@ -1514,27 +1508,26 @@ function phRender() {
     if (el) el.textContent = c === col ? (dir === -1 ? '↓' : '↑') : '↕';
   });
 
-  const tbody = document.getElementById('phBody');
+  const tbody   = document.getElementById('phBody');
   const countEl = document.getElementById('phCount');
   if (!tbody) return;
 
-  if (rows.length === 0) {
+  if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">Нет данных</td></tr>';
     if (countEl) countEl.textContent = '';
     return;
   }
-
   if (countEl) countEl.textContent = rows.length + ' записей';
 
   tbody.innerHTML = rows.slice(0, 300).map(r => {
-    const dateStr = r.date ? r.date.split('-').reverse().join('.') : '—';
+    const dateStr  = r.date ? r.date.split('-').reverse().join('.') : '—';
     const priceStr = r.price ? fmt(Math.round(r.price)) : '—';
-    const qtyStr = r.qty != null ? (+r.qty.toFixed(2)) + '' : '—';
-    let deltaHtml = '<span style="color:var(--muted)">—</span>';
-    if (r.delta !== null) {
-      const sign = r.delta > 0 ? '▲' : '▼';
+    const qtyStr   = r.qty  ? (+r.qty.toFixed(2)) + '' : '—';
+    let dHtml = '<span style="color:var(--muted)">—</span>';
+    if (r.delta !== null && r.delta !== undefined) {
+      const sign  = r.delta > 0 ? '▲' : '▼';
       const color = r.delta > 0 ? 'var(--red)' : 'var(--milana)';
-      deltaHtml = `<span style="color:${color};font-weight:700">${sign} ${Math.abs(r.delta).toFixed(1)}%</span>`;
+      dHtml = `<span style="color:${color};font-weight:700">${sign} ${Math.abs(r.delta).toFixed(1)}%</span>`;
     }
     const supTag = r.sup.toUpperCase().includes('МИЛАН')
       ? `<span class="tag-m">${r.sup}</span>`
@@ -1543,16 +1536,9 @@ function phRender() {
     return `<tr style="cursor:pointer" onclick="phClickRow('${skuEsc}')">
       <td>${r.sku}</td><td>${supTag}</td><td>${dateStr}</td>
       <td class="num">${priceStr}</td><td class="num">${qtyStr}</td>
-      <td class="num">${deltaHtml}</td>
+      <td class="num">${dHtml}</td>
     </tr>`;
   }).join('');
-}
-
-function phSetPeriod(btn, p) {
-  document.querySelectorAll('.ph-period-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  window._phPeriod = p;
-  phRender();
 }
 
 function phSortBy(col) {
