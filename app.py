@@ -1,18 +1,26 @@
 """
-app.py — Flask сервер с Google OAuth + ручное одобрение пользователей.
+app.py — Flask + Google OAuth + Telegram бот + динамический дашборд.
 Деплой: Render.com (gunicorn app:app)
 """
+import base64
 import os
 import sqlite3
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 from datetime import timedelta, datetime
 
-from flask import Flask, session, redirect, url_for, send_file, request, g
+import requests as http_req
+from flask import Flask, session, redirect, url_for, send_file, request, g, Response
 
-BASE      = Path(__file__).parent
-DASHBOARD = BASE / "docs" / "index.html"
-LOGIN_HTML= BASE / "login.html"
-USERS_DB  = BASE / "users.db"
+BASE       = Path(__file__).parent
+DASHBOARD  = BASE / "docs" / "index.html"
+LOGIN_HTML = BASE / "login.html"
+USERS_DB   = BASE / "users.db"
+PROC_DB    = BASE / "data" / "procurement.db"
+
+sys.path.insert(0, str(BASE))
 
 app = Flask(__name__)
 app.secret_key = os.environ["SECRET_KEY"]
@@ -27,8 +35,85 @@ if IS_PROD:
     )
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
+GITHUB_TOKEN   = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_REPO    = "akezhanzh/YouCookDash"
 
-# ── База данных пользователей ──────────────────────────────────────────────────
+# ── Дашборд в памяти ──────────────────────────────────────────────────────────
+_dashboard_html: str | None = None
+
+def _load_dashboard():
+    global _dashboard_html
+    if DASHBOARD.exists():
+        _dashboard_html = DASHBOARD.read_text(encoding="utf-8")
+
+def regenerate_dashboard():
+    global _dashboard_html
+    if not PROC_DB.exists():
+        return
+    try:
+        subprocess.run(
+            [sys.executable, str(BASE / "generate_dashboard.py")],
+            cwd=BASE, check=True, timeout=60,
+            capture_output=True
+        )
+        _load_dashboard()
+        print("[dashboard] regenerated")
+    except Exception as e:
+        print(f"[dashboard] failed: {e}")
+
+
+# ── GitHub — бэкап базы ───────────────────────────────────────────────────────
+def _gh_headers():
+    return {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
+def pull_db_from_github():
+    """Скачать procurement.db из GitHub при старте."""
+    if not GITHUB_TOKEN:
+        return
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/data/procurement.db"
+    try:
+        r = http_req.get(url, headers=_gh_headers(), timeout=30)
+        if r.ok:
+            content = base64.b64decode(r.json()["content"].replace("\n", ""))
+            PROC_DB.parent.mkdir(parents=True, exist_ok=True)
+            PROC_DB.write_bytes(content)
+            print("[startup] procurement.db pulled from GitHub")
+    except Exception as e:
+        print(f"[startup] pull DB failed: {e}")
+
+def push_db_to_github(message="update: procurement.db via bot"):
+    """Сохранить procurement.db в GitHub после каждого обновления."""
+    if not GITHUB_TOKEN or not PROC_DB.exists():
+        return
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/data/procurement.db"
+    headers = _gh_headers()
+    try:
+        r = http_req.get(url, headers=headers, timeout=30)
+        sha = r.json().get("sha") if r.ok else None
+        content = base64.b64encode(PROC_DB.read_bytes()).decode()
+        payload = {"message": message, "content": content}
+        if sha:
+            payload["sha"] = sha
+        http_req.put(url, json=payload, headers=headers, timeout=60)
+        print(f"[github] DB pushed: {message}")
+    except Exception as e:
+        print(f"[github] push DB failed: {e}")
+
+
+# ── Старт ─────────────────────────────────────────────────────────────────────
+if not PROC_DB.exists():
+    pull_db_from_github()
+
+PROC_DB.parent.mkdir(parents=True, exist_ok=True)
+regenerate_dashboard()
+_load_dashboard()
+
+
+# ── База пользователей ────────────────────────────────────────────────────────
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(USERS_DB)
@@ -58,7 +143,8 @@ def init_db():
 
 init_db()
 
-# ── Google OAuth ───────────────────────────────────────────────────────────────
+
+# ── Google OAuth ──────────────────────────────────────────────────────────────
 from authlib.integrations.flask_client import OAuth
 oauth = OAuth(app)
 oauth.register(
@@ -68,6 +154,7 @@ oauth.register(
     server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
     client_kwargs={"scope": "openid email profile"},
 )
+
 
 # ── HTML-шаблоны ──────────────────────────────────────────────────────────────
 def page(title, body, color="#6366f1"):
@@ -87,23 +174,19 @@ def page(title, body, color="#6366f1"):
   a:hover{{text-decoration:underline}}
 </style></head><body><div class="card">{body}</div></body></html>"""
 
-PENDING_PAGE = page(
-    "Заявка отправлена", """
+PENDING_PAGE = page("Заявка отправлена", """
     <div style="font-size:40px;margin-bottom:16px">⏳</div>
     <h2>Заявка отправлена</h2>
     <p>Ваш аккаунт ожидает подтверждения администратора.</p>
     <p>Попробуйте войти позже.</p>
-    <br>
-    <a href="/logout">← Выйти</a>
+    <br><a href="/logout">← Выйти</a>
 """, "#f59e0b")
 
-DENIED_PAGE = page(
-    "Нет доступа", """
+DENIED_PAGE = page("Нет доступа", """
     <div style="font-size:40px;margin-bottom:16px">🚫</div>
     <h2>Нет доступа</h2>
     <p>Ваш аккаунт не был одобрен.</p>
-    <br>
-    <a href="/logout">← Выйти</a>
+    <br><a href="/logout">← Выйти</a>
 """, "#ef4444")
 
 
@@ -119,6 +202,8 @@ def index():
     if not row:
         return PENDING_PAGE
     if row["status"] == "approved":
+        if _dashboard_html:
+            return Response(_dashboard_html, mimetype="text/html")
         return send_file(DASHBOARD)
     if row["status"] == "denied":
         return DENIED_PAGE
@@ -132,18 +217,16 @@ def login():
 
 @app.route("/auth/callback")
 def callback():
-    token    = oauth.google.authorize_access_token()
-    info     = token.get("userinfo", {})
-    email    = info.get("email", "")
-    name     = info.get("name", email)
-    picture  = info.get("picture", "")
-    now      = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    token   = oauth.google.authorize_access_token()
+    info    = token.get("userinfo", {})
+    email   = info.get("email", "")
+    name    = info.get("name", email)
+    picture = info.get("picture", "")
+    now     = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
     db = get_db()
     exists = db.execute("SELECT status FROM users WHERE email=?", (email,)).fetchone()
-
     if not exists:
-        # Новый пользователь — добавляем со статусом pending
         db.execute(
             "INSERT INTO users (email, name, picture, status, created_at, updated_at) VALUES (?,?,?,?,?,?)",
             (email, name, picture, "pending", now, now)
@@ -164,15 +247,15 @@ def logout():
 # ── Быстрое одобрение владельца ───────────────────────────────────────────────
 @app.route("/setup")
 def setup():
-    key = request.args.get("key", "")
-    if key != ADMIN_PASSWORD:
+    if request.args.get("key") != ADMIN_PASSWORD:
         return "403", 403
     owner = "akezhanz@youcook.kz"
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    db = get_db()
+    now   = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    db    = get_db()
     db.execute("UPDATE users SET status='approved', updated_at=? WHERE email=?", (now, owner))
     db.commit()
     return redirect("/")
+
 
 # ── Админ-панель ──────────────────────────────────────────────────────────────
 @app.route("/admin", methods=["GET", "POST"])
@@ -183,7 +266,6 @@ def admin():
             return redirect(f"/admin?key={ADMIN_PASSWORD}")
         return redirect("/admin")
 
-    # Проверка авторизации
     if request.args.get("key") != ADMIN_PASSWORD and session.get("admin") != True:
         return page("Вход в админ", f"""
             <h2>Админ-панель</h2>
@@ -200,25 +282,23 @@ def admin():
             </form>
         """)
 
-    # Действия: одобрить / отклонить
     action = request.args.get("action")
     email  = request.args.get("email")
     if action in ("approve", "deny") and email:
         new_status = "approved" if action == "approve" else "denied"
         now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        db = get_db()
+        db  = get_db()
         db.execute("UPDATE users SET status=?, updated_at=? WHERE email=?", (new_status, now, email))
         db.commit()
-        return redirect("/admin")
+        return redirect(f"/admin?key={ADMIN_PASSWORD}")
 
-    # Список пользователей
     db    = get_db()
     users = db.execute("SELECT * FROM users ORDER BY created_at DESC").fetchall()
 
     STATUS_LABEL = {
-        "pending":  ("<span style='color:#f59e0b'>⏳ Ожидает</span>",  "approve", "deny",    "Одобрить", "Отклонить"),
-        "approved": ("<span style='color:#22c55e'>✅ Одобрен</span>",  "deny",    "",        "Отклонить", ""),
-        "denied":   ("<span style='color:#ef4444'>🚫 Отклонён</span>", "approve", "",        "Одобрить",  ""),
+        "pending":  ("<span style='color:#f59e0b'>⏳ Ожидает</span>",  "approve", "deny",   "Одобрить", "Отклонить"),
+        "approved": ("<span style='color:#22c55e'>✅ Одобрен</span>",  "deny",    "",       "Отклонить", ""),
+        "denied":   ("<span style='color:#ef4444'>🚫 Отклонён</span>", "approve", "",       "Одобрить",  ""),
     }
 
     rows_html = ""
@@ -264,5 +344,191 @@ def admin():
     </tr></thead>
     <tbody>{rows_html if rows_html else '<tr><td colspan="4" style="padding:20px;color:#64748b;text-align:center">Пользователей пока нет</td></tr>'}</tbody>
   </table>
-  <p style="margin-top:16px;color:#2a2d3e;font-size:11px">Страница обновляется вручную — нажми F5 чтобы увидеть новых</p>
+  <p style="margin-top:16px;color:#2a2d3e;font-size:11px">Страница обновляется вручную — нажми F5</p>
 </body></html>"""
+
+
+# ── Telegram helpers ──────────────────────────────────────────────────────────
+def _tg(method, **kwargs):
+    if not TELEGRAM_TOKEN:
+        return {}
+    try:
+        r = http_req.post(
+            f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/{method}",
+            json=kwargs, timeout=30
+        )
+        return r.json().get("result", {})
+    except Exception:
+        return {}
+
+def tg_send(chat_id, text):
+    return _tg("sendMessage", chat_id=chat_id, text=text).get("message_id")
+
+def tg_edit(chat_id, msg_id, text):
+    if not msg_id:
+        return tg_send(chat_id, text)
+    _tg("editMessageText", chat_id=chat_id, message_id=msg_id, text=text)
+
+
+# Хранилище для накладных без поставщика: {chat_id: parsed_data}
+_pending_invoices: dict = {}
+
+
+def _process_invoice(chat_id, parsed, status_id):
+    """Загружает накладную в БД, обновляет дашборд и бэкапит в GitHub."""
+    from parse_invoice import ingest
+
+    PROC_DB.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(PROC_DB)
+    summary = ingest(conn, parsed)
+    conn.close()
+
+    if summary["duplicate"]:
+        tg_edit(chat_id, status_id,
+                f"ℹ️ Накладная №{parsed.get('invoice_id','?')} уже есть в базе.")
+        return
+
+    # Обновить дашборд сразу
+    regenerate_dashboard()
+
+    # Бэкап базы в GitHub (в фоне — не блокирует ответ)
+    push_db_to_github(f"update: invoice {parsed.get('invoice_id','?')} via telegram")
+
+    ovr = (f"\n⚠️ Переплата по {len(summary['overpriced'])} позициям"
+           if summary["overpriced"] else "")
+
+    total_fmt = f"{int(parsed.get('total', 0)):,}".replace(",", " ")
+    tg_edit(chat_id, status_id,
+        f"✅ Накладная добавлена!\n"
+        f"№{parsed.get('invoice_id','—')} от {parsed.get('date','—')}\n"
+        f"🏢 {parsed.get('supplier','—')}\n"
+        f"💰 {total_fmt} ₸ · {len(parsed.get('lines', []))} позиций"
+        + ovr
+    )
+
+
+# ── Telegram webhook ──────────────────────────────────────────────────────────
+@app.route("/telegram", methods=["POST"])
+def telegram_webhook():
+    if not TELEGRAM_TOKEN:
+        return "ok"
+
+    data    = request.get_json(force=True) or {}
+    message = data.get("message") or data.get("edited_message") or {}
+    chat_id = message.get("chat", {}).get("id")
+    if not chat_id:
+        return "ok"
+
+    text     = (message.get("text") or "").strip()
+    document = message.get("document")
+
+    # ── Команды ───────────────────────────────────────────────────────────────
+    if text.startswith("/start") or text.startswith("/help"):
+        tg_send(chat_id,
+            "YouCook Procurement Bot\n\n"
+            "Отправь PDF или XLSX накладную — добавлю в базу и обновлю дашборд.\n\n"
+            "/stats — статистика закупок\n"
+            "/help — эта справка"
+        )
+        return "ok"
+
+    if text.startswith("/stats"):
+        if PROC_DB.exists():
+            conn  = sqlite3.connect(PROC_DB)
+            total = conn.execute("SELECT COALESCE(SUM(total_amount),0) FROM invoices").fetchone()[0]
+            n_inv = conn.execute("SELECT COUNT(*) FROM invoices").fetchone()[0]
+            n_sku = conn.execute("SELECT COUNT(DISTINCT sku_id) FROM invoice_lines").fetchone()[0]
+            last  = conn.execute("SELECT MAX(invoice_date) FROM invoices").fetchone()[0]
+            conn.close()
+            total_fmt = f"{int(total):,}".replace(",", " ")
+            tg_send(chat_id,
+                f"📊 Статистика YouCook\n\n"
+                f"💰 Итого: {total_fmt} ₸\n"
+                f"📋 Накладных: {n_inv}\n"
+                f"📦 Уникальных SKU: {n_sku}\n"
+                f"📅 Последняя: {last or '—'}"
+            )
+        else:
+            tg_send(chat_id, "База данных пуста. Отправь первую накладную!")
+        return "ok"
+
+    # ── Ответ на вопрос о поставщике ──────────────────────────────────────────
+    if chat_id in _pending_invoices and text and not text.startswith("/"):
+        entry  = _pending_invoices.pop(chat_id)
+        parsed = entry["data"]
+        s_id   = entry["status_id"]
+        parsed["supplier"] = text
+        try:
+            _process_invoice(chat_id, parsed, s_id)
+        except Exception as e:
+            tg_edit(chat_id, s_id, f"❌ Ошибка: {str(e)[:300]}")
+        return "ok"
+
+    # ── Файл ──────────────────────────────────────────────────────────────────
+    if not document:
+        if text:
+            tg_send(chat_id, "Отправь PDF или XLSX накладную.")
+        return "ok"
+
+    fname = document.get("file_name", "invoice.pdf")
+    ext   = Path(fname).suffix.lower()
+
+    if ext not in (".pdf", ".xlsx", ".xls"):
+        tg_send(chat_id, "⚠️ Поддерживаются только PDF и XLSX файлы.")
+        return "ok"
+
+    status_id = tg_send(chat_id, "⏳ Обрабатываю накладную...")
+
+    tmp_dir  = Path(tempfile.mkdtemp())
+    tmp_path = tmp_dir / fname
+
+    try:
+        # Скачать файл из Telegram
+        file_info = _tg("getFile", file_id=document["file_id"])
+        file_path = file_info.get("file_path", "")
+        content   = http_req.get(
+            f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file_path}",
+            timeout=60
+        ).content
+        tmp_path.write_bytes(content)
+
+        # Парсинг
+        from parse_invoice import parse_pdf, parse_xlsx
+        parsed = parse_pdf(tmp_path) if ext == ".pdf" else parse_xlsx(tmp_path)
+
+        # Если поставщик не найден — спросить
+        if not parsed.get("supplier"):
+            _pending_invoices[chat_id] = {"data": parsed, "status_id": status_id}
+            tg_edit(chat_id, status_id,
+                "❓ Не удалось определить поставщика автоматически.\n\n"
+                "Напиши название поставщика в ответном сообщении\n"
+                "(например: ИП Иванов или ТОО АгроМаркет)"
+            )
+            return "ok"
+
+        _process_invoice(chat_id, parsed, status_id)
+
+    except Exception as e:
+        tg_edit(chat_id, status_id, f"❌ Ошибка: {str(e)[:300]}")
+    finally:
+        try:
+            tmp_path.unlink(missing_ok=True)
+            tmp_dir.rmdir()
+        except Exception:
+            pass
+
+    return "ok"
+
+
+# ── Регистрация вебхука (один раз при старте) ─────────────────────────────────
+if TELEGRAM_TOKEN and IS_PROD:
+    try:
+        http_req.post(
+            f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook",
+            json={"url": "https://youcookdash.onrender.com/telegram",
+                  "allowed_updates": ["message"]},
+            timeout=15
+        )
+        print("[telegram] webhook registered")
+    except Exception as e:
+        print(f"[telegram] webhook setup failed: {e}")
