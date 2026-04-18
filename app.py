@@ -329,6 +329,14 @@ def callback():
     return redirect("/")
 
 
+@app.route("/api/me")
+def api_me():
+    user = session.get("user")
+    is_admin = bool(user and user.get("email") == "akezhanz@youcook.kz")
+    from flask import jsonify
+    return jsonify({"admin": is_admin})
+
+
 @app.route("/logout")
 def logout():
     session.clear()
