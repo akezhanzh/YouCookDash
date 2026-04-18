@@ -1,9 +1,15 @@
-# Игнорировать всё
-*
+# Игнорировать секреты и кэш
+.env
+*.pyc
+__pycache__/
+*.db
+data/
+invoices/
+logs/
+reports/
+scripts/
 
-# Кроме docs/ (GitHub Pages)
+# Включить в репо (GitHub Pages + деплой)
 !docs/
 !docs/**
-
-# И этого файла
 !.gitignore

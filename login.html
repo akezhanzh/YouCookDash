@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouCook — Войти</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f1117;
+    color: #e2e8f0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #1a1d27;
+    border: 1px solid #2a2d3e;
+    border-radius: 20px;
+    padding: 48px 40px;
+    text-align: center;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(0,0,0,.4);
+  }
+  .logo {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 6px;
+  }
+  .logo span { color: #6366f1; }
+  .subtitle {
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 36px;
+  }
+  .btn-google {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    color: #1f2937;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: box-shadow .2s, transform .1s;
+    width: 100%;
+    justify-content: center;
+  }
+  .btn-google:hover {
+    box-shadow: 0 4px 20px rgba(99,102,241,.3);
+    transform: translateY(-1px);
+  }
+  .btn-google:active { transform: translateY(0); }
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 20px;
+    color: #2a2d3e;
+    font-size: 11px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #2a2d3e;
+  }
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+    margin-top: 28px;
+  }
+  .feat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #64748b;
+  }
+  .feat-icon { font-size: 14px; }
+  .footer {
+    margin-top: 32px;
+    font-size: 10px;
+    color: #2a2d3e;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">You<span>Cook</span></div>
+    <p class="subtitle">Дашборд закупок ресторана<br>Войдите через Google чтобы продолжить</p>
+
+    <a href="/login" class="btn-google">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.3 0-9.6-2.9-11.3-7l-6.6 5.1C9.6 39.5 16.3 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.2-2.3 4-4.3 5.2l6.2 5.2C40.3 35.2 44 30 44 24c0-1.3-.1-2.7-.4-4z"/>
+      </svg>
+      Войти через Google
+    </a>
+
+    <div class="features">
+      <div class="feat"><span class="feat-icon">🔒</span> Безопасный вход — только ваш Google-аккаунт</div>
+      <div class="feat"><span class="feat-icon">📊</span> Аналитика закупок в реальном времени</div>
+      <div class="feat"><span class="feat-icon">⚡</span> Быстрый доступ с любого устройства</div>
+    </div>
+
+    <p class="footer">YouCook Procurement Dashboard</p>
+  </div>
+</body>
+</html>
