@@ -38,6 +38,11 @@ def fmt_date_short(d):
     except Exception:
         return d or "—"
 
+def clean_sup(name):
+    """Убирает ИП/ТОО/АО/ООО в начале названия поставщика."""
+    import re as _re
+    return _re.sub(r'^(ИП|ТОО|АО|ООО|ЧП)\s+', '', str(name or ''), flags=_re.IGNORECASE).strip()
+
 def shorten(name, maxlen=22):
     return name if len(name) <= maxlen else name[:maxlen-1] + "…"
 
@@ -291,7 +296,7 @@ anom_detail = defaultdict(list)
 for sku_name, inv_id, inv_date, sup_name, price, qty, line_ttl in anomaly_detail_raw:
     anom_detail[sku_name].append({
         'inv': inv_id, 'date': fmt_date(inv_date),
-        'sup': sup_name, 'price': price,
+        'sup': clean_sup(sup_name), 'price': price,
         'qty': qty or 0, 'total': int(line_ttl or 0)
     })
 
@@ -309,9 +314,9 @@ if len(dates) >= 2:
 weekly_avg  = int(total / max(1, n_days / 7))
 avg_invoice = int(total / n_inv) if n_inv else 0
 
-sup1_name  = suppliers[0][0] if suppliers else "—"
+sup1_name  = clean_sup(suppliers[0][0]) if suppliers else "—"
 sup1_spend = int(suppliers[0][2]) if suppliers else 0
-sup2_name  = suppliers[1][0] if len(suppliers) > 1 else "—"
+sup2_name  = clean_sup(suppliers[1][0]) if len(suppliers) > 1 else "—"
 sup2_spend = int(suppliers[1][2]) if len(suppliers) > 1 else 0
 sup1_pct   = round(sup1_spend / total * 100, 1) if total else 0
 sup2_pct   = round(100 - sup1_pct, 1)
@@ -339,7 +344,7 @@ def js_invoices():
     rows = []
     for inv_id, sup, city, dt, amt, lines in invoices:
         rows.append(
-            f'  [{js_str(inv_id)}, {js_str(sup)}, {js_str(city or "—")}, '
+            f'  [{js_str(inv_id)}, {js_str(clean_sup(sup))}, {js_str(city or "—")}, '
             f'{js_str(fmt_date(dt))}, {int(amt)}, {int(lines)}]'
         )
     return "const invoices = [\n" + ",\n".join(rows) + "\n];"
@@ -365,7 +370,7 @@ def js_suspicious():
     for name, unit, price, ttl, sup, city in suspicious:
         rows.append(
             f'  [{js_str(shorten(name))}, {js_str(unit or "—")}, '
-            f'{price}, {int(ttl)}, {js_str(sup)}, {js_str(city or "—")}]'
+            f'{price}, {int(ttl)}, {js_str(clean_sup(sup))}, {js_str(city or "—")}]'
         )
     return "const suspicious = [\n" + ",\n".join(rows) + "\n];"
 
@@ -426,8 +431,8 @@ def js_cross_supplier():
             cheaper = sup1n if p1 <= p2 else sup2n
             diff_pct = round(abs(p2 - p1) / min(p1, p2) * 100, 1)
             rows.append(
-                f'  [{js_str(shorten(sku_name))}, {js_str(sup1n)}, {p1}, '
-                f'{js_str(sup2n)}, {p2}, {diff_pct}, {js_str(cheaper)}]'
+                f'  [{js_str(shorten(sku_name))}, {js_str(clean_sup(sup1n))}, {p1}, '
+                f'{js_str(clean_sup(sup2n))}, {p2}, {diff_pct}, {js_str(clean_sup(cheaper))}]'
             )
     return "const crossSupplier = [\n" + ",\n".join(rows) + "\n];"
 
