@@ -1473,21 +1473,19 @@ function getCatJS(n){const l=(n||'').toLowerCase();for(const[k,c]of CAT_MAP_JS)i
 
 let _skuChart=null;
 
-// Populate dropdowns after page loads
-window.addEventListener('DOMContentLoaded', function() {
-  // Supplier select
+// Populate dropdowns (script runs at bottom of body — DOM already ready)
+(function(){
   const sel=document.getElementById('fSup');
   if(sel){
     const sups=[...new Set(ALL_LINES.map(l=>l[1]))].sort();
     sups.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
   }
-  // SKU datalist
   const dl=document.getElementById('skuDL');
   if(dl){
     const skus=[...new Set(ALL_LINES.map(l=>l[0]))].sort();
     skus.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});
   }
-});
+})();
 
 function _filterLines(){
   const from=document.getElementById('fFrom').value;
