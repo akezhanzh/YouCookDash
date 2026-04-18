@@ -38,6 +38,11 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
 GITHUB_TOKEN   = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_REPO    = "akezhanzh/YouCookDash"
+OWNER_EMAIL    = "akezhanz@youcook.kz"
+
+def is_owner():
+    user = session.get("user")
+    return bool(user and user.get("email") == OWNER_EMAIL)
 
 # ── Дашборд в памяти ──────────────────────────────────────────────────────────
 _dashboard_html: str | None = None
@@ -274,7 +279,7 @@ def index():
         return LOGIN_HTML.read_text(encoding="utf-8")
 
     # Владелец всегда имеет доступ
-    if user["email"] == "akezhanz@youcook.kz":
+    if user["email"] == OWNER_EMAIL:
         now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         db  = get_db()
         db.execute("""
@@ -331,10 +336,8 @@ def callback():
 
 @app.route("/api/me")
 def api_me():
-    user = session.get("user")
-    is_admin = bool(user and user.get("email") == "akezhanz@youcook.kz")
     from flask import jsonify
-    return jsonify({"admin": is_admin})
+    return jsonify({"admin": is_owner()})
 
 
 @app.route("/logout")
@@ -364,19 +367,21 @@ def setup():
 # ── Админ-панель ──────────────────────────────────────────────────────────────
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
-    if request.method == "POST":
+    # Владелец входит без пароля
+    if is_owner():
+        pass
+    elif request.method == "POST":
         pwd = request.form.get("password", "")
         if pwd == ADMIN_PASSWORD:
             return redirect(f"/admin?key={ADMIN_PASSWORD}")
         return redirect("/admin")
-
-    if request.args.get("key") != ADMIN_PASSWORD and session.get("admin") != True:
+    elif request.args.get("key") != ADMIN_PASSWORD:
         return page("Вход в админ", f"""
             <h2>Админ-панель</h2>
             <form method="POST" action="/admin" style="margin-top:20px">
               <input name="password" type="password" placeholder="Пароль"
                 style="width:100%;padding:10px 14px;border-radius:8px;
-                       border:1px solid #2a2d3e;background:#0f1117;color:#e2e8f0;
+                       border:1px solid var(--border);background:var(--bg);color:var(--text);
                        font-size:14px;margin-bottom:12px">
               <button type="submit"
                 style="width:100%;padding:10px;background:#6366f1;color:#fff;
