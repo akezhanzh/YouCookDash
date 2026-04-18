@@ -161,14 +161,26 @@ def logout():
     return redirect("/")
 
 
+# ── Быстрое одобрение владельца ───────────────────────────────────────────────
+@app.route("/setup")
+def setup():
+    key = request.args.get("key", "")
+    if key != ADMIN_PASSWORD:
+        return "403", 403
+    owner = "akezhanz@youcook.kz"
+    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    db = get_db()
+    db.execute("UPDATE users SET status='approved', updated_at=? WHERE email=?", (now, owner))
+    db.commit()
+    return redirect("/")
+
 # ── Админ-панель ──────────────────────────────────────────────────────────────
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
     if request.method == "POST":
         pwd = request.form.get("password", "")
         if pwd == ADMIN_PASSWORD:
-            session["admin"] = True
-            return redirect("/admin")
+            return redirect(f"/admin?key={ADMIN_PASSWORD}")
         return redirect("/admin")
 
     # Проверка авторизации
