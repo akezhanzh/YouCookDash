@@ -11,7 +11,7 @@ bot.py — YouCook Procurement Telegram Bot
 
 Переменные окружения:
     TELEGRAM_TOKEN  — токен от @BotFather (обязательно)
-    DB_PATH         — путь к procurement.db (по умолчанию ./data/procurement.db)
+    DB_PATH         — путь к YouCookDashOG.db (по умолчанию ./data/YouCookDashOG.db)
     ALLOWED_IDS     — через запятую ID пользователей, кому разрешён доступ (необязательно)
 """
 
@@ -40,7 +40,7 @@ if _env_file.exists():
             _k, _v = _line.split("=", 1)
             os.environ.setdefault(_k.strip(), _v.strip())
 
-DB_PATH  = Path(os.environ.get("DB_PATH", BASE_DIR / "data" / "procurement.db"))
+DB_PATH  = Path(os.environ.get("DB_PATH", BASE_DIR / "data" / "YouCookDashOG.db"))
 TOKEN    = os.environ.get("TELEGRAM_TOKEN", "")
 
 # Если задан ALLOWED_IDS — пускать только этих пользователей

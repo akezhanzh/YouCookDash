@@ -18,7 +18,7 @@ BASE       = Path(__file__).parent
 DASHBOARD  = BASE / "docs" / "index.html"
 LOGIN_HTML = BASE / "login.html"
 USERS_DB   = BASE / "users.db"
-PROC_DB    = BASE / "data" / "procurement.db"
+PROC_DB    = BASE / "data" / "YouCookDashOG.db"
 
 sys.path.insert(0, str(BASE))
 
@@ -71,25 +71,25 @@ def _gh_headers():
     }
 
 def pull_db_from_github():
-    """Скачать procurement.db из GitHub при старте."""
+    """Скачать YouCookDashOG.db из GitHub при старте."""
     if not GITHUB_TOKEN:
         return
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/data/procurement.db"
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/data/YouCookDashOG.db"
     try:
         r = http_req.get(url, headers=_gh_headers(), timeout=30)
         if r.ok:
             content = base64.b64decode(r.json()["content"].replace("\n", ""))
             PROC_DB.parent.mkdir(parents=True, exist_ok=True)
             PROC_DB.write_bytes(content)
-            print("[startup] procurement.db pulled from GitHub")
+            print("[startup] YouCookDashOG.db pulled from GitHub")
     except Exception as e:
         print(f"[startup] pull DB failed: {e}")
 
-def push_db_to_github(message="update: procurement.db via bot"):
-    """Сохранить procurement.db в GitHub после каждого обновления."""
+def push_db_to_github(message="update: YouCookDashOG.db via bot"):
+    """Сохранить YouCookDashOG.db в GitHub после каждого обновления."""
     if not GITHUB_TOKEN or not PROC_DB.exists():
         return
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/data/procurement.db"
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/data/YouCookDashOG.db"
     headers = _gh_headers()
     try:
         r = http_req.get(url, headers=headers, timeout=30)
