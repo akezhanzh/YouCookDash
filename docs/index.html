@@ -147,9 +147,60 @@
   ::-webkit-scrollbar-track { background: var(--surf); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-  @media(max-width:1100px) { .grid-5{grid-template-columns:repeat(3,1fr)} .grid-equal3{grid-template-columns:1fr 1fr} }
-  @media(max-width:900px) { .grid-5{grid-template-columns:repeat(2,1fr)} .grid-2,.grid-3,.grid-32,.grid-equal3{grid-template-columns:1fr} }
-  @media(max-width:500px) { .grid-5{grid-template-columns:1fr} }
+  /* ── НОВЫЕ СТИЛИ ─────────────────────────────────────────────────────────── */
+
+  /* 6-column KPI grid */
+  .grid-6 { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:20px; }
+
+  /* Filter buttons */
+  .filter-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { border-color:var(--accent); color:var(--text); }
+  .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
+
+  /* Export button */
+  .btn-export { background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.3); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:#a5b4fc; cursor:pointer; transition:all .15s; user-select:none; }
+  .btn-export:hover { background:rgba(99,102,241,.25); color:#c7d2fe; }
+
+  /* Timeline */
+  .tl-track { position:relative; height:80px; min-width:480px; }
+  .tl-line  { position:absolute; top:42px; left:3%; right:3%; height:2px; background:var(--border); border-radius:2px; }
+  .tl-dot   { position:absolute; transform:translateX(-50%); text-align:center; }
+  .tl-lbl   { font-size:9px; color:var(--muted); white-space:nowrap; margin-bottom:3px; }
+  .tl-circle{ border-radius:50%; border:2px solid var(--bg); margin:0 auto; }
+  .tl-amt   { font-size:9px; color:var(--muted); white-space:nowrap; margin-top:3px; font-family:monospace; }
+
+  /* Monthly comparison */
+  .month-cmp { display:grid; grid-template-columns:1fr 32px 1fr; gap:10px; align-items:center; }
+  .month-col { text-align:center; padding:12px 8px; border-radius:10px; background:rgba(255,255,255,.03); }
+  .month-name { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--muted); margin-bottom:6px; }
+  .month-amt  { font-size:17px; font-weight:700; font-family:monospace; }
+  .month-cnt  { font-size:10px; color:var(--muted); margin-top:4px; }
+  .month-mid  { text-align:center; color:var(--muted); font-size:18px; }
+
+  /* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
+  @media(max-width:1300px) {
+    .grid-6{grid-template-columns:repeat(3,1fr)}
+    .grid-5{grid-template-columns:repeat(3,1fr)}
+    .grid-equal3{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:900px) {
+    .grid-6{grid-template-columns:repeat(2,1fr)}
+    .grid-5{grid-template-columns:repeat(2,1fr)}
+    .grid-2,.grid-3,.grid-32,.grid-equal3{grid-template-columns:1fr}
+    .ch{height:190px} .ch-tall{height:260px} .ch-trend{height:180px} .ch-med{height:180px}
+    .card{padding:14px} .card-value{font-size:20px}
+    .month-cmp{grid-template-columns:1fr;gap:8px} .month-mid{display:none}
+  }
+  @media(max-width:600px) {
+    .page{padding:12px} .header h1{font-size:18px}
+    .grid-6{grid-template-columns:1fr 1fr}
+    .alert-item{min-width:100%}
+  }
+  @media(max-width:380px) {
+    .grid-6{grid-template-columns:1fr}
+    .grid-5{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
@@ -163,6 +214,7 @@
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <span class="sup-pill sup-milana"><span class="dot" style="background:var(--milana)"></span>ИП МИЛАНА · Ақтау</span>
       <span class="sup-pill sup-osmanov"><span class="dot" style="background:var(--osmanov)"></span>ИП Osmanов · Алматы</span>
+      <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
       <span class="badge" id="ts">—</span>
     </div>
   </div>
@@ -171,7 +223,7 @@
   <div class="alert-strip" id="alertStrip"></div>
 
   <!-- KPI CARDS -->
-  <div class="grid-5">
+  <div class="grid-6">
     <div class="card">
       <div class="card-title">💰 Общие расходы</div>
       <div class="card-value">3 450 029 ₸</div>
@@ -201,6 +253,29 @@
       <div class="card-value">383 336 ₸</div>
       <div class="card-sub топ категория">топ: Молочные · 20%</div>
       <div class="card-delta delta-blue">по 9 накладным</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📅 Прогноз закупки</div>
+      <div class="card-value" id="fcDate">—</div>
+      <div class="card-sub" id="fcSub">—</div>
+      <div class="card-delta delta-purple" id="fcDelta">—</div>
+    </div>
+  </div>
+
+  <!-- MONTHLY COMPARISON + INVOICE TIMELINE -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="sec">Бюджет по месяцам</div>
+      <div class="month-cmp" id="monthCmp"></div>
+      <div style="margin-top:12px;padding:10px 12px;border-radius:8px;background:rgba(99,102,241,.08);font-size:11px;color:#c7d2fe;line-height:1.5" id="monthNote">—</div>
+    </div>
+    <div class="card">
+      <div class="sec">Таймлайн накладных</div>
+      <div style="overflow-x:auto;">
+        <div class="tl-track" id="tlTrack">
+          <div class="tl-line"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -267,6 +342,12 @@
     </div>
   </div>
 
+  <!-- FREQ SKU -->
+  <div class="card g-full">
+    <div class="sec">Топ SKU по частоте · в скольких накладных встречается</div>
+    <div style="position:relative;height:300px;"><canvas id="freqSkuChart"></canvas></div>
+  </div>
+
   <!-- РАЗБИВКА ПО КАТЕГОРИЯМ -->
   <div class="card g-full">
     <div class="sec">Разбивка бюджета по категориям</div>
@@ -306,7 +387,15 @@
 
   <!-- ALL INVOICES -->
   <div class="card g-full">
-    <div class="sec">Все накладные</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+      <div class="sec" style="margin:0;flex:1">Все накладные</div>
+      <div class="filter-bar">
+        <span style="font-size:10px;color:var(--muted)">Период:</span>
+        <button class="filter-btn active" data-m="all"  onclick="setFilter(this)">Все</button>
+        <button class="filter-btn"        data-m="03"   onclick="setFilter(this)">Март</button>
+        <button class="filter-btn"        data-m="04"   onclick="setFilter(this)">Апрель</button>
+      </div>
+    </div>
     <div class="tbl-wrap">
       <table>
         <thead><tr>
@@ -432,6 +521,24 @@ const priceTrends = [
   ["геркулес", [null, 600.0, 350.0, null, null], 71.4],
   ["Яйцо куриное", [null, 72.0, 75.0, 87.5, null], 21.5],
   ["мука высший сорт 25 кг", [8800.0, 7500.0, null, null, null], 17.3]
+];
+
+const freqSku = [
+  ["мука высший сорт патш…", 4, 7500, "Крупы"],
+  ["масло подсолнечное 5л", 4, 4100, "Масла"],
+  ["масло фритюрное 10 л", 3, 9000, "Масла"],
+  ["сливки 1 л", 3, 3000, "Молочные"],
+  ["томат", 3, 1660, "Овощи"],
+  ["тостер хлеб", 3, 650, "Хлеб"],
+  ["рис баракат", 3, 560, "Крупы"],
+  ["молоко", 3, 393, "Молочные"],
+  ["гречка", 3, 380, "Крупы"],
+  ["Яйцо куриное", 3, 78, "Яйца"],
+  ["мука высший сорт 25 кг", 2, 8367, "Крупы"],
+  ["сыр гауда", 2, 5500, "Молочные"],
+  ["колбаса варенная", 2, 2625, "Мясо"],
+  ["сырный соус", 2, 2000, "Молочные"],
+  ["черный перец", 2, 1875, "Специи"]
 ];
 
 const crossSupplier = [
@@ -935,28 +1042,48 @@ anomalies.forEach((r) => {
   </tr>`;
 });
 
-// ── INVOICES TABLE ────────────────────────────────────────────────────────────
-const invTbody = document.getElementById('invTbody');
-invoices.forEach(r => {
-  const [inv, sup, city, date, sum, lines] = r;
-  const isO  = isOsman(sup);
-  const pct  = (sum / TOTAL * 100).toFixed(1);
-  const bw   = Math.min(100, parseFloat(pct) * 1.5);
-  const col  = isO ? OSMANOV_COLOR : MILANA_COLOR;
-  invTbody.innerHTML += `<tr>
-    <td><span class="${isO?'tag-o':'tag-m'}">${sup}</span></td>
-    <td style="color:var(--muted)">${city}</td>
-    <td>${date}</td>
-    <td class="num"><strong style="color:${sum>900000?'#ef4444':col}">${fmt(sum)} ₸</strong></td>
-    <td class="num">${lines}</td>
-    <td>
-      <div style="display:flex;align-items:center;gap:7px;">
+// ── INVOICES TABLE (with filter) ─────────────────────────────────────────────
+let _activeMonth = 'all';
+
+function setFilter(btn) {
+  _activeMonth = btn.dataset.m;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderInvTable();
+}
+
+function renderInvTable() {
+  const tbody = document.getElementById('invTbody');
+  tbody.innerHTML = '';
+  const list = _activeMonth === 'all'
+    ? invoices
+    : invoices.filter(r => r[3].split('.')[1] === _activeMonth);
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Нет накладных за этот период</td></tr>';
+    return;
+  }
+  const periodTotal = list.reduce((s,r) => s + r[4], 0);
+  list.forEach(r => {
+    const [inv, sup, city, dt, sum, lines] = r;
+    const isO = isOsman(sup);
+    const pct = (sum / TOTAL * 100).toFixed(1);
+    const bw  = Math.min(100, parseFloat(pct) * 1.5);
+    const col = isO ? OSMANOV_COLOR : MILANA_COLOR;
+    tbody.innerHTML += `<tr>
+      <td><span class="${isO?'tag-o':'tag-m'}">${sup}</span></td>
+      <td style="color:var(--muted)">${city}</td>
+      <td>${dt}</td>
+      <td class="num"><strong style="color:${sum>900000?'#ef4444':col}">${fmt(sum)} ₸</strong></td>
+      <td class="num">${lines}</td>
+      <td><div style="display:flex;align-items:center;gap:7px;">
         <div class="bar-bg" style="width:110px"><div class="bar-fill" style="width:${bw}%;background:${col}"></div></div>
         <span style="color:var(--muted);font-size:10px">${pct}%</span>
-      </div>
-    </td>
-  </tr>`;
-});
+      </div></td>
+    </tr>`;
+  });
+}
+renderInvTable();
 
 // ── SUSPICIOUS TABLE ──────────────────────────────────────────────────────────
 const suspTbody = document.getElementById('suspTbody');
@@ -983,6 +1110,154 @@ suspicious.forEach((r) => {
 // ── TIMESTAMP ─────────────────────────────────────────────────────────────────
 document.getElementById('ts').textContent =
   new Date().toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
+
+// ── FORECAST ──────────────────────────────────────────────────────────────────
+(function renderForecast() {
+  if (invoices.length < 2) return;
+  const dates = invoices.map(r => {
+    const [d,m,y] = r[3].split('.');
+    return new Date(+y, +m-1, +d);
+  }).sort((a,b) => a-b);
+
+  const intervals = [];
+  for (let i = 1; i < dates.length; i++)
+    intervals.push(Math.round((dates[i]-dates[i-1])/86400000));
+
+  const recent = intervals.slice(-3);
+  const avgDays = Math.round(recent.reduce((s,v)=>s+v,0)/recent.length);
+  const lastDate = dates[dates.length-1];
+  const forecast = new Date(lastDate.getTime() + avgDays*86400000);
+  const today    = new Date();
+  const daysUntil = Math.round((forecast-today)/86400000);
+  const pad = n => String(n).padStart(2,'0');
+  const fStr = `${pad(forecast.getDate())}.${pad(forecast.getMonth()+1)}.${forecast.getFullYear()}`;
+
+  document.getElementById('fcDate').textContent = fStr;
+  document.getElementById('fcSub').textContent  =
+    `ср. интервал: ${avgDays} дн · посл. ${pad(lastDate.getDate())}.${pad(lastDate.getMonth()+1)}`;
+  const fcDelta = document.getElementById('fcDelta');
+  if (daysUntil < 0) {
+    fcDelta.textContent = `⚠️ ${Math.abs(daysUntil)} дн назад`;
+    fcDelta.className = 'card-delta delta-red';
+  } else if (daysUntil === 0) {
+    fcDelta.textContent = '📦 Сегодня';
+    fcDelta.className = 'card-delta delta-amber';
+  } else {
+    fcDelta.textContent = `через ${daysUntil} дн`;
+    fcDelta.className = 'card-delta delta-blue';
+  }
+})();
+
+// ── MONTHLY COMPARISON ────────────────────────────────────────────────────────
+(function renderMonthly() {
+  const by = {};
+  invoices.forEach(r => {
+    const mm = r[3].split('.')[1];
+    const key = mm === '03' ? 'Март 2026' : mm === '04' ? 'Апрель 2026' : mm;
+    if (!by[key]) by[key] = {amt:0,cnt:0};
+    by[key].amt += r[4];
+    by[key].cnt++;
+  });
+
+  const mar = by['Март 2026']   || {amt:0,cnt:0};
+  const apr = by['Апрель 2026'] || {amt:0,cnt:0};
+  const delta = apr.amt - mar.amt;
+  const pct   = mar.amt ? Math.round(delta/mar.amt*100) : 0;
+  const isUp  = delta >= 0;
+  const aprColor = apr.amt > mar.amt ? '#f87171' : '#4ade80';
+
+  document.getElementById('monthCmp').innerHTML = `
+    <div class="month-col">
+      <div class="month-name">Март 2026</div>
+      <div class="month-amt" style="color:var(--milana)">${fmt(mar.amt)} ₸</div>
+      <div class="month-cnt">${mar.cnt} накл</div>
+    </div>
+    <div class="month-mid">${isUp ? '→' : '→'}</div>
+    <div class="month-col">
+      <div class="month-name">Апрель 2026&thinsp;<span style="font-size:9px;opacity:.55">неполный</span></div>
+      <div class="month-amt" style="color:${aprColor}">${fmt(apr.amt)} ₸</div>
+      <div class="month-cnt">${apr.cnt} накл · ${isUp?'+':''}${pct}%</div>
+    </div>`;
+
+  document.getElementById('monthNote').textContent =
+    apr.cnt > 0
+      ? `В апреле уже ${apr.cnt} накл (из ~${mar.cnt} в марте). ` +
+        (isUp ? `На ${Math.abs(pct)}% больше — следите за ростом расходов.`
+               : `На ${Math.abs(pct)}% меньше — пока экономнее марта.`)
+      : 'Данных за апрель нет.';
+})();
+
+// ── INVOICE TIMELINE ─────────────────────────────────────────────────────────
+(function renderTimeline() {
+  const track = document.getElementById('tlTrack');
+  if (!invoices.length) return;
+  const parsed = invoices.map(r => {
+    const [d,m,y] = r[3].split('.');
+    return { ts: new Date(+y,+m-1,+d).getTime(), sup:r[1], amt:r[4], lbl:r[3].slice(0,5) };
+  });
+  const minT = Math.min(...parsed.map(p=>p.ts));
+  const maxT = Math.max(...parsed.map(p=>p.ts));
+  const span = maxT - minT || 86400000;
+
+  parsed.forEach(p => {
+    const pct = 3 + (p.ts-minT)/span * 94;
+    const isO = isOsman(p.sup);
+    const col = isO ? OSMANOV_COLOR : MILANA_COLOR;
+    const r   = Math.max(7, Math.min(14, Math.round(p.amt/100000)+6));
+    const el  = document.createElement('div');
+    el.className = 'tl-dot';
+    el.style.cssText = `left:${pct.toFixed(1)}%;position:absolute;transform:translateX(-50%);`;
+    el.title = `${p.lbl}  ${p.sup}  ${fmt(p.amt)} ₸`;
+    el.innerHTML =
+      `<div class="tl-lbl">${p.lbl}</div>` +
+      `<div class="tl-circle" style="width:${r*2}px;height:${r*2}px;background:${col};` +
+        `margin-top:${20-r}px;"></div>` +
+      `<div class="tl-amt">${fmt(Math.round(p.amt/1000))}к</div>`;
+    track.appendChild(el);
+  });
+})();
+
+// ── FREQ SKU CHART ────────────────────────────────────────────────────────────
+new Chart(document.getElementById('freqSkuChart'), {
+  type: 'bar',
+  data: {
+    labels: freqSku.map(d => d[0]),
+    datasets: [{
+      label: 'Накладных',
+      data: freqSku.map(d => d[1]),
+      backgroundColor: freqSku.map(d => catColorAlpha(d[3], 0.8)),
+      borderColor: freqSku.map(d => catColor(d[3])),
+      borderWidth: 1, borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: TOOLTIP_BG,
+        callbacks: { label: c => ` ${c.raw} накл · ср. цена ${fmt(freqSku[c.dataIndex][2])} ₸` }
+      }
+    },
+    scales: {
+      x: { grid:{color:GRID}, ticks:{color:TICK,font:FONT,stepSize:1}, beginAtZero:true },
+      y: { grid:{display:false}, ticks:{color:TICK,font:{...FONT,size:10}} }
+    }
+  }
+});
+
+// ── CSV EXPORT ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const hdr = 'Накладная,Поставщик,Город,Дата,Сумма ₸,Позиций';
+  const rows = invoices.map(r => r.map(v => `"${v}"`).join(','));
+  const csv  = '\uFEFF' + [hdr, ...rows].join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'youcook_invoices.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 </script>
 </body>
 </html>

@@ -11,7 +11,7 @@
     --surf:    #1a1d27;
     --surf2:   #20243a;
     --border:  #2a2d3e;
-    --accent:  #6c63ff;
+    --accent:  #6366f1;
     --milana:  #22c55e;
     --osmanov: #f59e0b;
     --red:     #ef4444;
@@ -24,7 +24,7 @@
   .page { max-width: 1440px; margin: 0 auto; padding: 24px; }
 
   /* Header */
-  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
   .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
   .header h1 span { color: var(--accent); }
   .header-meta { color: var(--muted); font-size: 11px; margin-top: 4px; }
@@ -36,32 +36,49 @@
   .sup-osmanov { background: rgba(245,158,11,.12); color: var(--osmanov); border: 1px solid rgba(245,158,11,.3); }
   .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 
+  /* Alert strip */
+  .alert-strip { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .alert-item { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+  .alert-red    { background: rgba(239,68,68,.1);   border: 1px solid rgba(239,68,68,.3);   color: #fca5a5; }
+  .alert-amber  { background: rgba(245,158,11,.1);  border: 1px solid rgba(245,158,11,.3);  color: #fcd34d; }
+  .alert-green  { background: rgba(34,197,94,.1);   border: 1px solid rgba(34,197,94,.3);   color: #86efac; }
+  .alert-blue   { background: rgba(99,102,241,.1);  border: 1px solid rgba(99,102,241,.3);  color: #a5b4fc; }
+  .alert-icon { font-size: 16px; flex-shrink: 0; }
+  .alert-text strong { display: block; margin-bottom: 1px; }
+  .alert-text span   { font-size: 10px; opacity: .8; }
+
   /* Grids */
+  .grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; margin-bottom: 20px; }
   .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 20px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
   .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
   .grid-32{ display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 20px; }
+  .grid-equal3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
   .g-full { margin-bottom: 20px; }
 
   /* Card */
   .card { background: var(--surf); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
   .card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: var(--muted); margin-bottom: 10px; }
-  .card-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+  .card-value { font-size: 26px; font-weight: 700; line-height: 1.1; }
   .card-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
   .card-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-top: 8px; }
   .delta-red    { background: rgba(239,68,68,.15);  color: var(--red); }
   .delta-green  { background: rgba(34,197,94,.15);  color: var(--milana); }
   .delta-amber  { background: rgba(245,158,11,.15); color: var(--osmanov); }
   .delta-purple { background: rgba(108,99,255,.15); color: #a78bfa; }
+  .delta-blue   { background: rgba(99,102,241,.15); color: #a5b4fc; }
 
   /* Section label */
   .sec { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
   .sec::after { content:''; flex:1; height:1px; background: var(--border); }
+  .sec-sub { font-size: 10px; color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
 
   /* Charts */
   .ch      { position: relative; height: 260px; }
   .ch-tall { position: relative; height: 360px; }
-  .ch-sm   { position: relative; height: 200px; }
+  .ch-sm   { position: relative; height: 180px; }
+  .ch-med  { position: relative; height: 220px; }
+  .ch-trend{ position: relative; height: 240px; }
 
   /* Tables */
   .tbl-wrap { overflow-x: auto; }
@@ -89,16 +106,101 @@
   /* Comparison rows */
   .cmp-row { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
   .cmp-row:last-child { border-bottom: none; }
-  .cmp-bar-wrap { display: flex; align-items: center; gap: 8px; }
   .cmp-name { font-size: 12px; font-weight: 500; }
   .cmp-price { font-size: 13px; font-weight: 700; font-family: monospace; min-width: 90px; text-align: right; }
+
+  /* Supplier scorecard */
+  .scorecard { display: flex; flex-direction: column; gap: 0; }
+  .scorecard-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 12px; }
+  .scorecard-row:last-child { border-bottom: none; }
+  .scorecard-label { color: var(--muted); font-size: 11px; }
+  .scorecard-vals { display: flex; gap: 16px; }
+  .sc-m { color: var(--milana); font-family: monospace; font-weight: 600; }
+  .sc-o { color: var(--osmanov); font-family: monospace; font-weight: 600; }
+
+  /* Category badge */
+  .cat-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+
+  /* Modal */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:#1a1d27; border:1px solid #2a2d3e; border-radius:16px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; padding:24px; position:relative; animation:fadeIn .15s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
+  .modal-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,.08); border:none; color:#94a3b8; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; }
+  .modal-close:hover { background:rgba(255,255,255,.15); color:#e2e8f0; }
+  .modal-title { font-size:17px; font-weight:700; margin-bottom:4px; }
+  .modal-spread { display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:16px; }
+  .modal-section { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.9px; color:#6366f1; margin:16px 0 8px; }
+  .modal-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .modal-table th { color:#64748b; font-size:10px; font-weight:700; text-transform:uppercase; padding:5px 8px; border-bottom:1px solid #2a2d3e; text-align:left; }
+  .modal-table td { padding:8px 8px; border-bottom:1px solid rgba(255,255,255,.04); }
+  .modal-table tr:last-child td { border-bottom:none; }
+  .modal-trend { display:flex; align-items:center; gap:10px; padding:12px; border-radius:10px; margin-top:8px; font-size:12px; }
+  .trend-up   { background:rgba(239,68,68,.1);  border:1px solid rgba(239,68,68,.25);  color:#fca5a5; }
+  .trend-down { background:rgba(34,197,94,.1);  border:1px solid rgba(34,197,94,.25);  color:#86efac; }
+  .trend-mix  { background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); color:#fcd34d; }
+  .modal-explain { background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.2); border-radius:10px; padding:12px; font-size:12px; color:#c7d2fe; margin-top:10px; line-height:1.6; }
+  .alert-item { cursor:pointer; transition:filter .15s; }
+  .alert-item:hover { filter:brightness(1.15); }
 
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: var(--surf); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-  @media(max-width:900px) { .grid-4{grid-template-columns:repeat(2,1fr)} .grid-2,.grid-3,.grid-32{grid-template-columns:1fr} }
-  @media(max-width:500px) { .grid-4{grid-template-columns:1fr} }
+  /* ── НОВЫЕ СТИЛИ ─────────────────────────────────────────────────────────── */
+
+  /* 6-column KPI grid */
+  .grid-6 { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:20px; }
+
+  /* Filter buttons */
+  .filter-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { border-color:var(--accent); color:var(--text); }
+  .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
+
+  /* Export button */
+  .btn-export { background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.3); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:#a5b4fc; cursor:pointer; transition:all .15s; user-select:none; }
+  .btn-export:hover { background:rgba(99,102,241,.25); color:#c7d2fe; }
+
+  /* Timeline */
+  .tl-track { position:relative; height:80px; min-width:480px; }
+  .tl-line  { position:absolute; top:42px; left:3%; right:3%; height:2px; background:var(--border); border-radius:2px; }
+  .tl-dot   { position:absolute; transform:translateX(-50%); text-align:center; }
+  .tl-lbl   { font-size:9px; color:var(--muted); white-space:nowrap; margin-bottom:3px; }
+  .tl-circle{ border-radius:50%; border:2px solid var(--bg); margin:0 auto; }
+  .tl-amt   { font-size:9px; color:var(--muted); white-space:nowrap; margin-top:3px; font-family:monospace; }
+
+  /* Monthly comparison */
+  .month-cmp { display:grid; grid-template-columns:1fr 32px 1fr; gap:10px; align-items:center; }
+  .month-col { text-align:center; padding:12px 8px; border-radius:10px; background:rgba(255,255,255,.03); }
+  .month-name { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--muted); margin-bottom:6px; }
+  .month-amt  { font-size:17px; font-weight:700; font-family:monospace; }
+  .month-cnt  { font-size:10px; color:var(--muted); margin-top:4px; }
+  .month-mid  { text-align:center; color:var(--muted); font-size:18px; }
+
+  /* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
+  @media(max-width:1300px) {
+    .grid-6{grid-template-columns:repeat(3,1fr)}
+    .grid-5{grid-template-columns:repeat(3,1fr)}
+    .grid-equal3{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:900px) {
+    .grid-6{grid-template-columns:repeat(2,1fr)}
+    .grid-5{grid-template-columns:repeat(2,1fr)}
+    .grid-2,.grid-3,.grid-32,.grid-equal3{grid-template-columns:1fr}
+    .ch{height:190px} .ch-tall{height:260px} .ch-trend{height:180px} .ch-med{height:180px}
+    .card{padding:14px} .card-value{font-size:20px}
+    .month-cmp{grid-template-columns:1fr;gap:8px} .month-mid{display:none}
+  }
+  @media(max-width:600px) {
+    .page{padding:12px} .header h1{font-size:18px}
+    .grid-6{grid-template-columns:1fr 1fr}
+    .alert-item{min-width:100%}
+  }
+  @media(max-width:380px) {
+    .grid-6{grid-template-columns:1fr}
+    .grid-5{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
@@ -107,18 +209,21 @@
   <!-- HEADER -->
   <div class="header">
     <div>
-      <h1>YouCook <span>Procurement</span></h1>
-      <p class="header-meta">9 накладных · 2 поставщика · 04.03 — 08.04.2026</p>
+      <h1>YouCook</h1>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <span class="sup-pill sup-milana"><span class="dot" style="background:var(--milana)"></span>ИП МИЛАНА · Ақтау</span>
-      <span class="sup-pill sup-osmanov"><span class="dot" style="background:var(--osmanov)"></span>ИП Османов · Алматы</span>
+      <span class="sup-pill sup-osmanov"><span class="dot" style="background:var(--osmanov)"></span>ИП Osmanов · Алматы</span>
+      <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
       <span class="badge" id="ts">—</span>
     </div>
   </div>
 
-  <!-- KPI -->
-  <div class="grid-4">
+  <!-- ALERT STRIP -->
+  <div class="alert-strip" id="alertStrip"></div>
+
+  <!-- KPI CARDS -->
+  <div class="grid-6">
     <div class="card">
       <div class="card-title">💰 Общие расходы</div>
       <div class="card-value">3 450 030 ₸</div>
@@ -128,8 +233,8 @@
     <div class="card">
       <div class="card-title">🏢 Поставщики</div>
       <div class="card-value">2</div>
-      <div class="card-sub">МИЛАНА 2 923 335 ₸ · Османов 526 695 ₸</div>
-      <div class="card-delta delta-green">МИЛАНА 8 накл · Османов 1 накл</div>
+      <div class="card-sub">МИЛАНА 2 923 335 ₸ · Osmanов 526 695 ₸</div>
+      <div class="card-delta delta-green">МИЛАНА 8 накл · Osmanов 1 накл</div>
     </div>
     <div class="card">
       <div class="card-title">🗺️ Закуп по городам</div>
@@ -141,7 +246,36 @@
       <div class="card-title">⚠️ Ценовые аномалии</div>
       <div class="card-value" style="color:var(--red)">5</div>
       <div class="card-sub">перец +300% · колбаса +173% · геркулес +71%</div>
-      <div class="card-delta delta-red">Требуют проверки</div>
+      <div class="card-delta delta-red">1 критичных · требуют проверки</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Средняя накладная</div>
+      <div class="card-value">383 337 ₸</div>
+      <div class="card-sub топ категория">топ: Молочные · 20%</div>
+      <div class="card-delta delta-blue">по 9 накладным</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📅 Прогноз закупки</div>
+      <div class="card-value" id="fcDate">—</div>
+      <div class="card-sub" id="fcSub">—</div>
+      <div class="card-delta delta-purple" id="fcDelta">—</div>
+    </div>
+  </div>
+
+  <!-- MONTHLY COMPARISON + INVOICE TIMELINE -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="sec">Бюджет по месяцам</div>
+      <div class="month-cmp" id="monthCmp"></div>
+      <div style="margin-top:12px;padding:10px 12px;border-radius:8px;background:rgba(99,102,241,.08);font-size:11px;color:#c7d2fe;line-height:1.5" id="monthNote">—</div>
+    </div>
+    <div class="card">
+      <div class="sec">Таймлайн накладных</div>
+      <div style="overflow-x:auto;">
+        <div class="tl-track" id="tlTrack">
+          <div class="tl-line"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -152,16 +286,16 @@
       <div class="ch"><canvas id="spendChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="sec">Доля поставщиков</div>
+      <div class="sec">Доля по городам</div>
       <div class="ch-sm"><canvas id="supPieChart"></canvas></div>
       <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--milana)"></span>ИП МИЛАНА (Ақтау)</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--milana)"></span>Ақтау</span>
           <span style="font-family:monospace;font-size:12px;">2 923 335 ₸</span>
         </div>
         <div class="bar-bg"><div class="bar-fill" style="width:84.7%;background:var(--milana)"></div></div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--osmanov)"></span>ИП Османов (Алматы)</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--osmanov)"></span>Алматы</span>
           <span style="font-family:monospace;font-size:12px;">526 695 ₸</span>
         </div>
         <div class="bar-bg"><div class="bar-fill" style="width:15.3%;background:var(--osmanov)"></div></div>
@@ -169,7 +303,34 @@
     </div>
   </div>
 
-  <!-- TOP SKU + ANOMALIES CHART -->
+  <!-- КАТЕГОРИИ + НЕДЕЛИ + ПОСТАВЩИКИ SCORECARD -->
+  <div class="grid-equal3">
+    <div class="card">
+      <div class="sec">Расходы по категориям</div>
+      <div class="ch-sm"><canvas id="catPieChart"></canvas></div>
+      <div id="catLegend" style="margin-top:12px;display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
+    <div class="card">
+      <div class="sec">Расходы по неделям</div>
+      <div class="ch-med"><canvas id="weeklyChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="sec">Сравнение поставщиков <span class="sec-sub">/ скоркард</span></div>
+      <div style="margin-bottom:10px;display:flex;justify-content:flex-end;gap:12px;">
+        <span style="font-size:10px;color:var(--milana);font-weight:700;">МИЛАНА</span>
+        <span style="font-size:10px;color:var(--osmanov);font-weight:700;">Osmanов</span>
+      </div>
+      <div class="scorecard" id="scorecard"></div>
+    </div>
+  </div>
+
+  <!-- ТРЕНДЫ ЦЕН -->
+  <div class="card g-full">
+    <div class="sec">Динамика цен · как менялись цены от накладной к накладной</div>
+    <div class="ch-trend"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <!-- TOP SKU + ANOMALY CHART -->
   <div class="grid-2">
     <div class="card">
       <div class="sec">Топ-15 SKU по сумме закупок</div>
@@ -181,33 +342,32 @@
     </div>
   </div>
 
+  <!-- FREQ SKU -->
+  <div class="card g-full">
+    <div class="sec">Топ SKU по частоте · в скольких накладных встречается</div>
+    <div style="position:relative;height:300px;"><canvas id="freqSkuChart"></canvas></div>
+  </div>
+
+  <!-- РАЗБИВКА ПО КАТЕГОРИЯМ -->
+  <div class="card g-full">
+    <div class="sec">Разбивка бюджета по категориям</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Категория</th>
+          <th class="num">Сумма ₸</th>
+          <th class="num">Доля</th>
+          <th style="min-width:160px;">Визуализация</th>
+        </tr></thead>
+        <tbody id="catTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- CROSS-SUPPLIER COMPARISON -->
   <div class="card g-full">
     <div class="sec">Сравнение цен между поставщиками</div>
-    <div id="crossPrices">
-      <div class="cmp-row">
-        <div>
-          <div class="cmp-name">Яйцо куриное</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:2px;">шт · 2 поставщика</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:10px;color:var(--muted);">ИП МИЛАНА</div>
-          <div class="cmp-price" style="color:var(--milana)">72 ₸</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:10px;color:var(--muted);">ИП Османов</div>
-          <div class="cmp-price" style="color:var(--osmanov)">87.5 ₸</div>
-        </div>
-        <div style="text-align:right">
-          <span class="pill pill-amber">+21.5%</span>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px;">МИЛАНА дешевле</div>
-          <div style="font-size:10px;color:var(--red);font-weight:600;">−16 740 ₸/мес</div>
-        </div>
-      </div>
-      <div style="padding:20px 0;color:var(--muted);font-size:11px;text-align:center;">
-        Добавляйте накладных — появятся новые пересечения для сравнения
-      </div>
-    </div>
+    <div id="crossPrices"></div>
   </div>
 
   <!-- ANOMALIES TABLE -->
@@ -216,7 +376,7 @@
     <div class="tbl-wrap">
       <table>
         <thead><tr>
-          <th>#</th><th>SKU</th><th>Ед.</th>
+          <th>SKU</th><th>Ед.</th>
           <th class="num">Мин ₸</th><th class="num">Макс ₸</th>
           <th class="num">Разброс</th><th>Поставщиков</th><th>Статус</th>
         </tr></thead>
@@ -227,11 +387,19 @@
 
   <!-- ALL INVOICES -->
   <div class="card g-full">
-    <div class="sec">Все накладные</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+      <div class="sec" style="margin:0;flex:1">Все накладные</div>
+      <div class="filter-bar">
+        <span style="font-size:10px;color:var(--muted)">Период:</span>
+        <button class="filter-btn active" data-m="all"  onclick="setFilter(this)">Все</button>
+        <button class="filter-btn"        data-m="03"   onclick="setFilter(this)">Март</button>
+        <button class="filter-btn"        data-m="04"   onclick="setFilter(this)">Апрель</button>
+      </div>
+    </div>
     <div class="tbl-wrap">
       <table>
         <thead><tr>
-          <th>№</th><th>Поставщик</th><th>Город</th><th>Дата</th>
+          <th>Поставщик</th><th>Город</th><th>Дата</th>
           <th class="num">Сумма ₸</th><th class="num">Позиций</th><th>Доля</th>
         </tr></thead>
         <tbody id="invTbody"></tbody>
@@ -245,7 +413,7 @@
     <div class="tbl-wrap">
       <table>
         <thead><tr>
-          <th>#</th><th>SKU</th><th>Ед.</th>
+          <th>SKU</th><th>Ед.</th>
           <th class="num">Цена ₸/ед</th><th class="num">Итого ₸</th>
           <th>Поставщик</th><th>Доля бюджета</th>
         </tr></thead>
@@ -255,6 +423,15 @@
   </div>
 
 </div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const TOTAL = 3450030;
@@ -272,27 +449,27 @@ const invoices = [
   ["74",        "ИП МИЛАНА",  "Ақтау",  "11.03.2026",  91068,  5],
   ["76",        "ИП МИЛАНА",  "Ақтау",  "12.03.2026",  98341,  5],
   ["85",        "ИП МИЛАНА",  "Ақтау",  "18.03.2026", 382141, 14],
-  ["43",        "ИП Османов", "Алматы", "03.04.2026", 526695, 24],
+  ["43",        "ИП Osmanов", "Алматы", "03.04.2026", 526695, 24],
   ["101",       "ИП МИЛАНА",  "Ақтау",  "07.04.2026", 123610,  7],
   ["102",       "ИП МИЛАНА",  "Ақтау",  "08.04.2026", 494661, 12],
 ];
 
 const topSku = [
-  ["сливки 1 л",           288000, 1],
-  ["масло подсолн. 5л",    258300, 1],
-  ["Яйцо куриное",         164340, 2],
-  ["масло фритюрное 10л",  153000, 1],
-  ["рис баракат",          126000, 1],
-  ["мука Патша 25кг",      105000, 1],
-  ["сыр гауда",             97234, 1],
-  ["мука в/с 25кг",         92900, 1],
-  ["творог",                91000, 1],
-  ["Креветки 16/20",        87500, 1],
-  ["творог 5кг",            75000, 1],
-  ["тостер хлеб",           74969, 1],
-  ["черный перец",          67500, 1],
-  ["томат",                 66400, 1],
-  ["Мука дані нан",         63000, 1],
+  ["сливки 1 л",           288000, 1, "Молочные"],
+  ["масло подсолн. 5л",    258300, 1, "Масла"],
+  ["Яйцо куриное",         164340, 2, "Яйца"],
+  ["масло фритюрное 10л",  153000, 1, "Масла"],
+  ["рис баракат",          126000, 1, "Крупы"],
+  ["мука Патша 25кг",      105000, 1, "Крупы"],
+  ["сыр гауда",             97234, 1, "Молочные"],
+  ["мука в/с 25кг",         92900, 1, "Крупы"],
+  ["творог",                91000, 1, "Молочные"],
+  ["Креветки 16/20",        87500, 1, "Мясо"],
+  ["творог 5кг",            75000, 1, "Молочные"],
+  ["тостер хлеб",           74969, 1, "Хлеб"],
+  ["черный перец",          67500, 1, "Специи"],
+  ["томат",                 66400, 1, "Овощи"],
+  ["Мука дані нан",         63000, 1, "Крупы"],
 ];
 
 const anomalies = [
@@ -312,18 +489,229 @@ const suspicious = [
   ["мука в/с 25кг",              "шт",    8800, 92900,  "ИП МИЛАНА",  "Ақтау"],
   ["мука Патша 25кг",            "шт",    7500, 90000,  "ИП МИЛАНА",  "Ақтау"],
   ["сыр Гауда",                  "кг",    5500, 97234,  "ИП МИЛАНА",  "Ақтау"],
-  ["Креветки 16/20",             "кг",    4375, 87500,  "ИП Османов", "Алматы"],
+  ["Креветки 16/20",             "кг",    4375, 87500,  "ИП Osmanов", "Алматы"],
   ["лаучиу соус",                "шт",    5000, 25000,  "ИП МИЛАНА",  "Ақтау"],
+];
+
+const catSpend = [
+  ["Молочные", 551234, 16.0],
+  ["Масла",    411300, 11.9],
+  ["Крупы",    390000, 11.3],
+  ["Мясо",     320000,  9.3],
+  ["Яйца",     164340,  4.8],
+  ["Овощи",    130000,  3.8],
+  ["Специи",   120000,  3.5],
+  ["Хлеб",      74969,  2.2],
+  ["Хозтовары", 50000,  1.4],
+  ["Прочее",   438187, 12.7],
+];
+
+const weeklySpend = [
+  ["04.03", 1733514, 0],
+  ["11.03",  189409, 0],
+  ["18.03",  382141, 0],
+  ["03.04",       0, 526695],
+  ["07.04",  618271, 0],
+];
+
+const trendDates = ["06.03", "08.03", "11.03", "03.04"];
+const priceTrends = [
+  ["черный перец",         [null, 3000, 750, null], 300.0],
+  ["колбаса копчёная",     [2650, 970, null, null], 173.2],
+  ["геркулес",             [600, 350, null, null],   71.4],
+  ["Яйцо куриное",         [72, 75, null, 87.5],     21.5],
+  ["мука в/с 25кг",        [null, 8800, null, 7500], 17.3],
+];
+
+const crossSupplier = [
+  ["Яйцо куриное", "ИП МИЛАНА", 72, "ИП Osmanов", 87.5, 21.5, "ИП МИЛАНА"],
 ];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 const fmt  = n => Math.round(n).toLocaleString('ru-RU');
 const fmtD = n => n.toFixed(1);
-function supTag(name) {
-  const isO = name.includes('Осман');
-  return `<span class="${isO ? 'tag-o' : 'tag-m'}">${isO ? 'Алматы' : 'Ақтау'}</span>`;
+
+const CAT_COLORS = {
+  'Молочные':   '#60a5fa',
+  'Масла':      '#fbbf24',
+  'Крупы':      '#a78bfa',
+  'Мясо':       '#f87171',
+  'Яйца':       '#fb923c',
+  'Овощи':      '#4ade80',
+  'Специи':     '#e879f9',
+  'Хлеб':       '#f59e0b',
+  'Хозтовары':  '#94a3b8',
+  'Прочее':     '#475569',
+};
+
+function catColor(cat) { return CAT_COLORS[cat] || '#6366f1'; }
+function catColorAlpha(cat, a=0.7) {
+  const c = catColor(cat);
+  const r = parseInt(c.slice(1,3),16);
+  const g = parseInt(c.slice(3,5),16);
+  const b = parseInt(c.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
 }
-function supColor(name) { return name.includes('Осман') ? OSMANOV_COLOR : MILANA_COLOR; }
+
+function supTag(name) {
+  const isO = name.includes('Осман') || name.includes('Osman');
+  return `<span class="${isO ? 'tag-o' : 'tag-m'}">${name}</span>`;
+}
+function supColor(name) {
+  return (name.includes('Осман') || name.includes('Osman')) ? OSMANOV_COLOR : MILANA_COLOR;
+}
+function isOsman(name) { return name.includes('Осман') || name.includes('Osman'); }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(skuName) {
+  // Точный поиск, затем частичный
+  let detail = anomalyDetail[skuName];
+  let matchedKey = skuName;
+  if (!detail) {
+    matchedKey = Object.keys(anomalyDetail).find(k =>
+      k.toLowerCase().includes(skuName.toLowerCase().slice(0, 8)) ||
+      skuName.toLowerCase().includes(k.toLowerCase().slice(0, 8))
+    );
+    detail = matchedKey ? anomalyDetail[matchedKey] : null;
+  }
+  if (!detail) return;
+
+  const anom = anomalies.find(a => skuName.includes(a[0]) || a[0].includes(skuName.split(' ')[0]));
+  const spread = anom ? anom[4] : 0;
+  const unit   = anom ? anom[1] : 'шт';
+
+  // Направление цены
+  const sorted = [...detail].sort((a,b) => a.date.localeCompare(b.date));
+  const firstPrice = sorted[0].price;
+  const lastPrice  = sorted[sorted.length-1].price;
+  const direction  = lastPrice > firstPrice ? 'up' : lastPrice < firstPrice ? 'down' : 'stable';
+  const suppliers  = new Set(detail.map(o => o.sup)).size;
+
+  // Объяснение
+  let explain = '';
+  if (suppliers > 1) {
+    const prices = [...new Set(detail.map(o => `${o.sup}: ${fmt(o.price)} ₸`))];
+    explain = `Этот товар закупался у разных поставщиков по разной цене. ${prices.join(', ')}. Всегда берите у того, кто дешевле.`;
+  } else if (direction === 'up') {
+    const pct = Math.round((lastPrice - firstPrice) / firstPrice * 100);
+    explain = `⚠️ Цена растёт: с ${fmt(firstPrice)} ₸ до ${fmt(lastPrice)} ₸ (+${pct}%). Рекомендуем уточнить у поставщика причину — возможно смена фасовки, сезонный рост или повышение отпускной цены.`;
+  } else if (direction === 'down') {
+    const pct = Math.round((firstPrice - lastPrice) / firstPrice * 100);
+    explain = `✅ Цена снизилась: с ${fmt(firstPrice)} ₸ до ${fmt(lastPrice)} ₸ (-${pct}%). Аномалия зафиксирована из-за большого разброса в истории. Текущая цена ниже — это хорошо.`;
+  } else {
+    explain = `Цена колеблется в пределах нормы. Наблюдайте за динамикой.`;
+  }
+
+  // Цвет spread
+  const spreadCls = spread > 50 ? 'background:rgba(239,68,68,.2);color:#f87171' : spread > 10 ? 'background:rgba(245,158,11,.2);color:#fbbf24' : 'background:rgba(34,197,94,.2);color:#4ade80';
+  const trendCls  = direction === 'up' ? 'trend-up' : direction === 'down' ? 'trend-down' : 'trend-mix';
+  const trendIcon = direction === 'up' ? '📈' : direction === 'down' ? '📉' : '➡️';
+  const trendText = direction === 'up'
+    ? `Цена РАСТЁТ: ${fmt(firstPrice)} → ${fmt(lastPrice)} ₸`
+    : direction === 'down'
+    ? `Цена СНИЗИЛАСЬ: ${fmt(firstPrice)} → ${fmt(lastPrice)} ₸`
+    : `Цена стабильна: ${fmt(firstPrice)} ₸`;
+
+  // Строки таблицы
+  const rows = detail.map(o => {
+    const priceColor = o.price === Math.max(...detail.map(d=>d.price)) ? '#f87171' :
+                       o.price === Math.min(...detail.map(d=>d.price)) ? '#4ade80' : '#e2e8f0';
+    const isO = o.sup.includes('Осман') || o.sup.includes('Osman');
+    return `<tr>
+      <td>${o.date}</td>
+      <td><strong>№${o.inv}</strong></td>
+      <td><span class="${isO?'tag-o':'tag-m'}" style="font-size:10px">${o.sup}</span></td>
+      <td class="num"><strong style="color:${priceColor}">${fmt(o.price)} ₸</strong></td>
+      <td class="num" style="color:#94a3b8">${o.qty} ${unit}</td>
+      <td class="num" style="color:#94a3b8">${fmt(o.total)} ₸</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-title">${skuName}</div>
+    <span class="modal-spread" style="${spreadCls}">Разброс цен: +${spread}%</span>
+
+    <div class="modal-section">История по накладным</div>
+    <table class="modal-table">
+      <thead><tr>
+        <th>Дата</th><th>Накладная</th><th>Поставщик</th>
+        <th class="num">Цена/ед</th><th class="num">Кол-во</th><th class="num">Итого</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <div class="modal-trend ${trendCls}" style="margin-top:14px">
+      <span style="font-size:20px">${trendIcon}</span>
+      <strong>${trendText}</strong>
+    </div>
+
+    <div class="modal-explain">${explain}</div>
+  `;
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+// ── ALERT STRIP ───────────────────────────────────────────────────────────────
+(function buildAlerts() {
+  const strip = document.getElementById('alertStrip');
+  const alerts = [];
+
+  const critical = anomalies.filter(a => a[4] > 50);
+  if (critical.length > 0) {
+    alerts.push({
+      cls: 'alert-red',
+      icon: '🔴',
+      title: `Критично: ${critical[0][0]}`,
+      sub: `Разброс цен +${critical[0][4]}% (${fmt(critical[0][2])} ↔ ${fmt(critical[0][3])} ₸) · нажмите для деталей`,
+      sku: critical[0][0]
+    });
+  }
+
+  const warn = anomalies.filter(a => a[4] > 10 && a[4] <= 50);
+  if (warn.length > 0) {
+    alerts.push({
+      cls: 'alert-amber',
+      icon: '🟡',
+      title: `Проверить: ${warn[0][0]}`,
+      sub: `+${warn[0][4]}% разброс цен · нажмите для деталей`,
+      sku: warn[0][0]
+    });
+  }
+
+  if (crossSupplier.length > 0) {
+    const cs = crossSupplier[0];
+    const saving = Math.round(Math.abs(cs[4]-cs[2]) * 600);
+    alerts.push({
+      cls: 'alert-blue',
+      icon: '💡',
+      title: `Экономия: ${cs[0]}`,
+      sub: `${cs[6]} дешевле на ${cs[5]}% · ~${fmt(saving)} ₸/мес потенциал · нажмите для деталей`,
+      sku: cs[0]
+    });
+  }
+
+  alerts.push({
+    cls: 'alert-green',
+    icon: '✅',
+    title: `Поставщики в норме`,
+    sub: `МИЛАНА (Ақтау) · Osmanов (Алматы) · 2 активных`
+  });
+
+  alerts.forEach(a => {
+    const div = document.createElement('div');
+    div.className = `alert-item ${a.cls}`;
+    div.innerHTML = `<span class="alert-icon">${a.icon}</span>
+      <div class="alert-text"><strong>${a.title}</strong><span>${a.sub}</span></div>`;
+    if (a.sku) div.addEventListener('click', () => openModal(a.sku));
+    strip.appendChild(div);
+  });
+})();
 
 // ── SPEND TIMELINE ────────────────────────────────────────────────────────────
 new Chart(document.getElementById('spendChart'), {
@@ -333,9 +721,9 @@ new Chart(document.getElementById('spendChart'), {
     datasets: [{
       label: 'Сумма ₸',
       data: invoices.map(d => d[4]),
-      backgroundColor: invoices.map(d => d[1].includes('Осман')
+      backgroundColor: invoices.map(d => isOsman(d[1])
         ? 'rgba(245,158,11,0.8)' : 'rgba(34,197,94,0.75)'),
-      borderColor: invoices.map(d => d[1].includes('Осман') ? OSMANOV_COLOR : MILANA_COLOR),
+      borderColor: invoices.map(d => isOsman(d[1]) ? OSMANOV_COLOR : MILANA_COLOR),
       borderWidth: 1, borderRadius: 6,
     }]
   },
@@ -357,7 +745,7 @@ new Chart(document.getElementById('spendChart'), {
 new Chart(document.getElementById('supPieChart'), {
   type: 'doughnut',
   data: {
-    labels: ['ИП МИЛАНА (Ақтау)', 'ИП Османов (Алматы)'],
+    labels: ['Ақтау', 'Алматы'],
     datasets: [{ data: [2923335, 526695],
       backgroundColor: [MILANA_COLOR, OSMANOV_COLOR], borderWidth: 0, hoverOffset: 6 }]
   },
@@ -371,6 +759,130 @@ new Chart(document.getElementById('supPieChart'), {
   }
 });
 
+// ── CATEGORY PIE ──────────────────────────────────────────────────────────────
+new Chart(document.getElementById('catPieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: catSpend.map(d => d[0]),
+    datasets: [{
+      data: catSpend.map(d => d[1]),
+      backgroundColor: catSpend.map(d => catColor(d[0])),
+      borderWidth: 0, hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '60%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: TOOLTIP_BG,
+        callbacks: { label: c => ` ${fmt(c.raw)} ₸ (${catSpend[c.dataIndex][2]}%)` } }
+    }
+  }
+});
+
+// Category legend
+const catLegend = document.getElementById('catLegend');
+catSpend.slice(0, 6).forEach(([cat, amt, pct]) => {
+  catLegend.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+    <span style="display:flex;align-items:center;gap:5px;">
+      <span style="width:8px;height:8px;border-radius:2px;background:${catColor(cat)};display:inline-block"></span>
+      ${cat}
+    </span>
+    <span style="color:var(--muted);font-family:monospace">${pct}%</span>
+  </div>`;
+});
+
+// ── WEEKLY SPEND ──────────────────────────────────────────────────────────────
+new Chart(document.getElementById('weeklyChart'), {
+  type: 'bar',
+  data: {
+    labels: weeklySpend.map(d => 'Нед ' + d[0]),
+    datasets: [
+      {
+        label: 'МИЛАНА', data: weeklySpend.map(d => d[1]),
+        backgroundColor: 'rgba(34,197,94,0.75)', borderRadius: 4, borderSkipped: false,
+      },
+      {
+        label: 'Osmanов', data: weeklySpend.map(d => d[2]),
+        backgroundColor: 'rgba(245,158,11,0.75)', borderRadius: 4, borderSkipped: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true, labels: { color: '#94a3b8', font: FONT, boxWidth: 10, boxHeight: 10 } },
+      tooltip: { backgroundColor: TOOLTIP_BG, callbacks: { label: c => ` ${fmt(c.raw)} ₸` } }
+    },
+    scales: {
+      x: { stacked: true, grid: { color: GRID }, ticks: { color: TICK, font: FONT } },
+      y: { stacked: true, grid: { color: GRID }, ticks: { color: TICK, font: FONT, callback: v => fmt(v) }, beginAtZero: true }
+    }
+  }
+});
+
+// ── SUPPLIER SCORECARD ────────────────────────────────────────────────────────
+(function buildScorecard() {
+  const sc = document.getElementById('scorecard');
+  const milanaTotal = invoices.filter(r => !isOsman(r[1])).reduce((s,r) => s+r[4], 0);
+  const osmanTotal  = invoices.filter(r =>  isOsman(r[1])).reduce((s,r) => s+r[4], 0);
+  const milanaInv   = invoices.filter(r => !isOsman(r[1])).length;
+  const osmanInv    = invoices.filter(r =>  isOsman(r[1])).length;
+  const milanaAvg   = milanaInv ? Math.round(milanaTotal / milanaInv) : 0;
+  const osmanAvg    = osmanInv  ? Math.round(osmanTotal  / osmanInv)  : 0;
+  const milanaSkus  = topSku.filter(s => !isOsman(s[0])).length;
+
+  const rows = [
+    ['Общие расходы', `${fmt(milanaTotal)} ₸`, `${fmt(osmanTotal)} ₸`],
+    ['Накладных',     milanaInv,                 osmanInv],
+    ['Ср. накладная', `${fmt(milanaAvg)} ₸`,     `${fmt(osmanAvg)} ₸`],
+    ['Город',         'Ақтау',                   'Алматы'],
+    ['Доля бюджета',  '84.7%',                   '15.3%'],
+  ];
+
+  rows.forEach(([label, mv, ov]) => {
+    sc.innerHTML += `<div class="scorecard-row">
+      <span class="scorecard-label">${label}</span>
+      <div class="scorecard-vals">
+        <span class="sc-m">${mv}</span>
+        <span class="sc-o">${ov}</span>
+      </div>
+    </div>`;
+  });
+})();
+
+// ── PRICE TRENDS ──────────────────────────────────────────────────────────────
+const TREND_COLORS = ['#f87171','#fb923c','#fbbf24','#60a5fa','#a78bfa'];
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels: trendDates,
+    datasets: priceTrends.map(([name, data, spread], i) => ({
+      label: `${name} (+${spread}%)`,
+      data: data,
+      borderColor: TREND_COLORS[i % TREND_COLORS.length],
+      backgroundColor: TREND_COLORS[i % TREND_COLORS.length] + '20',
+      borderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      tension: 0.3,
+      spanGaps: true,
+      fill: false,
+    }))
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true, labels: { color: '#94a3b8', font: FONT, boxWidth: 12, boxHeight: 2 } },
+      tooltip: { backgroundColor: TOOLTIP_BG, callbacks: { label: c => ` ${c.dataset.label.split('(')[0].trim()}: ${fmt(c.raw)} ₸` } }
+    },
+    scales: {
+      x: { grid: { color: GRID }, ticks: { color: TICK, font: FONT } },
+      y: { grid: { color: GRID }, ticks: { color: TICK, font: FONT, callback: v => fmt(v) }, beginAtZero: false }
+    }
+  }
+});
+
 // ── TOP SKU ───────────────────────────────────────────────────────────────────
 new Chart(document.getElementById('skuChart'), {
   type: 'bar',
@@ -378,9 +890,9 @@ new Chart(document.getElementById('skuChart'), {
     labels: topSku.map(d => d[0]),
     datasets: [{
       label: '₸', data: topSku.map(d => d[1]),
-      backgroundColor: topSku.map(d =>
-        d[2] > 1 ? 'rgba(108,99,255,0.85)' : 'rgba(34,197,94,0.65)'),
-      borderWidth: 0, borderRadius: 4,
+      backgroundColor: topSku.map(d => catColorAlpha(d[3], 0.8)),
+      borderColor: topSku.map(d => catColor(d[3])),
+      borderWidth: 1, borderRadius: 4,
     }]
   },
   options: {
@@ -388,7 +900,7 @@ new Chart(document.getElementById('skuChart'), {
     plugins: {
       legend: { display: false },
       tooltip: { backgroundColor: TOOLTIP_BG,
-        callbacks: { label: c => ` ${fmt(c.raw)} ₸${topSku[c.dataIndex][2]>1?' · 2 поставщика':''}` } }
+        callbacks: { label: c => ` ${fmt(c.raw)} ₸  [${topSku[c.dataIndex][3]}]${topSku[c.dataIndex][2]>1?' · 2 поставщика':''}` } }
     },
     scales: {
       x: { grid:{color:GRID}, ticks:{color:TICK,font:FONT,callback:v=>fmt(v)}, beginAtZero:true },
@@ -422,62 +934,139 @@ new Chart(document.getElementById('anomalyChart'), {
   }
 });
 
+// ── CATEGORY BREAKDOWN TABLE ──────────────────────────────────────────────────
+const catTbody = document.getElementById('catTbody');
+catSpend.forEach(([cat, amt, pct]) => {
+  const col = catColor(cat);
+  catTbody.innerHTML += `<tr>
+    <td>
+      <span style="display:inline-flex;align-items:center;gap:7px;">
+        <span style="width:10px;height:10px;border-radius:3px;background:${col};display:inline-block;flex-shrink:0"></span>
+        <strong>${cat}</strong>
+      </span>
+    </td>
+    <td class="num"><strong style="color:${col}">${fmt(amt)} ₸</strong></td>
+    <td class="num" style="color:var(--muted)">${pct}%</td>
+    <td>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="bar-bg" style="flex:1;max-width:200px">
+          <div class="bar-fill" style="width:${Math.min(100,pct*3)}%;background:${col}"></div>
+        </div>
+        <span style="font-size:10px;color:var(--muted);min-width:32px">${pct}%</span>
+      </div>
+    </td>
+  </tr>`;
+});
+
+// ── CROSS-SUPPLIER COMPARISON ─────────────────────────────────────────────────
+const crossDiv = document.getElementById('crossPrices');
+if (crossSupplier.length === 0) {
+  crossDiv.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:11px;text-align:center;">Добавляйте накладных — появятся новые пересечения для сравнения</div>';
+} else {
+  crossSupplier.forEach(([sku, sup1n, p1, sup2n, p2, diffPct, cheaper]) => {
+    const isOsm1 = isOsman(sup1n);
+    const c1 = isOsm1 ? OSMANOV_COLOR : MILANA_COLOR;
+    const c2 = isOsman(sup2n) ? OSMANOV_COLOR : MILANA_COLOR;
+    const cheaperCheap = cheaper === sup1n ? p1 : p2;
+    const saving = Math.round(Math.abs(p2-p1) * 600);
+    crossDiv.innerHTML += `<div class="cmp-row">
+      <div>
+        <div class="cmp-name">${sku}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">шт · 2 поставщика</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--muted)">${sup1n}</div>
+        <div class="cmp-price" style="color:${c1}">${fmt(p1)} ₸</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--muted)">${sup2n}</div>
+        <div class="cmp-price" style="color:${c2}">${fmt(p2)} ₸</div>
+      </div>
+      <div style="text-align:right">
+        <span class="pill pill-amber">+${diffPct}%</span>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px">${cheaper} дешевле</div>
+        <div style="font-size:10px;color:var(--red);font-weight:600">~−${fmt(saving)} ₸/мес</div>
+      </div>
+    </div>`;
+  });
+  crossDiv.innerHTML += '<div style="padding:12px 0 0;color:var(--muted);font-size:10px;text-align:center;">Добавляйте накладных — появятся новые пересечения</div>';
+}
+
 // ── ANOMALIES TABLE ───────────────────────────────────────────────────────────
 const anomTbody = document.getElementById('anomTbody');
-anomalies.forEach((r, i) => {
+anomalies.forEach((r) => {
   const [name, unit, mn, mx, spread, sups] = r;
   const cls  = spread > 50 ? 'pill-red' : spread > 10 ? 'pill-amber' : 'pill-green';
   const lbl  = spread > 50 ? '🔴 КРИТИЧНО' : spread > 10 ? '🟡 ПРОВЕРИТЬ' : '🟢 НОРМА';
   const bw   = Math.min(100, spread / 2);
   const bcol = spread > 50 ? '#ef4444' : spread > 10 ? '#f59e0b' : '#22c55e';
   const supBadge = sups > 1
-    ? '<span class="tag-o" style="margin-left:4px">2 поставщика</span>'
+    ? '<span class="tag-o" style="margin-left:4px">2 постав.</span>'
     : '';
   anomTbody.innerHTML += `<tr>
-    <td style="color:var(--muted)">${i+1}</td>
     <td>${name}${supBadge}</td>
     <td>${unit}</td>
     <td class="num" style="color:var(--milana)">${fmt(mn)} ₸</td>
     <td class="num" style="color:var(--red)">${fmt(mx)} ₸</td>
-    <td class="num"><strong style="color:${bcol}">+${spread}%</strong></td>
-    <td><div class="bar-bg" style="width:90px"><div class="bar-fill" style="width:${bw}%;background:${bcol}"></div></div></td>
+    <td class="num"><strong style="color:${bcol}">+${spread}%</strong>
+      <div class="bar-bg" style="width:60px;margin-top:4px"><div class="bar-fill" style="width:${bw}%;background:${bcol}"></div></div>
+    </td>
+    <td style="color:var(--muted)">${sups}</td>
     <td><span class="pill ${cls}">${lbl}</span></td>
   </tr>`;
 });
 
-// ── INVOICES TABLE ────────────────────────────────────────────────────────────
-const invTbody = document.getElementById('invTbody');
-invoices.forEach(r => {
-  const [inv, sup, city, date, sum, lines] = r;
-  const isO  = sup.includes('Осман');
-  const pct  = (sum / TOTAL * 100).toFixed(1);
-  const bw   = Math.min(100, parseFloat(pct) * 1.5);
-  const col  = isO ? OSMANOV_COLOR : MILANA_COLOR;
-  invTbody.innerHTML += `<tr>
-    <td><strong>№${inv}</strong></td>
-    <td><span class="${isO?'tag-o':'tag-m'}">${sup}</span></td>
-    <td style="color:var(--muted)">${city}</td>
-    <td>${date}</td>
-    <td class="num"><strong style="color:${sum>900000?'#ef4444':col}">${fmt(sum)} ₸</strong></td>
-    <td class="num">${lines}</td>
-    <td>
-      <div style="display:flex;align-items:center;gap:7px;">
+// ── INVOICES TABLE (with filter) ─────────────────────────────────────────────
+let _activeMonth = 'all';
+
+function setFilter(btn) {
+  _activeMonth = btn.dataset.m;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderInvTable();
+}
+
+function renderInvTable() {
+  const tbody = document.getElementById('invTbody');
+  tbody.innerHTML = '';
+  const list = _activeMonth === 'all'
+    ? invoices
+    : invoices.filter(r => r[3].split('.')[1] === _activeMonth);
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Нет накладных за этот период</td></tr>';
+    return;
+  }
+  const periodTotal = list.reduce((s,r) => s + r[4], 0);
+  list.forEach(r => {
+    const [inv, sup, city, dt, sum, lines] = r;
+    const isO = isOsman(sup);
+    const pct = (sum / TOTAL * 100).toFixed(1);
+    const bw  = Math.min(100, parseFloat(pct) * 1.5);
+    const col = isO ? OSMANOV_COLOR : MILANA_COLOR;
+    tbody.innerHTML += `<tr>
+      <td><span class="${isO?'tag-o':'tag-m'}">${sup}</span></td>
+      <td style="color:var(--muted)">${city}</td>
+      <td>${dt}</td>
+      <td class="num"><strong style="color:${sum>900000?'#ef4444':col}">${fmt(sum)} ₸</strong></td>
+      <td class="num">${lines}</td>
+      <td><div style="display:flex;align-items:center;gap:7px;">
         <div class="bar-bg" style="width:110px"><div class="bar-fill" style="width:${bw}%;background:${col}"></div></div>
         <span style="color:var(--muted);font-size:10px">${pct}%</span>
-      </div>
-    </td>
-  </tr>`;
-});
+      </div></td>
+    </tr>`;
+  });
+}
+renderInvTable();
 
 // ── SUSPICIOUS TABLE ──────────────────────────────────────────────────────────
 const suspTbody = document.getElementById('suspTbody');
-suspicious.forEach((r, i) => {
+suspicious.forEach((r) => {
   const [name, unit, price, total, sup, city] = r;
   const pct = (total / TOTAL * 100).toFixed(1);
   const bw  = Math.min(100, parseFloat(pct) * 5);
-  const isO = sup.includes('Осман');
+  const isO = isOsman(sup);
   suspTbody.innerHTML += `<tr>
-    <td style="color:var(--muted)">${i+1}</td>
     <td>${name}</td>
     <td>${unit}</td>
     <td class="num"><strong style="color:${price>10000?'#ef4444':'#f59e0b'}">${fmt(price)} ₸</strong></td>
@@ -495,6 +1084,154 @@ suspicious.forEach((r, i) => {
 // ── TIMESTAMP ─────────────────────────────────────────────────────────────────
 document.getElementById('ts').textContent =
   new Date().toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
+
+// ── FORECAST ──────────────────────────────────────────────────────────────────
+(function renderForecast() {
+  if (invoices.length < 2) return;
+  const dates = invoices.map(r => {
+    const [d,m,y] = r[3].split('.');
+    return new Date(+y, +m-1, +d);
+  }).sort((a,b) => a-b);
+
+  const intervals = [];
+  for (let i = 1; i < dates.length; i++)
+    intervals.push(Math.round((dates[i]-dates[i-1])/86400000));
+
+  const recent = intervals.slice(-3);
+  const avgDays = Math.round(recent.reduce((s,v)=>s+v,0)/recent.length);
+  const lastDate = dates[dates.length-1];
+  const forecast = new Date(lastDate.getTime() + avgDays*86400000);
+  const today    = new Date();
+  const daysUntil = Math.round((forecast-today)/86400000);
+  const pad = n => String(n).padStart(2,'0');
+  const fStr = `${pad(forecast.getDate())}.${pad(forecast.getMonth()+1)}.${forecast.getFullYear()}`;
+
+  document.getElementById('fcDate').textContent = fStr;
+  document.getElementById('fcSub').textContent  =
+    `ср. интервал: ${avgDays} дн · посл. ${pad(lastDate.getDate())}.${pad(lastDate.getMonth()+1)}`;
+  const fcDelta = document.getElementById('fcDelta');
+  if (daysUntil < 0) {
+    fcDelta.textContent = `⚠️ ${Math.abs(daysUntil)} дн назад`;
+    fcDelta.className = 'card-delta delta-red';
+  } else if (daysUntil === 0) {
+    fcDelta.textContent = '📦 Сегодня';
+    fcDelta.className = 'card-delta delta-amber';
+  } else {
+    fcDelta.textContent = `через ${daysUntil} дн`;
+    fcDelta.className = 'card-delta delta-blue';
+  }
+})();
+
+// ── MONTHLY COMPARISON ────────────────────────────────────────────────────────
+(function renderMonthly() {
+  const by = {};
+  invoices.forEach(r => {
+    const mm = r[3].split('.')[1];
+    const key = mm === '03' ? 'Март 2026' : mm === '04' ? 'Апрель 2026' : mm;
+    if (!by[key]) by[key] = {amt:0,cnt:0};
+    by[key].amt += r[4];
+    by[key].cnt++;
+  });
+
+  const mar = by['Март 2026']   || {amt:0,cnt:0};
+  const apr = by['Апрель 2026'] || {amt:0,cnt:0};
+  const delta = apr.amt - mar.amt;
+  const pct   = mar.amt ? Math.round(delta/mar.amt*100) : 0;
+  const isUp  = delta >= 0;
+  const aprColor = apr.amt > mar.amt ? '#f87171' : '#4ade80';
+
+  document.getElementById('monthCmp').innerHTML = `
+    <div class="month-col">
+      <div class="month-name">Март 2026</div>
+      <div class="month-amt" style="color:var(--milana)">${fmt(mar.amt)} ₸</div>
+      <div class="month-cnt">${mar.cnt} накл</div>
+    </div>
+    <div class="month-mid">${isUp ? '→' : '→'}</div>
+    <div class="month-col">
+      <div class="month-name">Апрель 2026&thinsp;<span style="font-size:9px;opacity:.55">неполный</span></div>
+      <div class="month-amt" style="color:${aprColor}">${fmt(apr.amt)} ₸</div>
+      <div class="month-cnt">${apr.cnt} накл · ${isUp?'+':''}${pct}%</div>
+    </div>`;
+
+  document.getElementById('monthNote').textContent =
+    apr.cnt > 0
+      ? `В апреле уже ${apr.cnt} накл (из ~${mar.cnt} в марте). ` +
+        (isUp ? `На ${Math.abs(pct)}% больше — следите за ростом расходов.`
+               : `На ${Math.abs(pct)}% меньше — пока экономнее марта.`)
+      : 'Данных за апрель нет.';
+})();
+
+// ── INVOICE TIMELINE ─────────────────────────────────────────────────────────
+(function renderTimeline() {
+  const track = document.getElementById('tlTrack');
+  if (!invoices.length) return;
+  const parsed = invoices.map(r => {
+    const [d,m,y] = r[3].split('.');
+    return { ts: new Date(+y,+m-1,+d).getTime(), sup:r[1], amt:r[4], lbl:r[3].slice(0,5) };
+  });
+  const minT = Math.min(...parsed.map(p=>p.ts));
+  const maxT = Math.max(...parsed.map(p=>p.ts));
+  const span = maxT - minT || 86400000;
+
+  parsed.forEach(p => {
+    const pct = 3 + (p.ts-minT)/span * 94;
+    const isO = isOsman(p.sup);
+    const col = isO ? OSMANOV_COLOR : MILANA_COLOR;
+    const r   = Math.max(7, Math.min(14, Math.round(p.amt/100000)+6));
+    const el  = document.createElement('div');
+    el.className = 'tl-dot';
+    el.style.cssText = `left:${pct.toFixed(1)}%;position:absolute;transform:translateX(-50%);`;
+    el.title = `${p.lbl}  ${p.sup}  ${fmt(p.amt)} ₸`;
+    el.innerHTML =
+      `<div class="tl-lbl">${p.lbl}</div>` +
+      `<div class="tl-circle" style="width:${r*2}px;height:${r*2}px;background:${col};` +
+        `margin-top:${20-r}px;"></div>` +
+      `<div class="tl-amt">${fmt(Math.round(p.amt/1000))}к</div>`;
+    track.appendChild(el);
+  });
+})();
+
+// ── FREQ SKU CHART ────────────────────────────────────────────────────────────
+new Chart(document.getElementById('freqSkuChart'), {
+  type: 'bar',
+  data: {
+    labels: freqSku.map(d => d[0]),
+    datasets: [{
+      label: 'Накладных',
+      data: freqSku.map(d => d[1]),
+      backgroundColor: freqSku.map(d => catColorAlpha(d[3], 0.8)),
+      borderColor: freqSku.map(d => catColor(d[3])),
+      borderWidth: 1, borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: TOOLTIP_BG,
+        callbacks: { label: c => ` ${c.raw} накл · ср. цена ${fmt(freqSku[c.dataIndex][2])} ₸` }
+      }
+    },
+    scales: {
+      x: { grid:{color:GRID}, ticks:{color:TICK,font:FONT,stepSize:1}, beginAtZero:true },
+      y: { grid:{display:false}, ticks:{color:TICK,font:{...FONT,size:10}} }
+    }
+  }
+});
+
+// ── CSV EXPORT ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const hdr = 'Накладная,Поставщик,Город,Дата,Сумма ₸,Позиций';
+  const rows = invoices.map(r => r.map(v => `"${v}"`).join(','));
+  const csv  = '\uFEFF' + [hdr, ...rows].join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = 'youcook_invoices.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 </script>
 </body>
 </html>
