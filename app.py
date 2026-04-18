@@ -252,7 +252,11 @@ def setup():
     owner = "akezhanz@youcook.kz"
     now   = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     db    = get_db()
-    db.execute("UPDATE users SET status='approved', updated_at=? WHERE email=?", (now, owner))
+    db.execute("""
+        INSERT INTO users (email, name, status, created_at, updated_at)
+        VALUES (?, 'Admin', 'approved', ?, ?)
+        ON CONFLICT(email) DO UPDATE SET status='approved', updated_at=?
+    """, (owner, now, now, now))
     db.commit()
     return redirect("/")
 
