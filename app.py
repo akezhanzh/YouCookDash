@@ -103,10 +103,44 @@ def push_db_to_github(message="update: YouCookDashOG.db via bot"):
     except Exception as e:
         print(f"[github] push DB failed: {e}")
 
+def push_users_to_github():
+    """Сохранить users.db в GitHub."""
+    if not GITHUB_TOKEN or not USERS_DB.exists():
+        return
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/data/users.db"
+    headers = _gh_headers()
+    try:
+        r = http_req.get(url, headers=headers, timeout=30)
+        sha = r.json().get("sha") if r.ok else None
+        content = base64.b64encode(USERS_DB.read_bytes()).decode()
+        payload = {"message": "update: users.db", "content": content}
+        if sha:
+            payload["sha"] = sha
+        http_req.put(url, json=payload, headers=headers, timeout=60)
+        print("[github] users.db pushed")
+    except Exception as e:
+        print(f"[github] push users.db failed: {e}")
+
+def pull_users_from_github():
+    """Скачать users.db из GitHub при старте."""
+    if not GITHUB_TOKEN:
+        return
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/data/users.db"
+    try:
+        r = http_req.get(url, headers=_gh_headers(), timeout=30)
+        if r.ok:
+            content = base64.b64decode(r.json()["content"].replace("\n", ""))
+            USERS_DB.write_bytes(content)
+            print("[startup] users.db pulled from GitHub")
+    except Exception as e:
+        print(f"[startup] pull users.db failed: {e}")
+
 
 # ── Старт ─────────────────────────────────────────────────────────────────────
 if not PROC_DB.exists():
     pull_db_from_github()
+
+pull_users_from_github()
 
 PROC_DB.parent.mkdir(parents=True, exist_ok=True)
 regenerate_dashboard()
@@ -238,6 +272,7 @@ def callback():
             (email, name, picture, "pending", now, now)
         )
         db.commit()
+        push_users_to_github()
 
     session.permanent = True
     session["user"] = {"email": email, "name": name}
@@ -300,6 +335,7 @@ def admin():
         db  = get_db()
         db.execute("UPDATE users SET status=?, updated_at=? WHERE email=?", (new_status, now, email))
         db.commit()
+        push_users_to_github()
         return redirect(f"/admin?key={ADMIN_PASSWORD}")
 
     db    = get_db()
