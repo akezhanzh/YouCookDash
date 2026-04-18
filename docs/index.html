@@ -1679,7 +1679,8 @@ function phRender() {
 
   let rows = window._phAll;
 
-  if (period !== 'all' && maxDate) {
+  // Period filter only when not searching — search scans all history
+  if (!q && period !== 'all' && maxDate) {
     const days = parseInt(period, 10);
     const cutoff = new Date(maxDate);
     cutoff.setDate(cutoff.getDate() - days + 1);
