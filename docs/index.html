@@ -214,7 +214,6 @@
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <span class="sup-pill sup-milana"><span class="dot" style="background:var(--milana)"></span>ИП МИЛАНА · Ақтау</span>
       <span class="sup-pill sup-osmanov"><span class="dot" style="background:var(--osmanov)"></span>ИП Osmanов · Алматы</span>
-      <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
       <span class="badge" id="ts">—</span>
     </div>
   </div>
@@ -1245,19 +1244,6 @@ new Chart(document.getElementById('freqSkuChart'), {
   }
 });
 
-// ── CSV EXPORT ────────────────────────────────────────────────────────────────
-function exportCSV() {
-  const hdr = 'Накладная,Поставщик,Город,Дата,Сумма ₸,Позиций';
-  const rows = invoices.map(r => r.map(v => `"${v}"`).join(','));
-  const csv  = '\uFEFF' + [hdr, ...rows].join('\r\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = 'youcook_invoices.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
 </script>
 </body>
 </html>
