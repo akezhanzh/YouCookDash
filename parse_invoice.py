@@ -264,12 +264,28 @@ def parse_pdf(pdf_path: Path) -> dict:
                     if not row or not row[0] or not str(row[0]).strip().isdigit():
                         continue
                     try:
-                        name  = str(row[1]).strip() if row[1] else ""
-                        unit  = str(row[3]).strip() if row[3] else "кг"
-                        qty   = to_float(row[5] or row[4])   # кол-во отпущено
-                        price = to_float(row[6])
-                        total = to_float(row[7])
-                        if not name or name.isdigit() or price <= 0 or qty <= 0:
+                        name = str(row[1]).strip() if row[1] else ""
+                        if not name or name.isdigit():
+                            continue
+
+                        # Определяем формат таблицы по колонке [3]:
+                        # Вариант А: [1]Наим [2]Код [3]Ед [4]кол.заказ [5]кол.отпуск [6]Цена [7]Сумма
+                        # Вариант Б: [1]Наим [2]Ед  [3]Код [4]кол.заказ [5]кол.отпуск [6]кол.dup [7]Цена [8]Сумма
+                        col3 = str(row[3]).strip() if len(row) > 3 and row[3] else ""
+                        is_code = re.match(r'^\d{6,}$', col3.replace('\xa0', '').replace(' ', ''))
+
+                        if is_code and len(row) > 8:
+                            unit  = str(row[2]).strip() if row[2] else "кг"
+                            qty   = to_float(row[5] or row[4])
+                            price = to_float(row[7])
+                            total = to_float(row[8])
+                        else:
+                            unit  = col3 or "кг"
+                            qty   = to_float(row[5] or row[4])
+                            price = to_float(row[6])
+                            total = to_float(row[7])
+
+                        if price <= 0 or qty <= 0:
                             continue
                         result["lines"].append({"sku": name, "qty": qty, "unit": unit,
                                                  "price": price, "total": total})
