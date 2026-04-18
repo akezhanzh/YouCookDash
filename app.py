@@ -282,12 +282,15 @@ def index():
     if user["email"] == OWNER_EMAIL:
         now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         db  = get_db()
+        existed = db.execute("SELECT 1 FROM users WHERE email=?", (user["email"],)).fetchone()
         db.execute("""
             INSERT INTO users (email, name, status, created_at, updated_at)
             VALUES (?,?,'approved',?,?)
             ON CONFLICT(email) DO UPDATE SET status='approved', updated_at=?
         """, (user["email"], user.get("name","Владелец"), now, now, now))
         db.commit()
+        if not existed:
+            push_users_to_github()
         if _dashboard_html:
             return Response(_dashboard_html, mimetype="text/html")
         return send_file(DASHBOARD)
