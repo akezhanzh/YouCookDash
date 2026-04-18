@@ -164,7 +164,14 @@ def logout():
 # ── Админ-панель ──────────────────────────────────────────────────────────────
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
-    # Проверка пароля
+    if request.method == "POST":
+        pwd = request.form.get("password", "")
+        if pwd == ADMIN_PASSWORD:
+            session["admin"] = True
+            return redirect("/admin")
+        return redirect("/admin")
+
+    # Проверка авторизации
     if request.args.get("key") != ADMIN_PASSWORD and session.get("admin") != True:
         return page("Вход в админ", f"""
             <h2>Админ-панель</h2>
@@ -180,13 +187,6 @@ def admin():
               </button>
             </form>
         """)
-
-    if request.method == "POST":
-        pwd = request.form.get("password", "")
-        if pwd == ADMIN_PASSWORD:
-            session["admin"] = True
-            return redirect("/admin")
-        return redirect("/admin")
 
     # Действия: одобрить / отклонить
     action = request.args.get("action")
