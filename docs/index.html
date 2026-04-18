@@ -19,6 +19,21 @@
     --muted:   #64748b;
     --font:    'Segoe UI', system-ui, sans-serif;
   }
+  [data-theme="light"] {
+    --bg:      #f1f5f9;
+    --surf:    #ffffff;
+    --surf2:   #f8fafc;
+    --border:  #e2e8f0;
+    --text:    #0f172a;
+    --muted:   #64748b;
+  }
+  .theme-btn {
+    background: var(--surf); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 10px; font-size: 15px;
+    cursor: pointer; transition: all .15s; color: var(--text);
+    line-height: 1;
+  }
+  .theme-btn:hover { border-color: var(--accent); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; }
   .page { max-width: 1440px; margin: 0 auto; padding: 24px; }
@@ -215,6 +230,7 @@
       <span class="sup-pill sup-milana"><span class="dot" style="background:var(--milana)"></span>ИП МИЛАНА · Ақтау</span>
       <span class="sup-pill sup-osmanov"><span class="dot" style="background:var(--osmanov)"></span>ИП Osmanов · Алматы</span>
       <span class="badge" id="ts">—</span>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☀️</button>
     </div>
   </div>
 
@@ -225,21 +241,21 @@
   <div class="grid-6">
     <div class="card">
       <div class="card-title">💰 Общие расходы</div>
-      <div class="card-value">3 450 029 ₸</div>
-      <div class="card-sub">за 35 дней · 9 накладных</div>
-      <div class="card-delta delta-amber">690 005 ₸/нед среднее</div>
+      <div class="card-value">3 770 287 ₸</div>
+      <div class="card-sub">за 43 дней · 10 накладных</div>
+      <div class="card-delta delta-amber">613 767 ₸/нед среднее</div>
     </div>
     <div class="card">
       <div class="card-title">🏢 Поставщики</div>
       <div class="card-value">2</div>
       <div class="card-sub">МИЛАНА 2 923 335 ₸ · Osmanов 526 695 ₸</div>
-      <div class="card-delta delta-green">МИЛАНА 8 накл · Osmanов 1 накл</div>
+      <div class="card-delta delta-green">МИЛАНА 9 накл · Osmanов 1 накл</div>
     </div>
     <div class="card">
       <div class="card-title">🗺️ Закуп по городам</div>
       <div class="card-value">2</div>
-      <div class="card-sub">Ақтау 2 923 335 ₸ · Алматы 526 694 ₸</div>
-      <div class="card-delta delta-green">Ақтау 84.7% · Алматы 15.3%</div>
+      <div class="card-sub">Ақтау 3 243 593 ₸ · Алматы 526 694 ₸</div>
+      <div class="card-delta delta-green">Ақтау 86.0% · Алматы 14.0%</div>
     </div>
     <div class="card">
       <div class="card-title">⚠️ Ценовые аномалии</div>
@@ -249,7 +265,7 @@
     </div>
     <div class="card">
       <div class="card-title">📊 Средняя накладная</div>
-      <div class="card-value">383 336 ₸</div>
+      <div class="card-value">377 028 ₸</div>
       <div class="card-sub топ категория">топ: Молочные · 20%</div>
       <div class="card-delta delta-blue">по 9 накладным</div>
     </div>
@@ -292,12 +308,12 @@
           <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--milana)"></span>Ақтау</span>
           <span style="font-family:monospace;font-size:12px;">2 923 335 ₸</span>
         </div>
-        <div class="bar-bg"><div class="bar-fill" style="width:84.7%;background:var(--milana)"></div></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:86.0%;background:var(--milana)"></div></div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--osmanov)"></span>Алматы</span>
           <span style="font-family:monospace;font-size:12px;">526 695 ₸</span>
         </div>
-        <div class="bar-bg"><div class="bar-fill" style="width:15.3%;background:var(--osmanov)"></div></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:14.0%;background:var(--osmanov)"></div></div>
       </div>
     </div>
   </div>
@@ -433,7 +449,7 @@
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
-const TOTAL = 3450029;
+const TOTAL = 3770287;
 const MILANA_COLOR  = '#22c55e';
 const OSMANOV_COLOR = '#f59e0b';
 const GRID   = 'rgba(255,255,255,0.06)';
@@ -450,25 +466,26 @@ const invoices = [
   ["85", "МИЛАНА", "Ақтау", "18.03.2026", 382141, 14],
   ["00000000043", "Индивидуальный Предприниматель Османов", "Алматы", "03.04.2026", 526694, 24],
   ["101", "МИЛАНА", "Ақтау", "07.04.2026", 123610, 7],
-  ["102", "МИЛАНА", "Ақтау", "08.04.2026", 494661, 12]
+  ["102", "МИЛАНА", "Ақтау", "08.04.2026", 494661, 12],
+  ["114", "МИЛАНА", "Ақтау", "16.04.2026", 320258, 15]
 ];
 
 const topSku = [
+  ["масло подсолнечное 5л", 332100, 1, "Масла"],
   ["сливки 1 л", 288000, 1, "Молочные"],
-  ["масло подсолнечное 5л", 258300, 1, "Масла"],
   ["Яйцо куриное", 164340, 2, "Яйца"],
   ["масло фритюрное 10 л", 153000, 1, "Масла"],
   ["рис баракат", 126000, 1, "Крупы"],
+  ["тостер хлеб", 114944, 1, "Хлеб"],
   ["мука высший сорт патш…", 105000, 1, "Крупы"],
   ["сыр гауда", 97234, 1, "Молочные"],
   ["мука высший сорт 25 кг", 92900, 1, "Крупы"],
   ["творог", 91000, 1, "Молочные"],
   ["Креветки 16/20", 87500, 1, "Мясо"],
+  ["яйцо куринное", 81000, 1, "Яйца"],
   ["творог 5кг", 75000, 1, "Молочные"],
-  ["тостер хлеб", 74969, 1, "Хлеб"],
   ["черный перец", 67500, 1, "Специи"],
-  ["томат", 66400, 1, "Овощи"],
-  ["Мука дани нан", 63000, 1, "Крупы"]
+  ["томат", 66400, 1, "Овощи"]
 ];
 
 const anomalies = [
@@ -493,16 +510,16 @@ const suspicious = [
 ];
 
 const catSpend = [
-  ["Молочные", 719804, 20.9],
-  ["Крупы", 647940, 18.8],
-  ["Мясо", 439603, 12.7],
-  ["Масла", 414900, 12.0],
-  ["Специи", 348710, 10.1],
-  ["Овощи", 323754, 9.4],
-  ["Хлеб", 235469, 6.8],
-  ["Хозтовары", 168300, 4.9],
-  ["Яйца", 164340, 4.8],
-  ["Прочее", 81936, 2.4]
+  ["Молочные", 721804, 19.1],
+  ["Крупы", 647940, 17.2],
+  ["Масла", 488700, 13.0],
+  ["Мясо", 477446, 12.7],
+  ["Специи", 418070, 11.1],
+  ["Овощи", 323754, 8.6],
+  ["Хлеб", 276644, 7.3],
+  ["Яйца", 245340, 6.5],
+  ["Хозтовары", 168300, 4.5],
+  ["Прочее", 97016, 2.6]
 ];
 
 const weeklySpend = [
@@ -510,7 +527,8 @@ const weeklySpend = [
   ["11.03", 189409, 0],
   ["18.03", 382141, 0],
   ["03.04", 0, 526694],
-  ["07.04", 618271, 0]
+  ["07.04", 618271, 0],
+  ["16.04", 320258, 0]
 ];
 
 const trendDates = ["04.03", "06.03", "08.03", "03.04", "07.04"];
@@ -523,21 +541,21 @@ const priceTrends = [
 ];
 
 const freqSku = [
+  ["масло подсолнечное 5л", 5, 4100, "Масла"],
   ["мука высший сорт патш…", 4, 7500, "Крупы"],
-  ["масло подсолнечное 5л", 4, 4100, "Масла"],
+  ["тостер хлеб", 4, 650, "Хлеб"],
   ["масло фритюрное 10 л", 3, 9000, "Масла"],
   ["сливки 1 л", 3, 3000, "Молочные"],
+  ["сырный соус", 3, 2000, "Молочные"],
   ["томат", 3, 1660, "Овощи"],
-  ["тостер хлеб", 3, 650, "Хлеб"],
   ["рис баракат", 3, 560, "Крупы"],
   ["молоко", 3, 393, "Молочные"],
   ["гречка", 3, 380, "Крупы"],
   ["Яйцо куриное", 3, 78, "Яйца"],
   ["мука высший сорт 25 кг", 2, 8367, "Крупы"],
   ["сыр гауда", 2, 5500, "Молочные"],
-  ["колбаса варенная", 2, 2625, "Мясо"],
-  ["сырный соус", 2, 2000, "Молочные"],
-  ["черный перец", 2, 1875, "Специи"]
+  ["копченное грудка", 2, 3550, "Мясо"],
+  ["колбаса варенная", 2, 2625, "Мясо"]
 ];
 
 const crossSupplier = [
@@ -1244,6 +1262,26 @@ new Chart(document.getElementById('freqSkuChart'), {
   }
 });
 
+// ── THEME ─────────────────────────────────────────────────────────────────────
+function _applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+(function() {
+  const saved = localStorage.getItem('theme');
+  const sys = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  _applyTheme(saved || sys);
+})();
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'light' ? 'dark' : 'light';
+  _applyTheme(next);
+  localStorage.setItem('theme', next);
+}
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+  if (!localStorage.getItem('theme')) _applyTheme(e.matches ? 'light' : 'dark');
+});
 </script>
 </body>
 </html>

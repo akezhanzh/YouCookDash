@@ -191,6 +191,38 @@ oauth.register(
 
 
 # ── HTML-шаблоны ──────────────────────────────────────────────────────────────
+THEME_CSS = """
+  :root{--bg:#0f1117;--surf:#1a1d27;--border:#2a2d3e;--text:#e2e8f0;--muted:#64748b}
+  [data-theme=light]{--bg:#f1f5f9;--surf:#ffffff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b}
+"""
+THEME_JS = """
+<script>
+(function(){
+  var s=localStorage.getItem('theme');
+  var sys=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
+  document.documentElement.setAttribute('data-theme',s||sys);
+  var btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=(s||sys)==='light'?'🌙':'☀️';
+})();
+function toggleTheme(){
+  var cur=document.documentElement.getAttribute('data-theme');
+  var next=cur==='light'?'dark':'light';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('theme',next);
+  var btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=next==='light'?'🌙':'☀️';
+}
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change',function(e){
+  if(!localStorage.getItem('theme')){
+    var t=e.matches?'light':'dark';
+    document.documentElement.setAttribute('data-theme',t);
+    var btn=document.getElementById('themeBtn');
+    if(btn)btn.textContent=t==='light'?'🌙':'☀️';
+  }
+});
+</script>
+"""
+
 def page(title, body, color="#6366f1"):
     return f"""<!DOCTYPE html>
 <html lang="ru"><head><meta charset="UTF-8">
@@ -198,15 +230,25 @@ def page(title, body, color="#6366f1"):
 <title>YouCook — {title}</title>
 <style>
   *{{box-sizing:border-box;margin:0;padding:0}}
-  body{{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;
+  {THEME_CSS}
+  body{{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;
        min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}}
-  .card{{background:#1a1d27;border:1px solid #2a2d3e;border-radius:20px;
-         padding:40px;text-align:center;max-width:420px;width:100%}}
+  .card{{background:var(--surf);border:1px solid var(--border);border-radius:20px;
+         padding:40px;text-align:center;max-width:420px;width:100%;position:relative}}
   h2{{font-size:22px;font-weight:700;margin-bottom:10px;color:{color}}}
-  p{{color:#64748b;font-size:13px;line-height:1.6;margin-bottom:8px}}
+  p{{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:8px}}
   a{{color:#6366f1;text-decoration:none;font-size:13px}}
   a:hover{{text-decoration:underline}}
-</style></head><body><div class="card">{body}</div></body></html>"""
+  .theme-btn{{position:absolute;top:14px;right:14px;background:var(--surf);
+    border:1px solid var(--border);border-radius:8px;padding:4px 8px;
+    font-size:15px;cursor:pointer;color:var(--text);line-height:1}}
+</style></head><body>
+<div class="card">
+  <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☀️</button>
+  {body}
+</div>
+{THEME_JS}
+</body></html>"""
 
 PENDING_PAGE = page("Заявка отправлена", """
     <div style="font-size:40px;margin-bottom:16px">⏳</div>
@@ -371,26 +413,31 @@ def admin():
 <title>YouCook — Админ</title>
 <style>
   *{{box-sizing:border-box;margin:0;padding:0}}
-  body{{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:24px}}
+  {THEME_CSS}
+  body{{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;padding:24px}}
   h1{{font-size:20px;font-weight:700;margin-bottom:20px}}
   h1 span{{color:#6366f1}}
-  table{{width:100%;border-collapse:collapse;background:#1a1d27;border:1px solid #2a2d3e;border-radius:12px;overflow:hidden}}
-  th{{text-align:left;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;border-bottom:1px solid #2a2d3e}}
-  tr:hover td{{background:rgba(255,255,255,.02)}}
+  table{{width:100%;border-collapse:collapse;background:var(--surf);border:1px solid var(--border);border-radius:12px;overflow:hidden}}
+  th{{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;border-bottom:1px solid var(--border)}}
+  tr:hover td{{background:rgba(99,102,241,.04)}}
   tr:last-child td{{border-bottom:none}}
-  td{{border-bottom:1px solid rgba(255,255,255,.04)}}
+  td{{border-bottom:1px solid var(--border);padding:10px 12px;font-size:13px;color:var(--text)}}
   .back{{color:#6366f1;font-size:12px;text-decoration:none;display:inline-block;margin-bottom:16px}}
+  .theme-btn{{background:var(--surf);border:1px solid var(--border);border-radius:8px;
+    padding:4px 10px;font-size:15px;cursor:pointer;color:var(--text);line-height:1;float:right}}
 </style></head>
 <body>
   <a href="/" class="back">← Дашборд</a>
+  <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☀️</button>
   <h1>You<span>Cook</span> · Пользователи{badge}</h1>
   <table>
     <thead><tr>
       <th>Пользователь</th><th>Дата заявки</th><th>Статус</th><th>Действия</th>
     </tr></thead>
-    <tbody>{rows_html if rows_html else '<tr><td colspan="4" style="padding:20px;color:#64748b;text-align:center">Пользователей пока нет</td></tr>'}</tbody>
+    <tbody>{rows_html if rows_html else '<tr><td colspan="4" style="padding:20px;color:var(--muted);text-align:center">Пользователей пока нет</td></tr>'}</tbody>
   </table>
-  <p style="margin-top:16px;color:#2a2d3e;font-size:11px">Страница обновляется вручную — нажми F5</p>
+  <p style="margin-top:16px;color:var(--border);font-size:11px">Страница обновляется вручную — нажми F5</p>
+{THEME_JS}
 </body></html>"""
 
 

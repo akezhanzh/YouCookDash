@@ -19,6 +19,21 @@
     --muted:   #64748b;
     --font:    'Segoe UI', system-ui, sans-serif;
   }
+  [data-theme="light"] {
+    --bg:      #f1f5f9;
+    --surf:    #ffffff;
+    --surf2:   #f8fafc;
+    --border:  #e2e8f0;
+    --text:    #0f172a;
+    --muted:   #64748b;
+  }
+  .theme-btn {
+    background: var(--surf); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 10px; font-size: 15px;
+    cursor: pointer; transition: all .15s; color: var(--text);
+    line-height: 1;
+  }
+  .theme-btn:hover { border-color: var(--accent); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; }
   .page { max-width: 1440px; margin: 0 auto; padding: 24px; }
@@ -214,8 +229,8 @@
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <span class="sup-pill sup-milana"><span class="dot" style="background:var(--milana)"></span>ИП МИЛАНА · Ақтау</span>
       <span class="sup-pill sup-osmanov"><span class="dot" style="background:var(--osmanov)"></span>ИП Osmanов · Алматы</span>
-      <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
       <span class="badge" id="ts">—</span>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☀️</button>
     </div>
   </div>
 
@@ -1219,19 +1234,26 @@ new Chart(document.getElementById('freqSkuChart'), {
   }
 });
 
-// ── CSV EXPORT ────────────────────────────────────────────────────────────────
-function exportCSV() {
-  const hdr = 'Накладная,Поставщик,Город,Дата,Сумма ₸,Позиций';
-  const rows = invoices.map(r => r.map(v => `"${v}"`).join(','));
-  const csv  = '\uFEFF' + [hdr, ...rows].join('\r\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = 'youcook_invoices.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+// ── THEME ─────────────────────────────────────────────────────────────────────
+function _applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
 }
+(function() {
+  const saved = localStorage.getItem('theme');
+  const sys = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  _applyTheme(saved || sys);
+})();
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'light' ? 'dark' : 'light';
+  _applyTheme(next);
+  localStorage.setItem('theme', next);
+}
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+  if (!localStorage.getItem('theme')) _applyTheme(e.matches ? 'light' : 'dark');
+});
 </script>
 </body>
 </html>
