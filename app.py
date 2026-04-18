@@ -275,6 +275,14 @@ def index():
 
     # Владелец всегда имеет доступ
     if user["email"] == "akezhanz@youcook.kz":
+        now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        db  = get_db()
+        db.execute("""
+            INSERT INTO users (email, name, status, created_at, updated_at)
+            VALUES (?,?,'approved',?,?)
+            ON CONFLICT(email) DO UPDATE SET status='approved', updated_at=?
+        """, (user["email"], user.get("name","Владелец"), now, now, now))
+        db.commit()
         if _dashboard_html:
             return Response(_dashboard_html, mimetype="text/html")
         return send_file(DASHBOARD)
@@ -341,6 +349,7 @@ def setup():
         ON CONFLICT(email) DO UPDATE SET status='approved', updated_at=?
     """, (owner, now, now, now))
     db.commit()
+    push_users_to_github()
     return redirect("/")
 
 
