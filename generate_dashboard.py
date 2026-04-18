@@ -39,9 +39,14 @@ def fmt_date_short(d):
         return d or "—"
 
 def clean_sup(name):
-    """Убирает ИП/ТОО/АО/ООО в начале названия поставщика."""
+    """Сокращает полные юридические формы до аббревиатур."""
     import re as _re
-    return _re.sub(r'^(ИП|ТОО|АО|ООО|ЧП)\s+', '', str(name or ''), flags=_re.IGNORECASE).strip()
+    s = str(name or '').strip()
+    s = _re.sub(r'Индивидуальный\s+Предприниматель', 'ИП', s, flags=_re.IGNORECASE)
+    s = _re.sub(r'Товарищество\s+с\s+[Оо]граниченной\s+[Оо]тветственностью', 'ТОО', s, flags=_re.IGNORECASE)
+    s = _re.sub(r'Общество\s+с\s+[Оо]граниченной\s+[Оо]тветственностью', 'ООО', s, flags=_re.IGNORECASE)
+    s = _re.sub(r'Акционерное\s+[Оо]бщество', 'АО', s, flags=_re.IGNORECASE)
+    return s
 
 def shorten(name, maxlen=22):
     return name if len(name) <= maxlen else name[:maxlen-1] + "…"

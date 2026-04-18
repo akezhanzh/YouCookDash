@@ -35,6 +35,18 @@ RU_MONTHS = {
 }
 
 
+# ── Supplier name helpers ──────────────────────────────────────────────────────
+
+def clean_supplier_name(name: str) -> str:
+    """Сокращает полные юридические формы: 'Индивидуальный Предприниматель' → 'ИП' и т.д."""
+    s = str(name or '').strip()
+    s = re.sub(r'Индивидуальный\s+Предприниматель', 'ИП', s, flags=re.IGNORECASE)
+    s = re.sub(r'Товарищество\s+с\s+[Оо]граниченной\s+[Оо]тветственностью', 'ТОО', s, flags=re.IGNORECASE)
+    s = re.sub(r'Общество\s+с\s+[Оо]граниченной\s+[Оо]тветственностью', 'ООО', s, flags=re.IGNORECASE)
+    s = re.sub(r'Акционерное\s+[Оо]бщество', 'АО', s, flags=re.IGNORECASE)
+    return s
+
+
 # ── Number helpers ─────────────────────────────────────────────────────────────
 
 def to_float(s: str) -> float:
@@ -87,7 +99,7 @@ def extract_meta(lines: list[str]) -> dict:
             if len(parts) >= 2:
                 name = parts[1].strip()
                 if name and not re.match(r"^\d", name) and len(name) > 3:
-                    meta["supplier"] = name
+                    meta["supplier"] = clean_supplier_name(name)
                     sup_line_idx = idx
 
             # Try city from same line (parts[3])
