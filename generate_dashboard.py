@@ -203,6 +203,17 @@ for name, amt in all_lines:
     cat_totals[get_category(name)] += (amt or 0)
 cat_spend = sorted(cat_totals.items(), key=lambda x: x[1], reverse=True)
 
+detail_lines_raw = conn.execute("""
+    SELECT sc.name, COALESCE(s.short_name, s.name), s.city,
+           i.invoice_date, il.unit_price, il.qty, COALESCE(il.line_total, 0),
+           i.invoice_id
+    FROM invoice_lines il
+    JOIN invoices i ON i.id = il.invoice_id
+    JOIN suppliers s ON s.id = i.supplier_id
+    JOIN sku_catalog sc ON sc.id = il.sku_id
+    ORDER BY i.invoice_date
+""").fetchall()
+
 # ── Недельные расходы ──────────────────────────────────────────────────────────
 weekly_raw = conn.execute("""
     SELECT
@@ -350,7 +361,7 @@ def js_invoices():
     for inv_id, sup, city, dt, amt, lines in invoices:
         rows.append(
             f'  [{js_str(inv_id)}, {js_str(clean_sup(sup))}, {js_str(city or "—")}, '
-            f'{js_str(fmt_date(dt))}, {int(amt)}, {int(lines)}]'
+            f'{js_str(fmt_date(dt))}, {int(amt)}, {int(lines)}, {js_str(dt or "")}]'
         )
     return "const invoices = [\n" + ",\n".join(rows) + "\n];"
 
@@ -441,6 +452,16 @@ def js_cross_supplier():
             )
     return "const crossSupplier = [\n" + ",\n".join(rows) + "\n];"
 
+def js_detail_lines():
+    rows = []
+    for sku, sup, city, dt, price, qty, total, inv_id in detail_lines_raw:
+        rows.append(
+            f'  [{js_str(sku)},{js_str(clean_sup(sup))},{js_str(city or "—")},'
+            f'{js_str(dt or "")},{float(price or 0):.2f},{float(qty or 0):.3f},'
+            f'{int(total or 0)},{js_str(str(inv_id or ""))}]'
+        )
+    return "const ALL_LINES=[\n" + ",\n".join(rows) + "\n];"
+
 new_data = f"""// ── DATA ──────────────────────────────────────────────────────────────────────
 const TOTAL = {int(total)};
 const MILANA_COLOR  = '#22c55e';
@@ -469,6 +490,8 @@ const TOOLTIP_BG = '#1e2235';
 {js_cross_supplier()}
 
 {js_anomaly_detail()}
+
+{js_detail_lines()}
 
 """
 

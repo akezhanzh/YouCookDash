@@ -62,6 +62,20 @@
   .alert-text strong { display: block; margin-bottom: 1px; }
   .alert-text span   { font-size: 10px; opacity: .8; }
 
+  /* Filter bar */
+  .filter-bar { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; padding:16px 20px; background:var(--surf); border:1px solid var(--border); border-radius:14px; margin-bottom:20px; }
+  .filter-group { display:flex; flex-direction:column; gap:5px; }
+  .filter-label { font-size:10px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); font-weight:700; }
+  .filter-input { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:7px 12px; color:var(--text); font-size:12px; outline:none; min-width:130px; }
+  .filter-input:focus { border-color:var(--accent); }
+  .filter-pills { display:flex; gap:6px; flex-wrap:wrap; }
+  .filter-pill { padding:5px 12px; border-radius:20px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--bg); color:var(--muted); transition:all .15s; white-space:nowrap; }
+  .filter-pill.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .filter-reset { padding:7px 14px; border-radius:8px; background:transparent; border:1px solid var(--border); color:var(--muted); font-size:12px; cursor:pointer; transition:all .15s; align-self:flex-end; }
+  .filter-reset:hover { border-color:var(--red); color:var(--red); }
+  .filter-active { font-size:10px; color:var(--accent); font-weight:700; align-self:center; }
+  .sku-chart-card { margin-bottom:20px; }
+
   /* Grids */
   .grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; margin-bottom: 20px; }
   .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 20px; }
@@ -167,8 +181,8 @@
   /* 6-column KPI grid */
   .grid-6 { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:20px; }
 
-  /* Filter buttons */
-  .filter-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  /* Filter buttons (invoice table period filter) */
+  .inv-filter-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
   .filter-btn:hover { border-color:var(--accent); color:var(--text); }
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
@@ -233,6 +247,35 @@
     </div>
   </div>
 
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">От</span>
+      <input type="date" id="fFrom" class="filter-input" onchange="applyFilters()">
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">До</span>
+      <input type="date" id="fTo" class="filter-input" onchange="applyFilters()">
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Поставщик / Город</span>
+      <div class="filter-pills" id="supPills"></div>
+    </div>
+    <div class="filter-group" style="flex:1;min-width:180px">
+      <span class="filter-label">Товар (SKU) — для графика цены</span>
+      <input type="text" id="fSku" class="filter-input" placeholder="Начни вводить товар..." list="skuDatalist" oninput="onSkuInput()" style="width:100%">
+      <datalist id="skuDatalist"></datalist>
+    </div>
+    <button class="filter-reset" onclick="resetFilters()">✕ Сброс</button>
+    <span class="filter-active" id="filterActive" style="display:none">● Фильтр активен</span>
+  </div>
+
+  <!-- SKU PRICE HISTORY CHART -->
+  <div class="card sku-chart-card" id="skuChartCard" style="display:none">
+    <div class="sec" id="skuChartTitle">История цены</div>
+    <div class="ch"><canvas id="chartSkuPrice"></canvas></div>
+  </div>
+
   <!-- ALERT STRIP -->
   <div class="alert-strip" id="alertStrip"></div>
 
@@ -240,33 +283,33 @@
   <div class="grid-6">
     <div class="card">
       <div class="card-title">💰 Общие расходы</div>
-      <div class="card-value">3 770 287 ₸</div>
-      <div class="card-sub">за 43 дней · 10 накладных</div>
-      <div class="card-delta delta-amber">613 767 ₸/нед среднее</div>
+      <div class="card-value" id="kpiTotal">3 450 030 ₸</div>
+      <div class="card-sub" id="kpiPeriod">за 43 дней · 10 накладных</div>
+      <div class="card-delta delta-amber" id="kpiWeekAvg">613 767 ₸/нед среднее</div>
     </div>
     <div class="card">
       <div class="card-title">🏢 Поставщики</div>
-      <div class="card-value">2</div>
-      <div class="card-sub">МИЛАНА 2 923 335 ₸ · Osmanов 526 695 ₸</div>
-      <div class="card-delta delta-green">МИЛАНА 9 накл · Osmanов 1 накл</div>
+      <div class="card-value" id="kpiSupCount">2</div>
+      <div class="card-sub" id="kpiSupDetail">МИЛАНА 2 923 335 ₸ · Osmanов 526 695 ₸</div>
+      <div class="card-delta delta-green" id="kpiSupInv">МИЛАНА 8 накл · Osmanов 1 накл</div>
     </div>
     <div class="card">
       <div class="card-title">🗺️ Закуп по городам</div>
-      <div class="card-value">2</div>
-      <div class="card-sub">Ақтау 3 243 593 ₸ · Алматы 526 694 ₸</div>
-      <div class="card-delta delta-green">Ақтау 86.0% · Алматы 14.0%</div>
+      <div class="card-value" id="kpiCityCount">2</div>
+      <div class="card-sub" id="kpiCityDetail">Ақтау 3 243 593 ₸ · Алматы 526 694 ₸</div>
+      <div class="card-delta delta-green" id="kpiCityPct">Ақтау 86.0% · Алматы 14.0%</div>
     </div>
     <div class="card">
       <div class="card-title">⚠️ Ценовые аномалии</div>
-      <div class="card-value" style="color:var(--red)">5</div>
-      <div class="card-sub">перец +300% · колбаса +173% · геркулес +71%</div>
-      <div class="card-delta delta-red">1 критичных · требуют проверки</div>
+      <div class="card-value" style="color:var(--red)" id="kpiAnom">5</div>
+      <div class="card-sub" id="kpiAnomDetail">перец +300% · колбаса +173% · геркулес +71%</div>
+      <div class="card-delta delta-red" id="kpiAnomNote">1 критичных · требуют проверки</div>
     </div>
     <div class="card">
       <div class="card-title">📊 Средняя накладная</div>
-      <div class="card-value">377 028 ₸</div>
-      <div class="card-sub топ категория">топ: Молочные · 20%</div>
-      <div class="card-delta delta-blue">по 9 накладным</div>
+      <div class="card-value" id="kpiAvg">383 337 ₸</div>
+      <div class="card-sub топ категория" id="kpiTopCat">топ: Молочные · 20%</div>
+      <div class="card-delta delta-blue" id="kpiAvgNote">по 9 накладным</div>
     </div>
     <div class="card">
       <div class="card-title">📅 Прогноз закупки</div>
@@ -403,7 +446,7 @@
   <div class="card g-full">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
       <div class="sec" style="margin:0;flex:1">Все накладные</div>
-      <div class="filter-bar">
+      <div class="inv-filter-bar">
         <span style="font-size:10px;color:var(--muted)">Период:</span>
         <button class="filter-btn active" data-m="all"  onclick="setFilter(this)">Все</button>
         <button class="filter-btn"        data-m="03"   onclick="setFilter(this)">Март</button>
@@ -457,16 +500,16 @@ const FONT   = { family: "'Segoe UI', system-ui, sans-serif", size: 11 };
 const TOOLTIP_BG = '#1e2235';
 
 const invoices = [
-  ["59", "МИЛАНА", "Ақтау", "04.03.2026", 94736, 10],
-  ["64", "МИЛАНА", "Ақтау", "06.03.2026", 653942, 23],
-  ["72", "МИЛАНА", "Ақтау", "08.03.2026", 984835, 43],
-  ["74", "МИЛАНА", "Ақтау", "11.03.2026", 91068, 5],
-  ["76", "МИЛАНА", "Ақтау", "12.03.2026", 98340, 5],
-  ["85", "МИЛАНА", "Ақтау", "18.03.2026", 382141, 14],
-  ["00000000043", "ИП Османов", "Алматы", "03.04.2026", 526694, 24],
-  ["101", "МИЛАНА", "Ақтау", "07.04.2026", 123610, 7],
-  ["102", "МИЛАНА", "Ақтау", "08.04.2026", 494661, 12],
-  ["114", "МИЛАНА", "Ақтау", "16.04.2026", 320258, 15]
+  ["59", "МИЛАНА", "Ақтау", "04.03.2026", 94736, 10, "2026-03-04"],
+  ["64", "МИЛАНА", "Ақтау", "06.03.2026", 653942, 23, "2026-03-06"],
+  ["72", "МИЛАНА", "Ақтау", "08.03.2026", 984835, 43, "2026-03-08"],
+  ["74", "МИЛАНА", "Ақтау", "11.03.2026", 91068, 5, "2026-03-11"],
+  ["76", "МИЛАНА", "Ақтау", "12.03.2026", 98340, 5, "2026-03-12"],
+  ["85", "МИЛАНА", "Ақтау", "18.03.2026", 382141, 14, "2026-03-18"],
+  ["00000000043", "ИП Османов", "Алматы", "03.04.2026", 526694, 24, "2026-04-03"],
+  ["101", "МИЛАНА", "Ақтау", "07.04.2026", 123610, 7, "2026-04-07"],
+  ["102", "МИЛАНА", "Ақтау", "08.04.2026", 494661, 12, "2026-04-08"],
+  ["114", "МИЛАНА", "Ақтау", "16.04.2026", 320258, 15, "2026-04-16"]
 ];
 
 const topSku = [
@@ -568,6 +611,167 @@ const anomalyDetail = {
   "мука высший сорт 25 кг": [{"inv":"59","date":"04.03.2026","sup":"МИЛАНА","price":8800.0,"qty":4.0,"total":35200}, {"inv":"64","date":"06.03.2026","sup":"МИЛАНА","price":7500.0,"qty":3.0,"total":22500}],
   "черный перец": [{"inv":"72","date":"08.03.2026","sup":"МИЛАНА","price":3000.0,"qty":10.0,"total":30000}, {"inv":"101","date":"07.04.2026","sup":"МИЛАНА","price":750.0,"qty":50.0,"total":37500}]
 };
+
+const ALL_LINES=[
+  ["Приправа дошидо куринный","МИЛАНА","Ақтау","2026-03-04",1200.00,5.000,6000,"59"],
+  ["грудка копченная","МИЛАНА","Ақтау","2026-03-04",3549.97,7.475,26536,"59"],
+  ["мука высший сорт 25 кг","МИЛАНА","Ақтау","2026-03-04",8800.00,4.000,35200,"59"],
+  ["тостер хлеб Алексеевский","МИЛАНА","Ақтау","2026-03-04",1300.00,15.000,19500,"59"],
+  ["мука высший сорт патша 25кг","МИЛАНА","Ақтау","2026-03-04",7500.00,1.000,7500,"59"],
+  ["Приправа дошидо куринный","МИЛАНА","Ақтау","2026-03-04",1200.00,5.000,6000,"59"],
+  ["грудка копченная","МИЛАНА","Ақтау","2026-03-04",3549.97,7.475,26536,"59"],
+  ["мука высший сорт 25 кг","МИЛАНА","Ақтау","2026-03-04",8800.00,4.000,35200,"59"],
+  ["тостер хлеб Алексеевский","МИЛАНА","Ақтау","2026-03-04",1300.00,15.000,19500,"59"],
+  ["мука высший сорт патша 25кг","МИЛАНА","Ақтау","2026-03-04",7500.00,1.000,7500,"59"],
+  ["Яйцо куриное","МИЛАНА","Ақтау","2026-03-06",72.00,720.000,51840,"64"],
+  ["масло подсолнечное 5л","МИЛАНА","Ақтау","2026-03-06",4100.00,15.000,61500,"64"],
+  ["рис баракат","МИЛАНА","Ақтау","2026-03-06",560.00,100.000,56000,"64"],
+  ["сливки 1 л","МИЛАНА","Ақтау","2026-03-06",3000.00,24.000,72000,"64"],
+  ["майонез","МИЛАНА","Ақтау","2026-03-06",3700.00,3.000,11100,"64"],
+  ["молоко","МИЛАНА","Ақтау","2026-03-06",380.00,31.000,11780,"64"],
+  ["лапша лия","МИЛАНА","Ақтау","2026-03-06",1100.00,10.000,11000,"64"],
+  ["горох консервированный","МИЛАНА","Ақтау","2026-03-06",890.00,12.000,10680,"64"],
+  ["геркулес","МИЛАНА","Ақтау","2026-03-06",600.00,10.000,6000,"64"],
+  ["сырный соус","МИЛАНА","Ақтау","2026-03-06",2000.00,10.000,20000,"64"],
+  ["устричный соус","МИЛАНА","Ақтау","2026-03-06",5000.00,2.000,10000,"64"],
+  ["жидкий дым 0,330","МИЛАНА","Ақтау","2026-03-06",380.00,3.000,1140,"64"],
+  ["тостер хлеб (30шт)","МИЛАНА","Ақтау","2026-03-06",1300.00,30.000,39000,"64"],
+  ["мука высший сорт 25 кг","МИЛАНА","Ақтау","2026-03-06",7500.00,3.000,22500,"64"],
+  ["томат","МИЛАНА","Ақтау","2026-03-06",1660.00,8.000,13280,"64"],
+  ["гречка","МИЛАНА","Ақтау","2026-03-06",380.00,25.000,9500,"64"],
+  ["нават","МИЛАНА","Ақтау","2026-03-06",2000.00,6.000,12000,"64"],
+  ["сыр гауда","МИЛАНА","Ақтау","2026-03-06",5499.96,11.185,61517,"64"],
+  ["колбаса копченная (0,5кг)","МИЛАНА","Ақтау","2026-03-06",2650.09,10.540,27931,"64"],
+  ["куринная грудка","МИЛАНА","Ақтау","2026-03-06",3549.95,10.190,36173,"64"],
+  ["творог","МИЛАНА","Ақтау","2026-03-06",1300.00,40.000,52000,"64"],
+  ["масло фритюрное 10 л","МИЛАНА","Ақтау","2026-03-06",9000.00,2.000,18000,"64"],
+  ["рис лазер","МИЛАНА","Ақтау","2026-03-06",1300.00,30.000,39000,"64"],
+  ["огурцы соленые 2л","МИЛАНА","Ақтау","2026-03-08",1200.00,16.000,19200,"72"],
+  ["молоко Добрый","МИЛАНА","Ақтау","2026-03-08",380.00,48.000,18240,"72"],
+  ["сливки 1 л","МИЛАНА","Ақтау","2026-03-08",3000.00,48.000,144000,"72"],
+  ["изюм","МИЛАНА","Ақтау","2026-03-08",2000.00,10.000,20000,"72"],
+  ["черный перец","МИЛАНА","Ақтау","2026-03-08",3000.00,10.000,30000,"72"],
+  ["соус теряки","МИЛАНА","Ақтау","2026-03-08",4000.00,10.000,40000,"72"],
+  ["геркулес","МИЛАНА","Ақтау","2026-03-08",350.00,10.000,3500,"72"],
+  ["макароны 5 кг","МИЛАНА","Ақтау","2026-03-08",2000.00,3.000,6000,"72"],
+  ["дошида","МИЛАНА","Ақтау","2026-03-08",1200.00,10.000,12000,"72"],
+  ["манная крупа","МИЛАНА","Ақтау","2026-03-08",660.00,2.000,1320,"72"],
+  ["гречка","МИЛАНА","Ақтау","2026-03-08",380.00,75.000,28500,"72"],
+  ["рис баракат","МИЛАНА","Ақтау","2026-03-08",560.00,50.000,28000,"72"],
+  ["кунжут белый","МИЛАНА","Ақтау","2026-03-08",2500.00,3.000,7500,"72"],
+  ["масло кунжутное 0,5","МИЛАНА","Ақтау","2026-03-08",1800.00,2.000,3600,"72"],
+  ["соль","МИЛАНА","Ақтау","2026-03-08",120.00,30.000,3600,"72"],
+  ["уксус столовый","МИЛАНА","Ақтау","2026-03-08",250.00,3.000,750,"72"],
+  ["уксус 92*","МИЛАНА","Ақтау","2026-03-08",550.00,2.000,1100,"72"],
+  ["винный уксус","МИЛАНА","Ақтау","2026-03-08",900.00,3.000,2700,"72"],
+  ["галина бланка кубики говядина","МИЛАНА","Ақтау","2026-03-08",29.00,96.000,2784,"72"],
+  ["тостер хлеб (12шт)","МИЛАНА","Ақтау","2026-03-08",1300.00,15.000,19500,"72"],
+  ["сырный соус","МИЛАНА","Ақтау","2026-03-08",2000.00,6.000,12000,"72"],
+  ["сливочное масло","МИЛАНА","Ақтау","2026-03-08",1300.00,10.000,13000,"72"],
+  ["мед","МИЛАНА","Ақтау","2026-03-08",2350.00,2.000,4700,"72"],
+  ["сухарики","МИЛАНА","Ақтау","2026-03-08",550.00,50.000,27500,"72"],
+  ["колбаса халал","МИЛАНА","Ақтау","2026-03-08",2650.00,9.000,23850,"72"],
+  ["свит чили 5.4","МИЛАНА","Ақтау","2026-03-08",11500.00,2.000,23000,"72"],
+  ["майонез 10кг","МИЛАНА","Ақтау","2026-03-08",9500.00,3.000,28500,"72"],
+  ["соль кристалин 0,400гр","МИЛАНА","Ақтау","2026-03-08",400.00,20.000,8000,"72"],
+  ["копченное грудка","МИЛАНА","Ақтау","2026-03-08",3549.90,7.485,26571,"72"],
+  ["Яйцо куриное","МИЛАНА","Ақтау","2026-03-08",75.00,1080.000,81000,"72"],
+  ["куркума","МИЛАНА","Ақтау","2026-03-08",2500.00,1.000,2500,"72"],
+  ["колбаса копченная (0,5кг)","МИЛАНА","Ақтау","2026-03-08",970.00,31.000,30070,"72"],
+  ["чечевица","МИЛАНА","Ақтау","2026-03-08",750.00,25.000,18750,"72"],
+  ["мука высший сорт патша 25кг","МИЛАНА","Ақтау","2026-03-08",7500.00,6.000,45000,"72"],
+  ["масло подсолнечное 5л","МИЛАНА","Ақтау","2026-03-08",4100.00,15.000,61500,"72"],
+  ["масло фритюрное 10 л","МИЛАНА","Ақтау","2026-03-08",9000.00,5.000,45000,"72"],
+  ["финики","МИЛАНА","Ақтау","2026-03-08",850.00,48.000,40800,"72"],
+  ["марля","МИЛАНА","Ақтау","2026-03-08",140.00,200.000,28000,"72"],
+  ["Ценник на рулоне","МИЛАНА","Ақтау","2026-03-08",500.00,30.000,15000,"72"],
+  ["Кассовый чек","МИЛАНА","Ақтау","2026-03-08",600.00,40.000,24000,"72"],
+  ["Антижир Азелит","МИЛАНА","Ақтау","2026-03-08",1000.00,10.000,10000,"72"],
+  ["губка для мытья посуды","МИЛАНА","Ақтау","2026-03-08",800.00,6.000,4800,"72"],
+  ["тряпка для пола","МИЛАНА","Ақтау","2026-03-08",19000.00,1.000,19000,"72"],
+  ["тостер хлеб","МИЛАНА","Ақтау","2026-03-11",649.98,36.552,23758,"74"],
+  ["приправа для моркови","МИЛАНА","Ақтау","2026-03-11",80.00,50.000,4000,"74"],
+  ["лаучиу соус","МИЛАНА","Ақтау","2026-03-11",5000.00,5.000,25000,"74"],
+  ["томат","МИЛАНА","Ақтау","2026-03-11",1660.00,16.000,26560,"74"],
+  ["сахар песок","МИЛАНА","Ақтау","2026-03-11",470.00,25.000,11750,"74"],
+  ["сыр гауда","МИЛАНА","Ақтау","2026-03-12",5500.00,6.494,35717,"76"],
+  ["колбаса варенная","МИЛАНА","Ақтау","2026-03-12",2649.95,10.530,27903,"76"],
+  ["кнут колбаски","МИЛАНА","Ақтау","2026-03-12",2400.00,6.050,14520,"76"],
+  ["чай пиала 0,500гр","МИЛАНА","Ақтау","2026-03-12",2100.00,2.000,4200,"76"],
+  ["нут для плова","МИЛАНА","Ақтау","2026-03-12",2000.00,8.000,16000,"76"],
+  ["тостер хлеб","МИЛАНА","Ақтау","2026-03-18",649.99,25.482,16563,"85"],
+  ["Разрыхлитель для мясо - нюрафен 250 гр","МИЛАНА","Ақтау","2026-03-18",1500.00,12.000,18000,"85"],
+  ["дошида","МИЛАНА","Ақтау","2026-03-18",1200.00,15.000,18000,"85"],
+  ["томат","МИЛАНА","Ақтау","2026-03-18",1660.00,16.000,26560,"85"],
+  ["Разрыхлитель для мясо - нурафен 250 гр","МИЛАНА","Ақтау","2026-03-18",9000.00,5.000,45000,"85"],
+  ["масло подсолнечное 5л","МИЛАНА","Ақтау","2026-03-18",4100.00,15.000,61500,"85"],
+  ["молоко","МИЛАНА","Ақтау","2026-03-18",400.00,36.000,14400,"85"],
+  ["рис баракат","МИЛАНА","Ақтау","2026-03-18",560.00,75.000,42000,"85"],
+  ["чечевица","МИЛАНА","Ақтау","2026-03-18",750.00,50.000,37500,"85"],
+  ["мука высший сорт патша 25кг","МИЛАНА","Ақтау","2026-03-18",7500.00,4.000,30000,"85"],
+  ["соль","МИЛАНА","Ақтау","2026-03-18",120.00,30.000,3600,"85"],
+  ["творог","МИЛАНА","Ақтау","2026-03-18",1300.00,30.000,39000,"85"],
+  ["колбаса варенная","МИЛАНА","Ақтау","2026-03-18",2600.00,10.530,27378,"85"],
+  ["манная крупа","МИЛАНА","Ақтау","2026-03-18",660.00,4.000,2640,"85"],
+  ["Мука дани нан","ИП Османов","Алматы","2026-04-03",787.50,80.000,63000,"00000000043"],
+  ["Зажигалка кухонная","ИП Османов","Алматы","2026-04-03",1125.00,10.000,11250,"00000000043"],
+  ["Ведро 5 л","ИП Османов","Алматы","2026-04-03",500.00,100.000,50000,"00000000043"],
+  ["Картофель","ИП Османов","Алматы","2026-04-03",375.00,97.000,36375,"00000000043"],
+  ["Лук репчатый","ИП Османов","Алматы","2026-04-03",175.00,62.800,10990,"00000000043"],
+  ["Помидоры","ИП Османов","Алматы","2026-04-03",1375.00,45.600,62700,"00000000043"],
+  ["Огурцы","ИП Османов","Алматы","2026-04-03",812.50,27.500,22343,"00000000043"],
+  ["Морковь","ИП Османов","Алматы","2026-04-03",375.00,10.400,3900,"00000000043"],
+  ["Морковь желтая","ИП Османов","Алматы","2026-04-03",375.00,5.300,1987,"00000000043"],
+  ["Томат. паста 1,05","ИП Османов","Алматы","2026-04-03",2000.00,16.000,32000,"00000000043"],
+  ["Петрушка кудрявая","ИП Османов","Алматы","2026-04-03",2500.00,1.500,3750,"00000000043"],
+  ["Лист салата","ИП Османов","Алматы","2026-04-03",1875.00,1.500,2812,"00000000043"],
+  ["Лук зеленый","ИП Османов","Алматы","2026-04-03",1875.00,1.500,2812,"00000000043"],
+  ["Капуста б/к","ИП Османов","Алматы","2026-04-03",312.50,10.250,3203,"00000000043"],
+  ["Перец светофор","ИП Османов","Алматы","2026-04-03",1625.00,15.900,25837,"00000000043"],
+  ["Гарбич большой","ИП Османов","Алматы","2026-04-03",437.50,20.000,8750,"00000000043"],
+  ["Губка для мытья посуды п.","ИП Османов","Алматы","2026-04-03",625.00,10.000,6250,"00000000043"],
+  ["Капуста пекинская","ИП Османов","Алматы","2026-04-03",437.50,8.300,3631,"00000000043"],
+  ["Масло сливочное","ИП Османов","Алматы","2026-04-03",1875.00,10.000,18750,"00000000043"],
+  ["Лук красный","ИП Османов","Алматы","2026-04-03",437.50,11.300,4943,"00000000043"],
+  ["Перец п/г","ИП Османов","Алматы","2026-04-03",2000.00,5.200,10400,"00000000043"],
+  ["Креветки 16/20","ИП Османов","Алматы","2026-04-03",4375.00,20.000,87500,"00000000043"],
+  ["Сыр Фета 0,480","ИП Османов","Алматы","2026-04-03",2750.00,8.000,22000,"00000000043"],
+  ["Яйцо куриное","ИП Османов","Алматы","2026-04-03",87.50,360.000,31500,"00000000043"],
+  ["манная крупа 1,5кг","МИЛАНА","Ақтау","2026-04-07",770.00,3.000,2310,"101"],
+  ["фасоль красная","МИЛАНА","Ақтау","2026-04-07",950.00,12.000,11400,"101"],
+  ["сырный соус 1кг","МИЛАНА","Ақтау","2026-04-07",2000.00,12.000,24000,"101"],
+  ["черный перец","МИЛАНА","Ақтау","2026-04-07",750.00,50.000,37500,"101"],
+  ["гречка","МИЛАНА","Ақтау","2026-04-07",380.00,50.000,19000,"101"],
+  ["молоко","МИЛАНА","Ақтау","2026-04-07",400.00,36.000,14400,"101"],
+  ["мука высший сорт патша 25кг","МИЛАНА","Ақтау","2026-04-07",7500.00,2.000,15000,"101"],
+  ["масло фритюрное 10 л","МИЛАНА","Ақтау","2026-04-08",9000.00,10.000,90000,"102"],
+  ["масло подсолнечное 5л","МИЛАНА","Ақтау","2026-04-08",4100.00,18.000,73800,"102"],
+  ["крабовые палочки","МИЛАНА","Ақтау","2026-04-08",2000.00,12.000,24000,"102"],
+  ["Колбаса Дәмді","МИЛАНА","Ақтау","2026-04-08",970.00,30.000,29100,"102"],
+  ["колбаса Хутор","МИЛАНА","Ақтау","2026-04-08",1800.00,25.585,46053,"102"],
+  ["горох консервированный","МИЛАНА","Ақтау","2026-04-08",890.00,12.000,10680,"102"],
+  ["соль кристалин 0,400гр","МИЛАНА","Ақтау","2026-04-08",400.00,25.000,10000,"102"],
+  ["лапша лия 0,700гр","МИЛАНА","Ақтау","2026-04-08",1150.00,14.000,16100,"102"],
+  ["томат Цинказ 1050 гр","МИЛАНА","Ақтау","2026-04-08",1660.00,8.000,13280,"102"],
+  ["сливки 1 л","МИЛАНА","Ақтау","2026-04-08",3000.00,24.000,72000,"102"],
+  ["творог 5кг","МИЛАНА","Ақтау","2026-04-08",7500.00,10.000,75000,"102"],
+  ["тостер хлеб","МИЛАНА","Ақтау","2026-04-08",650.00,53.305,34648,"102"],
+  ["бургер булочка","МИЛАНА","Ақтау","2026-04-16",190.00,12.000,2280,"114"],
+  ["хот- дог булочка","МИЛАНА","Ақтау","2026-04-16",160.00,18.000,2880,"114"],
+  ["сырный соус","МИЛАНА","Ақтау","2026-04-16",2000.00,1.000,2000,"114"],
+  ["нагетсы 1,5","МИЛАНА","Ақтау","2026-04-16",3500.00,1.000,3500,"114"],
+  ["лаваш круглый","МИЛАНА","Ақтау","2026-04-16",270.00,1.000,270,"114"],
+  ["лаваш овальный","МИЛАНА","Ақтау","2026-04-16",500.00,1.000,500,"114"],
+  ["разрыхлитель 950гр","МИЛАНА","Ақтау","2026-04-16",1200.00,1.000,1200,"114"],
+  ["сосиски","МИЛАНА","Ақтау","2026-04-16",1150.00,1.000,1150,"114"],
+  ["тостер хлеб","МИЛАНА","Ақтау","2026-04-16",650.00,61.500,39975,"114"],
+  ["масло подсолнечное 5л","МИЛАНА","Ақтау","2026-04-16",4100.00,18.000,73800,"114"],
+  ["яйцо куринное","МИЛАНА","Ақтау","2026-04-16",75.00,1080.000,81000,"114"],
+  ["соус теряки 1,8","МИЛАНА","Ақтау","2026-04-16",4000.00,12.000,48000,"114"],
+  ["ванильный сахар 200гр","МИЛАНА","Ақтау","2026-04-16",150.00,30.000,4500,"114"],
+  ["горох консервированный 425гр","МИЛАНА","Ақтау","2026-04-16",890.00,24.000,21360,"114"],
+  ["копченное грудка","МИЛАНА","Ақтау","2026-04-16",3550.00,10.660,37843,"114"]
+];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 const fmt  = n => Math.round(n).toLocaleString('ru-RU');
@@ -802,7 +1006,7 @@ new Chart(document.getElementById('supPieChart'), {
 });
 
 // ── CATEGORY PIE ──────────────────────────────────────────────────────────────
-new Chart(document.getElementById('catPieChart'), {
+window.chartCat = new Chart(document.getElementById('catPieChart'), {
   type: 'doughnut',
   data: {
     labels: catSpend.map(d => d[0]),
@@ -835,7 +1039,7 @@ catSpend.slice(0, 6).forEach(([cat, amt, pct]) => {
 });
 
 // ── WEEKLY SPEND ──────────────────────────────────────────────────────────────
-new Chart(document.getElementById('weeklyChart'), {
+window.chartWeekly = new Chart(document.getElementById('weeklyChart'), {
   type: 'bar',
   data: {
     labels: weeklySpend.map(d => 'Нед ' + d[0]),
@@ -926,7 +1130,7 @@ new Chart(document.getElementById('trendChart'), {
 });
 
 // ── TOP SKU ───────────────────────────────────────────────────────────────────
-new Chart(document.getElementById('skuChart'), {
+window.chartTopSku = new Chart(document.getElementById('skuChart'), {
   type: 'bar',
   data: {
     labels: topSku.map(d => d[0]),
@@ -1234,7 +1438,7 @@ document.getElementById('ts').textContent =
 })();
 
 // ── FREQ SKU CHART ────────────────────────────────────────────────────────────
-new Chart(document.getElementById('freqSkuChart'), {
+window.chartFreq = new Chart(document.getElementById('freqSkuChart'), {
   type: 'bar',
   data: {
     labels: freqSku.map(d => d[0]),
@@ -1265,6 +1469,278 @@ new Chart(document.getElementById('freqSkuChart'), {
 fetch('/api/me').then(r=>r.json()).then(d=>{
   if(d.admin) document.getElementById('adminLink').style.display='';
 }).catch(()=>{});
+
+// ── FILTER ENGINE ─────────────────────────────────────────────────────────────
+const CAT_MAP_JS=[['яйцо','Яйца'],['сливки','Молочные'],['творог','Молочные'],['молоко','Молочные'],['сыр','Молочные'],['масло растительное','Масло/жиры'],['подсолнечн','Масло/жиры'],['масло','Масло/жиры'],['маргарин','Масло/жиры'],['майонез','Масло/жиры'],['мясо','Мясо'],['говядина','Мясо'],['свинина','Мясо'],['колбас','Мясо'],['сосиск','Мясо'],['курица','Птица'],['бройлер','Птица'],['рыба','Рыба/морепродукты'],['горбуша','Рыба/морепродукты'],['хлеб','Хлеб/выпечка'],['батон','Хлеб/выпечка'],['мука','Сухие продукты'],['рис','Сухие продукты'],['греча','Сухие продукты'],['геркулес','Сухие продукты'],['крупа','Сухие продукты'],['макарон','Сухие продукты'],['соль','Специи/соусы'],['сахар','Специи/соусы'],['перец','Специи/соусы'],['приправ','Специи/соусы'],['соус','Специи/соусы'],['томат','Специи/соусы'],['картофел','Овощи/фрукты'],['морковь','Овощи/фрукты'],['лук','Овощи/фрукты'],['капуст','Овощи/фрукты'],['огурец','Овощи/фрукты'],['помидор','Овощи/фрукты'],['фрукт','Овощи/фрукты'],['яблок','Овощи/фрукты'],['банан','Овощи/фрукты'],['пакет','Упаковка'],['контейнер','Упаковка'],['мешок','Упаковка'],['перчатк','Хозяйство']];
+function getCatJS(n){const l=(n||'').toLowerCase();for(const[k,c]of CAT_MAP_JS)if(l.includes(k))return c;return'Прочее';}
+
+let _fFrom='', _fTo='', _fSups=new Set(), _fSkuQuery='', _chartSkuInst=null;
+
+// Build supplier/city pills from ALL_LINES
+(function buildPills(){
+  const sups=new Set(), cities=new Set();
+  ALL_LINES.forEach(l=>{sups.add(l[1]);cities.add(l[2]);});
+  const container=document.getElementById('supPills');
+  // Supplier pills
+  sups.forEach(s=>{
+    const b=document.createElement('button');
+    b.className='filter-pill'; b.textContent=s; b.dataset.val=s; b.dataset.type='sup';
+    b.onclick=()=>togglePill(b);
+    container.appendChild(b);
+  });
+  // City pills
+  cities.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='filter-pill'; b.textContent='📍'+c; b.dataset.val=c; b.dataset.type='city';
+    b.onclick=()=>togglePill(b);
+    container.appendChild(b);
+  });
+  // Build SKU datalist
+  const skus=new Set(ALL_LINES.map(l=>l[0]));
+  const dl=document.getElementById('skuDatalist');
+  skus.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});
+})();
+
+function togglePill(btn){
+  btn.classList.toggle('active');
+  _fSups.clear();
+  document.querySelectorAll('.filter-pill.active').forEach(b=>{_fSups.add(b.dataset.val);});
+  applyFilters();
+}
+
+function onSkuInput(){
+  _fSkuQuery=document.getElementById('fSku').value.trim().toLowerCase();
+  updateSkuChart();
+  updateFilterBadge();
+}
+
+function getFilteredLines(){
+  return ALL_LINES.filter(([sku,sup,city,date])=>{
+    if(_fFrom && date<_fFrom) return false;
+    if(_fTo   && date>_fTo)   return false;
+    if(_fSups.size && !_fSups.has(sup) && !_fSups.has(city)) return false;
+    return true;
+  });
+}
+
+// invoices row: [invId, sup, city, dispDate, amt, lineCount, rawDate]
+function getFilteredInvs(){
+  return invoices.filter(([,,city,,,, rawDate, sup],...rest)=>{
+    // handle both old (6 elem) and new (7 elem) formats
+    const inv=invoices[0];
+    return true; // will filter below
+  });
+  // Proper filter:
+}
+// Correct filtered invoices
+function filtInvs(){
+  return invoices.filter(row=>{
+    const sup=row[1], city=row[2], rawDate=row[6]||'';
+    if(_fFrom && rawDate<_fFrom) return false;
+    if(_fTo   && rawDate>_fTo)   return false;
+    if(_fSups.size && !_fSups.has(sup) && !_fSups.has(city)) return false;
+    return true;
+  });
+}
+
+function applyFilters(){
+  _fFrom=document.getElementById('fFrom').value;
+  _fTo  =document.getElementById('fTo').value;
+  const lines=getFilteredLines();
+  const invs =filtInvs();
+  updateKPIs(lines,invs);
+  updateCatChartFiltered(lines);
+  updateTopSkuFiltered(lines);
+  updateFreqFiltered(lines);
+  updateWeeklyFiltered(lines);
+  updateSkuChart();
+  updateFilterBadge();
+}
+
+function resetFilters(){
+  _fFrom='';_fTo='';_fSups.clear();_fSkuQuery='';
+  document.getElementById('fFrom').value='';
+  document.getElementById('fTo').value='';
+  document.getElementById('fSku').value='';
+  document.querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active'));
+  document.getElementById('skuChartCard').style.display='none';
+  applyFilters();
+}
+
+function updateFilterBadge(){
+  const active=_fFrom||_fTo||_fSups.size||_fSkuQuery;
+  document.getElementById('filterActive').style.display=active?'':'none';
+}
+
+// ── KPI UPDATE ─────────────────────────────────────────────────────────────────
+function fmtK(n){return Math.abs(n)>=1e6?(n/1e6).toFixed(1)+'M':fmt(n);}
+
+function updateKPIs(lines,invs){
+  const total=lines.reduce((s,l)=>s+l[6],0);
+  const invSet=new Set(lines.map(l=>l[7]));
+  const n=invSet.size;
+
+  // Supplier breakdown
+  const supTot={},supInvs={};
+  lines.forEach(([sku,sup,city,date,price,qty,lineTotal,invId])=>{
+    supTot[sup]=(supTot[sup]||0)+lineTotal;
+    if(!supInvs[sup])supInvs[sup]=new Set();
+    supInvs[sup].add(invId);
+  });
+  const supEntries=Object.entries(supTot).sort((a,b)=>b[1]-a[1]);
+
+  // City breakdown
+  const cityTot={};
+  lines.forEach(([,,city,,,, lineTotal])=>{cityTot[city]=(cityTot[city]||0)+lineTotal;});
+  const cityEntries=Object.entries(cityTot).sort((a,b)=>b[1]-a[1]);
+  const citySum=cityEntries.reduce((s,[,v])=>s+v,0);
+
+  // Date range
+  const dates=lines.map(l=>l[3]).filter(Boolean).sort();
+  const nDays=dates.length>=2?Math.max(1,(new Date(dates[dates.length-1])-new Date(dates[0]))/864e5):1;
+  const weekAvg=Math.round(total/Math.max(1,nDays/7));
+
+  // Category
+  const catTot={};
+  lines.forEach(([sku,,,,,, lineTotal])=>{const c=getCatJS(sku);catTot[c]=(catTot[c]||0)+lineTotal;});
+  const topCat=Object.entries(catTot).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('kpiTotal').textContent=fmt(total)+' ₸';
+  document.getElementById('kpiPeriod').textContent=`за ${Math.round(nDays)} дней · ${n} накладных`;
+  document.getElementById('kpiWeekAvg').textContent=fmt(weekAvg)+' ₸/нед среднее';
+  document.getElementById('kpiSupCount').textContent=supEntries.length;
+  document.getElementById('kpiSupDetail').textContent=supEntries.slice(0,2).map(([s,v])=>`${s} ${fmt(v)} ₸`).join(' · ')||'—';
+  document.getElementById('kpiSupInv').textContent=supEntries.slice(0,2).map(([s])=>`${s} ${supInvs[s]?.size||0} накл`).join(' · ')||'—';
+  document.getElementById('kpiCityCount').textContent=cityEntries.length;
+  document.getElementById('kpiCityDetail').textContent=cityEntries.slice(0,2).map(([c,v])=>`${c} ${fmt(v)} ₸`).join(' · ')||'—';
+  document.getElementById('kpiCityPct').textContent=cityEntries.slice(0,2).map(([c,v])=>`${c} ${citySum?Math.round(v/citySum*100):0}%`).join(' · ')||'—';
+  document.getElementById('kpiAvg').textContent=n?fmt(Math.round(total/n))+' ₸':'—';
+  document.getElementById('kpiAvgNote').textContent=`по ${n} накладным`;
+  document.getElementById('kpiTopCat').textContent=topCat?`топ: ${topCat[0]} · ${total?Math.round(topCat[1]/total*100):0}%`:'—';
+}
+
+// ── CHART UPDATES ──────────────────────────────────────────────────────────────
+function updateCatChartFiltered(lines){
+  if(!window.chartCat)return;
+  const catTot={};
+  lines.forEach(([sku,,,,,, t])=>{const c=getCatJS(sku);catTot[c]=(catTot[c]||0)+t;});
+  const sorted=Object.entries(catTot).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  chartCat.data.labels=sorted.map(x=>x[0]);
+  chartCat.data.datasets[0].data=sorted.map(x=>x[1]);
+  chartCat.update('none');
+}
+
+function updateTopSkuFiltered(lines){
+  if(!window.chartTopSku)return;
+  const skuTot={};
+  lines.forEach(([sku,,,,,, t])=>{skuTot[sku]=(skuTot[sku]||0)+t;});
+  const sorted=Object.entries(skuTot).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  chartTopSku.data.labels=sorted.map(([s])=>s.length>18?s.slice(0,17)+'…':s);
+  chartTopSku.data.datasets[0].data=sorted.map(([,v])=>v);
+  chartTopSku.update('none');
+}
+
+function updateFreqFiltered(lines){
+  if(!window.chartFreq)return;
+  const skuCnt={},skuPrc={};
+  lines.forEach(([sku,,,,price,qty, t,invId])=>{
+    if(!skuCnt[sku])skuCnt[sku]=new Set();
+    skuCnt[sku].add(invId);
+    if(!skuPrc[sku])skuPrc[sku]=[];
+    if(price>0)skuPrc[sku].push(price);
+  });
+  const sorted=Object.entries(skuCnt).sort((a,b)=>b[1].size-a[1].size).slice(0,8);
+  chartFreq.data.labels=sorted.map(([s])=>s.length>14?s.slice(0,13)+'…':s);
+  chartFreq.data.datasets[0].data=sorted.map(([s])=>skuCnt[s].size);
+  chartFreq.update('none');
+}
+
+function updateWeeklyFiltered(lines){
+  if(!window.chartWeekly)return;
+  const weeks={};
+  lines.forEach(([sku,sup,city,date,,,total])=>{
+    if(!date)return;
+    const d=new Date(date);
+    const monday=new Date(d);monday.setDate(d.getDate()-((d.getDay()+6)%7));
+    const key=monday.toISOString().slice(0,10);
+    if(!weeks[key])weeks[key]={milana:0,osmanov:0};
+    if(sup.toUpperCase().includes('МИЛАН')||city.toUpperCase().includes('АҚТАУ'))
+      weeks[key].milana+=total;
+    else
+      weeks[key].osmanov+=total;
+  });
+  const sorted=Object.entries(weeks).sort((a,b)=>a[0]<b[0]?-1:1);
+  const labels=sorted.map(([k])=>{const d=new Date(k);return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;});
+  chartWeekly.data.labels=labels;
+  chartWeekly.data.datasets[0].data=sorted.map(([,v])=>v.milana);
+  chartWeekly.data.datasets[1].data=sorted.map(([,v])=>v.osmanov);
+  chartWeekly.update('none');
+}
+
+// ── SKU PRICE HISTORY ─────────────────────────────────────────────────────────
+function updateSkuChart(){
+  const q=_fSkuQuery;
+  const card=document.getElementById('skuChartCard');
+  if(!q){card.style.display='none';return;}
+
+  const matched=ALL_LINES.filter(l=>l[0].toLowerCase().includes(q));
+  if(!matched.length){card.style.display='none';return;}
+
+  // Apply date/supplier filters too
+  const filtered=matched.filter(([sku,sup,city,date])=>{
+    if(_fFrom && date<_fFrom) return false;
+    if(_fTo   && date>_fTo)   return false;
+    if(_fSups.size && !_fSups.has(sup) && !_fSups.has(city)) return false;
+    return true;
+  });
+
+  card.style.display='';
+  const skuName=matched[0][0];
+  document.getElementById('skuChartTitle').textContent=`История цены: ${skuName}`;
+
+  // Group by date + supplier
+  const byDateSup={};
+  filtered.forEach(([sku,sup,city,date,price])=>{
+    if(!date||!price)return;
+    const key=date;
+    if(!byDateSup[key])byDateSup[key]={};
+    if(!byDateSup[key][sup])byDateSup[key][sup]=[];
+    byDateSup[key][sup].push(price);
+  });
+
+  const allDates=Object.keys(byDateSup).sort();
+  const allSups=[...new Set(filtered.map(l=>l[1]))];
+  const colors=['#6366f1','#22c55e','#f59e0b','#ef4444','#8b5cf6'];
+
+  const datasets=allSups.map((sup,i)=>({
+    label:sup,
+    data:allDates.map(d=>{
+      const prices=byDateSup[d]?.[sup];
+      return prices?prices.reduce((s,p)=>s+p,0)/prices.length:null;
+    }),
+    borderColor:colors[i%colors.length],
+    backgroundColor:colors[i%colors.length]+'33',
+    tension:.3,spanGaps:true,pointRadius:5,pointHoverRadius:7,
+    fill:false,borderWidth:2,
+  }));
+
+  if(_chartSkuInst){_chartSkuInst.destroy();}
+  _chartSkuInst=new Chart(document.getElementById('chartSkuPrice'),{
+    type:'line',
+    data:{labels:allDates.map(d=>{const[y,m,day]=d.split('-');return`${day}.${m}.${y}`;}),datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:TICK,font:FONT}},
+        tooltip:{backgroundColor:TOOLTIP_BG,callbacks:{label:c=>`${c.dataset.label}: ${c.raw?c.raw.toFixed(0)+' ₸/'+filtered.find(l=>l[1]===c.dataset.label)?.[5]?.toString()||'ед':'—'}`}}
+      },
+      scales:{
+        x:{grid:{color:GRID},ticks:{color:TICK,font:FONT}},
+        y:{grid:{color:GRID},ticks:{color:TICK,font:FONT,callback:v=>fmt(v)+' ₸'}}
+      }
+    }
+  });
+}
 
 // ── THEME ─────────────────────────────────────────────────────────────────────
 function _applyTheme(theme) {
