@@ -398,6 +398,27 @@
     </div>
   </div>
 
+  <!-- PRICE HISTORY DAY BY DAY -->
+  <div class="card g-full">
+    <div class="sec">История цен по товарам <span class="sec-sub">/ день за днём</span>
+      <input id="phSearch" type="text" placeholder="Поиск товара..." oninput="filterPriceHistory()"
+        style="margin-left:auto;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;outline:none;width:200px;">
+    </div>
+    <div class="tbl-wrap">
+      <table id="phTable">
+        <thead><tr>
+          <th>Товар</th>
+          <th>Поставщик</th>
+          <th>Дата</th>
+          <th class="num">Цена, ₸</th>
+          <th class="num">Кол-во</th>
+          <th class="num">Изменение</th>
+        </tr></thead>
+        <tbody id="phBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- CROSS-SUPPLIER COMPARISON -->
   <div class="card g-full">
     <div class="sec">Сравнение цен между поставщиками</div>
@@ -1416,6 +1437,67 @@ function runSkuChart(){
       scales:{x:{grid:{color:GRID},ticks:{color:TICK,font:FONT}},y:{grid:{color:GRID},ticks:{color:TICK,font:FONT,callback:v=>fmt(v)+' ₸'}}}
     }
   });
+}
+
+// ── PRICE HISTORY TABLE ───────────────────────────────────────────────────────
+(function buildPriceHistory() {
+  // Group ALL_LINES by SKU, sort each group by date
+  const bySkuSup = {};
+  ALL_LINES.forEach(([sku, sup, city, date, price, qty]) => {
+    const key = sku + '|||' + sup;
+    if (!bySkuSup[key]) bySkuSup[key] = [];
+    bySkuSup[key].push({ sku, sup, date, price, qty });
+  });
+
+  // Build flat rows with delta vs previous entry for same sku+supplier
+  const rows = [];
+  Object.values(bySkuSup).forEach(entries => {
+    entries.sort((a, b) => a.date < b.date ? -1 : 1);
+    entries.forEach((e, i) => {
+      const prev = i > 0 ? entries[i - 1].price : null;
+      const delta = (prev && prev > 0) ? ((e.price - prev) / prev * 100) : null;
+      rows.push({ ...e, delta });
+    });
+  });
+
+  // Sort by date desc, then SKU
+  rows.sort((a, b) => b.date < a.date ? -1 : b.date > a.date ? 1 : a.sku.localeCompare(b.sku));
+
+  window._phRows = rows;
+  renderPriceHistory(rows);
+})();
+
+function renderPriceHistory(rows) {
+  const tbody = document.getElementById('phBody');
+  if (!tbody) return;
+  tbody.innerHTML = rows.slice(0, 200).map(r => {
+    const dateStr = r.date ? r.date.split('-').reverse().join('.') : '—';
+    const priceStr = r.price ? fmt(Math.round(r.price)) : '—';
+    const qtyStr = r.qty ? (+r.qty.toFixed(2)) + '' : '—';
+    let deltaHtml = '<span style="color:var(--muted)">—</span>';
+    if (r.delta !== null) {
+      const sign = r.delta > 0 ? '▲' : '▼';
+      const color = r.delta > 0 ? 'var(--red)' : 'var(--milana)';
+      deltaHtml = `<span style="color:${color};font-weight:700">${sign} ${Math.abs(r.delta).toFixed(1)}%</span>`;
+    }
+    const supTag = r.sup.toUpperCase().includes('МИЛАН')
+      ? `<span class="tag-m">${r.sup}</span>`
+      : `<span class="tag-o">${r.sup}</span>`;
+    return `<tr>
+      <td>${r.sku}</td>
+      <td>${supTag}</td>
+      <td>${dateStr}</td>
+      <td class="num">${priceStr}</td>
+      <td class="num">${qtyStr}</td>
+      <td class="num">${deltaHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterPriceHistory() {
+  const q = document.getElementById('phSearch').value.trim().toLowerCase();
+  const rows = q ? window._phRows.filter(r => r.sku.toLowerCase().includes(q)) : window._phRows;
+  renderPriceHistory(rows);
 }
 
 // ── THEME ─────────────────────────────────────────────────────────────────────
