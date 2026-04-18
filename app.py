@@ -197,6 +197,12 @@ def index():
     if not user:
         return LOGIN_HTML.read_text(encoding="utf-8")
 
+    # Владелец всегда имеет доступ
+    if user["email"] == "akezhanz@youcook.kz":
+        if _dashboard_html:
+            return Response(_dashboard_html, mimetype="text/html")
+        return send_file(DASHBOARD)
+
     db  = get_db()
     row = db.execute("SELECT status FROM users WHERE email=?", (user["email"],)).fetchone()
     if not row:
