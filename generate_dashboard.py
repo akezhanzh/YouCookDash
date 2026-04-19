@@ -441,7 +441,7 @@ def js_freq_sku():
     rows = []
     for name, cnt, avg_p in freq_sku_raw:
         cat = get_category(name)
-        rows.append(f'  [{js_str(shorten(name))}, {int(cnt)}, {int(avg_p or 0)}, {js_str(cat)}]')
+        rows.append(f'  [{js_str(name)}, {int(cnt)}, {int(avg_p or 0)}, {js_str(cat)}]')
     return "const freqSku = [\n" + ",\n".join(rows) + "\n];"
 
 def js_cross_supplier():

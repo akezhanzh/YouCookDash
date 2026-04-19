@@ -1353,7 +1353,7 @@ window._freqSkuFull = freqSku.map(d => d[0]);
 window.chartFreq = new Chart(document.getElementById('freqSkuChart'), {
   type: 'bar',
   data: {
-    labels: freqSku.map(d => d[0]),
+    labels: freqSku.map(d => d[0].length > 18 ? d[0].slice(0, 17) + '…' : d[0]),
     datasets: [{
       label: 'Накладных',
       data: freqSku.map(d => d[1]),
@@ -1877,9 +1877,14 @@ function phClickRow(sku) {
 
 // ── SKU PRICE MODAL ───────────────────────────────────────────────────────────
 function openSkuModal(sku) {
-  const rows = ALL_LINES
-    .filter(([s]) => s === sku)
-    .sort((a, b) => a[3] < b[3] ? -1 : 1);
+  // Exact match first; if truncated (ends with …), fall back to prefix match
+  let rows = ALL_LINES.filter(([s]) => s === sku);
+  if (!rows.length) {
+    const prefix = sku.replace(/…$/, '').toLowerCase();
+    rows = ALL_LINES.filter(([s]) => s.toLowerCase().startsWith(prefix));
+    if (!rows.length) rows = ALL_LINES.filter(([s]) => s.toLowerCase().includes(prefix.slice(0, 6)));
+  }
+  rows = rows.slice().sort((a, b) => a[3] < b[3] ? -1 : 1);
 
   if (!rows.length) return;
 
