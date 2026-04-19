@@ -190,6 +190,11 @@
   .filter-btn:hover { border-color:var(--accent); color:var(--text); }
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
   /* Unified price analysis */
+  /* Price monitor tabs */
+  .pm-tab { padding:5px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surf); color:var(--muted); font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; }
+  .pm-tab:hover { border-color:var(--accent); color:var(--text); }
+  .pm-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+
   .ph-head { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
   .ph-badge { background:var(--accent); color:#fff; border-radius:12px; padding:2px 10px; font-size:11px; font-weight:700; }
   .ph-searchbox { display:flex; align-items:center; gap:10px; border:2px solid var(--border); border-radius:12px; padding:9px 14px; margin-bottom:14px; transition:border-color .2s; background:var(--bg); }
@@ -415,6 +420,36 @@
           <th style="min-width:160px;">Визуализация</th>
         </tr></thead>
         <tbody id="catTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PRICE MONITOR -->
+  <div class="card g-full">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">Мониторинг цен</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">последняя закупка vs предыдущая · по каждому товару</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <span id="pmCount" style="font-size:10px;color:var(--muted)"></span>
+        <button class="pm-tab active" data-f="all"  onclick="pmFilter(this)">Все</button>
+        <button class="pm-tab"        data-f="up"   onclick="pmFilter(this)">▲ Подорожали</button>
+        <button class="pm-tab"        data-f="down" onclick="pmFilter(this)">▼ Подешевели</button>
+        <button class="pm-tab"        data-f="same" onclick="pmFilter(this)">= Без изменений</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th onclick="pmSort('sku')"   style="cursor:pointer;user-select:none">Товар <span id="pm-s-sku">↕</span></th>
+          <th>Поставщик</th>
+          <th onclick="pmSort('date')"  style="cursor:pointer;user-select:none">Дата <span id="pm-s-date">↕</span></th>
+          <th class="num" onclick="pmSort('price')" style="cursor:pointer;user-select:none">Цена ₸ <span id="pm-s-price">↕</span></th>
+          <th class="num">Предыдущая ₸</th>
+          <th class="num" onclick="pmSort('delta')" style="cursor:pointer;user-select:none">Изменение <span id="pm-s-delta">↓</span></th>
+        </tr></thead>
+        <tbody id="pmBody"></tbody>
       </table>
     </div>
   </div>
@@ -1914,6 +1949,111 @@ function _phDrawChart(rows, q) {
 function phClickRow(sku) {
   const inp = document.getElementById('phSearch');
   if (inp) { inp.value = sku; phRender(); inp.focus(); }
+}
+
+// ── PRICE MONITOR ─────────────────────────────────────────────────────────────
+(function buildPriceMonitor() {
+  const byKey = {};
+  ALL_LINES.forEach(([sku, sup, , date, price]) => {
+    const k = sku + '|||' + sup;
+    if (!byKey[k]) byKey[k] = [];
+    byKey[k].push({ sku, sup, date, price: +price });
+  });
+
+  window._pmRows = [];
+  Object.values(byKey).forEach(entries => {
+    entries.sort((a, b) => b.date.localeCompare(a.date));
+    // Dedup same-date, keep first (highest)
+    const deduped = [];
+    entries.forEach(e => {
+      if (!deduped.length || deduped[deduped.length - 1].date !== e.date) deduped.push(e);
+    });
+    if (deduped.length < 2) return;
+    const cur = deduped[0], prev = deduped[1];
+    const delta = prev.price > 0 ? (cur.price - prev.price) / prev.price * 100 : null;
+    window._pmRows.push({ sku: cur.sku, sup: cur.sup, date: cur.date, price: cur.price,
+      prevPrice: prev.price, prevDate: prev.date, delta });
+  });
+
+  window._pmFilter = 'all';
+  window._pmSort  = { col: 'delta', dir: -1 };
+  pmRender();
+})();
+
+function pmFilter(btn) {
+  document.querySelectorAll('.pm-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  window._pmFilter = btn.dataset.f;
+  pmRender();
+}
+
+function pmSort(col) {
+  const s = window._pmSort;
+  s.dir = s.col === col ? s.dir * -1 : -1;
+  s.col = col;
+  pmRender();
+}
+
+function pmRender() {
+  const tbody = document.getElementById('pmBody');
+  if (!tbody) return;
+
+  const f = window._pmFilter || 'all';
+  let rows = [...(window._pmRows || [])];
+  if (f === 'up')   rows = rows.filter(r => r.delta !== null && r.delta > 0.5);
+  if (f === 'down') rows = rows.filter(r => r.delta !== null && r.delta < -0.5);
+  if (f === 'same') rows = rows.filter(r => r.delta === null || Math.abs(r.delta) <= 0.5);
+
+  const { col, dir } = window._pmSort;
+  rows.sort((a, b) => {
+    let av = a[col], bv = b[col];
+    if (col === 'price') { av = a.price; bv = b.price; }
+    if (col === 'delta') { av = a.delta ?? 0; bv = b.delta ?? 0; }
+    if (typeof av === 'string') return dir * av.localeCompare(bv, 'ru');
+    if (av < bv) return dir; if (av > bv) return -dir; return 0;
+  });
+
+  // Sort indicator arrows
+  ['sku','date','price','delta'].forEach(c => {
+    const el = document.getElementById('pm-s-' + c);
+    if (el) el.textContent = c === col ? (dir === -1 ? '↓' : '↑') : '↕';
+  });
+
+  const up = rows.filter(r => r.delta > 0.5).length;
+  const dn = rows.filter(r => r.delta < -0.5).length;
+  const cntEl = document.getElementById('pmCount');
+  if (cntEl) cntEl.textContent = `${rows.length} товаров · ${up > 0 ? `▲ ${up} подорожало` : ''} ${dn > 0 ? `▼ ${dn} подешевело` : ''}`.trim();
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Нет данных — нужно минимум 2 закупки одного товара</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const ds  = r.date.split('-').reverse().join('.');
+    const pds = r.prevDate.split('-').reverse().join('.');
+    let dh = '<span style="color:var(--muted);font-size:11px">—</span>';
+    let rowBg = '';
+    if (r.delta !== null && Math.abs(r.delta) > 0.1) {
+      const sign = r.delta > 0 ? '▲' : '▼';
+      const col  = r.delta > 0 ? 'var(--red)' : 'var(--milana)';
+      const bg   = r.delta > 0 ? 'rgba(251,113,133,.06)' : 'rgba(45,212,160,.06)';
+      dh = `<span style="color:${col};font-weight:700;font-size:13px">${sign} ${Math.abs(r.delta).toFixed(1)}%</span>`;
+      if (Math.abs(r.delta) > 2) rowBg = `background:${bg}`;
+    }
+    const se = r.sku.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<tr style="${rowBg};cursor:pointer" onclick="openSkuModal('${se}')">
+      <td style="font-weight:500;max-width:200px">${r.sku}</td>
+      <td>${supTag(r.sup)}</td>
+      <td style="color:var(--muted);font-size:11px;white-space:nowrap">${ds}</td>
+      <td class="num" style="font-weight:700;font-family:monospace">${fmt(Math.round(r.price))} ₸</td>
+      <td class="num" style="color:var(--muted);font-size:11px">
+        ${fmt(Math.round(r.prevPrice))} ₸
+        <span style="font-size:9px;opacity:.7">(${pds})</span>
+      </td>
+      <td class="num">${dh}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ── CALENDAR HEATMAP ──────────────────────────────────────────────────────────
