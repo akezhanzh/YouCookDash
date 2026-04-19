@@ -212,6 +212,14 @@
   .btn-export { background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.3); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:#a5b4fc; cursor:pointer; transition:all .15s; user-select:none; }
   .btn-export:hover { background:rgba(99,102,241,.25); color:#c7d2fe; }
 
+  /* Heatmap */
+  .hm-grid  { display:flex; gap:2px; overflow-x:auto; padding-bottom:6px; }
+  .hm-week  { display:flex; flex-direction:column; gap:2px; }
+  .hm-cell  { width:14px; height:14px; border-radius:2px; flex-shrink:0; transition:transform .1s; }
+  .hm-cell.has-data { cursor:pointer; }
+  .hm-cell.has-data:hover { transform:scale(1.4); z-index:1; position:relative; }
+  .hm-day   { font-size:9px; color:var(--muted); line-height:16px; width:18px; flex-shrink:0; text-align:right; padding-right:4px; }
+
   /* Timeline */
   .tl-track { position:relative; height:80px; min-width:480px; }
   .tl-line  { position:absolute; top:42px; left:3%; right:3%; height:2px; background:var(--border); border-radius:2px; }
@@ -332,6 +340,12 @@
     </div>
   </div>
 
+  <!-- HEATMAP -->
+  <div class="card g-full">
+    <div class="sec">Тепловая карта закупок <span class="sec-sub">/ активность по дням</span></div>
+    <div id="heatmapWrap"></div>
+  </div>
+
   <!-- ГОРОД + ПОСТАВЩИКИ -->
   <div class="grid-3">
     <div class="card">
@@ -357,6 +371,12 @@
       <div id="scorecardHeader" style="margin-bottom:10px;display:flex;justify-content:flex-end;gap:12px;"></div>
       <div class="scorecard" id="scorecard"></div>
     </div>
+  </div>
+
+  <!-- ТРЕНД ПО КАТЕГОРИЯМ -->
+  <div class="card g-full">
+    <div class="sec">Тренд по категориям <span class="sec-sub">/ месяц к месяцу</span></div>
+    <div class="ch"><canvas id="catTrendChart"></canvas></div>
   </div>
 
   <!-- ТРЕНДЫ ЦЕН -->
@@ -932,6 +952,7 @@ function openModal(skuName) {
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
+  if (window._skuModalChart) { window._skuModalChart.destroy(); window._skuModalChart = null; }
 }
 
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
@@ -1260,6 +1281,7 @@ new Chart(document.getElementById('trendChart'), {
 });
 
 // ── TOP SKU ───────────────────────────────────────────────────────────────────
+window._topSkuFull = topSku.map(d => d[0]);
 window.chartTopSku = new Chart(document.getElementById('skuChart'), {
   type: 'bar',
   data: {
@@ -1273,6 +1295,12 @@ window.chartTopSku = new Chart(document.getElementById('skuChart'), {
   },
   options: {
     indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    onHover: (e, active) => { e.native.target.style.cursor = active.length ? 'pointer' : 'default'; },
+    onClick: (e, elements) => {
+      if (!elements.length) return;
+      const sku = (window._topSkuFull || [])[elements[0].index];
+      if (sku) openSkuModal(sku);
+    },
     plugins: {
       legend: { display: false },
       tooltip: { backgroundColor: TOOLTIP_BG,
@@ -1346,7 +1374,8 @@ anomalies.forEach((r) => {
   const supBadge = sups > 1
     ? '<span class="tag-o" style="margin-left:4px">2 постав.</span>'
     : '';
-  anomTbody.innerHTML += `<tr>
+  const se = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  anomTbody.innerHTML += `<tr style="cursor:pointer" onclick="openSkuModal('${se}')">
     <td>${name}${supBadge}</td>
     <td>${unit}</td>
     <td class="num" style="color:var(--milana)">${fmt(mn)} ₸</td>
@@ -1519,6 +1548,7 @@ renderInvTable();
 })();
 
 // ── FREQ SKU CHART ────────────────────────────────────────────────────────────
+window._freqSkuFull = freqSku.map(d => d[0]);
 window.chartFreq = new Chart(document.getElementById('freqSkuChart'), {
   type: 'bar',
   data: {
@@ -1533,6 +1563,12 @@ window.chartFreq = new Chart(document.getElementById('freqSkuChart'), {
   },
   options: {
     indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    onHover: (e, active) => { e.native.target.style.cursor = active.length ? 'pointer' : 'default'; },
+    onClick: (e, elements) => {
+      if (!elements.length) return;
+      const sku = (window._freqSkuFull || [])[elements[0].index];
+      if (sku) openSkuModal(sku);
+    },
     plugins: {
       legend: { display: false },
       tooltip: { backgroundColor: TOOLTIP_BG,
@@ -1620,6 +1656,7 @@ function runFilter(){
     const skuTot={};
     lines.forEach(([sku,,,,,, t])=>{skuTot[sku]=(skuTot[sku]||0)+t;});
     const d=Object.entries(skuTot).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    window._topSkuFull = d.map(([s]) => s);
     chartTopSku.data.labels=d.map(([s])=>s.length>18?s.slice(0,17)+'…':s);
     chartTopSku.data.datasets[0].data=d.map(([,v])=>v);
     chartTopSku.update('none');
@@ -1628,6 +1665,7 @@ function runFilter(){
     const sc={};
     lines.forEach(([sku,,,,,,,id])=>{if(!sc[sku])sc[sku]=new Set();sc[sku].add(id);});
     const d=Object.entries(sc).sort((a,b)=>b[1].size-a[1].size).slice(0,8);
+    window._freqSkuFull = d.map(([s]) => s);
     chartFreq.data.labels=d.map(([s])=>s.length>14?s.slice(0,13)+'…':s);
     chartFreq.data.datasets[0].data=d.map(([s])=>sc[s].size);
     chartFreq.update('none');
@@ -1837,7 +1875,7 @@ function phRender() {
     const isM = r.sup.toUpperCase().includes('МИЛАН');
     const st2 = isM ? `<span class="tag-m">${r.sup}</span>` : `<span class="tag-o">${r.sup}</span>`;
     const se  = r.sku.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<tr style="${rowStyle}" onclick="phClickRow('${se}')"><td>${r.sku}</td><td>${st2}</td><td>${ds}</td><td class="num">${ps}</td><td class="num">${qs}</td><td class="num">${dh}</td></tr>`;
+    return `<tr style="${rowStyle}" onclick="openSkuModal('${se}')"><td>${r.sku}</td><td>${st2}</td><td>${ds}</td><td class="num">${ps}</td><td class="num">${qs}</td><td class="num">${dh}</td></tr>`;
   }).join('');
 }
 
@@ -1876,6 +1914,243 @@ function _phDrawChart(rows, q) {
 function phClickRow(sku) {
   const inp = document.getElementById('phSearch');
   if (inp) { inp.value = sku; phRender(); inp.focus(); }
+}
+
+// ── CALENDAR HEATMAP ──────────────────────────────────────────────────────────
+(function buildHeatmap() {
+  const el = document.getElementById('heatmapWrap');
+  if (!el) return;
+
+  const dayTot = {}, dayInvs = {};
+  ALL_LINES.forEach(([, , , date, , , total, inv_id]) => {
+    if (!date) return;
+    dayTot[date] = (dayTot[date] || 0) + total;
+    if (!dayInvs[date]) dayInvs[date] = new Set();
+    dayInvs[date].add(inv_id);
+  });
+
+  const dateKeys = Object.keys(dayTot).sort();
+  if (!dateKeys.length) return;
+
+  const firstD = new Date(dateKeys[0]);
+  const lastD  = new Date(dateKeys[dateKeys.length - 1]);
+
+  // Align to Mon–Sun weeks
+  const start = new Date(firstD);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  const end = new Date(lastD);
+  end.setDate(end.getDate() + (6 - ((end.getDay() + 6) % 7)));
+
+  const maxSpend = Math.max(...Object.values(dayTot));
+
+  function cellColor(spend) {
+    if (!spend) return 'var(--surf2)';
+    const t = Math.pow(spend / maxSpend, 0.5);
+    if (t < 0.5) return `rgba(124,133,245,${(0.25 + t * 1.4).toFixed(2)})`;
+    return `rgba(45,212,160,${(0.45 + (t - 0.5) * 1.1).toFixed(2)})`;
+  }
+
+  const MON = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+  const DAYS = ['','Вт','','Чт','','Сб',''];
+
+  const weeks = [];
+  const monthLbls = [];
+  let cur = new Date(start), lastMon = -1;
+
+  while (cur <= end) {
+    if (cur.getMonth() !== lastMon) {
+      monthLbls.push({ wi: weeks.length, lbl: MON[cur.getMonth()] });
+      lastMon = cur.getMonth();
+    }
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      const ds = cur.toISOString().slice(0, 10);
+      week.push({ ds, spend: dayTot[ds] || 0, invs: dayInvs[ds]?.size || 0 });
+      cur.setDate(cur.getDate() + 1);
+    }
+    weeks.push(week);
+  }
+
+  // Month label row
+  let monthRow = '<div style="display:flex;gap:2px;margin-bottom:3px;padding-left:22px">';
+  let mi = 0;
+  weeks.forEach((_, wi) => {
+    const lbl = (mi < monthLbls.length && monthLbls[mi].wi === wi) ? monthLbls[mi++].lbl : '';
+    monthRow += `<div style="min-width:14px;font-size:9px;color:var(--muted);white-space:nowrap">${lbl}</div>`;
+  });
+  monthRow += '</div>';
+
+  // Day labels + grid
+  let sideHtml = '<div style="display:flex;flex-direction:column;gap:2px;margin-right:4px">';
+  DAYS.forEach(l => { sideHtml += `<div class="hm-day">${l}</div>`; });
+  sideHtml += '</div>';
+
+  let gridHtml = '';
+  weeks.forEach(week => {
+    gridHtml += '<div class="hm-week">';
+    week.forEach(({ ds, spend, invs }) => {
+      const col = cellColor(spend);
+      const cls = spend ? 'hm-cell has-data' : 'hm-cell';
+      const tip = spend
+        ? `${ds.split('-').reverse().join('.')}: ${fmt(Math.round(spend))} ₸ · ${invs} накл`
+        : ds.split('-').reverse().join('.');
+      gridHtml += `<div class="${cls}" style="background:${col}" title="${tip}"></div>`;
+    });
+    gridHtml += '</div>';
+  });
+
+  // Legend
+  const legendColors = [0, 0.25, 0.5, 0.75, 1].map(t => {
+    if (t === 0) return 'var(--surf2)';
+    return t < 0.5
+      ? `rgba(124,133,245,${(0.25 + t * 1.4).toFixed(2)})`
+      : `rgba(45,212,160,${(0.45 + (t - 0.5) * 1.1).toFixed(2)})`;
+  });
+  const legendHtml = `<div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:10px;color:var(--muted)">
+    <span>Меньше</span>
+    ${legendColors.map(c => `<div style="width:14px;height:14px;border-radius:2px;background:${c}"></div>`).join('')}
+    <span>Больше</span>
+    <span style="margin-left:12px">Сумма закупок за день</span>
+  </div>`;
+
+  el.innerHTML = monthRow
+    + '<div style="display:flex">' + sideHtml + '<div class="hm-grid">' + gridHtml + '</div></div>'
+    + legendHtml;
+})();
+
+// ── CATEGORY TREND ────────────────────────────────────────────────────────────
+(function buildCatTrend() {
+  const canvas = document.getElementById('catTrendChart');
+  if (!canvas) return;
+
+  const months = {};
+  ALL_LINES.forEach(([sku, , , date, , , total]) => {
+    if (!date) return;
+    const mm = date.slice(0, 7);
+    const cat = getCatJS(sku);
+    if (!months[mm]) months[mm] = {};
+    months[mm][cat] = (months[mm][cat] || 0) + total;
+  });
+
+  const monthKeys = Object.keys(months).sort();
+  if (monthKeys.length < 1) return;
+
+  const catTotals = {};
+  monthKeys.forEach(m => {
+    Object.entries(months[m]).forEach(([cat, v]) => {
+      catTotals[cat] = (catTotals[cat] || 0) + v;
+    });
+  });
+  const topCats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]).slice(0, 7).map(([c]) => c);
+
+  const MON_LBL = { '03': 'Март', '04': 'Апрель', '05': 'Май', '06': 'Июнь',
+                    '07': 'Июль', '08': 'Август', '09': 'Сентябрь' };
+  const labels = monthKeys.map(m => MON_LBL[m.slice(5)] || m);
+
+  const datasets = topCats.map(cat => ({
+    label: cat,
+    data: monthKeys.map(m => Math.round(months[m][cat] || 0)),
+    backgroundColor: catColor(cat) + 'cc',
+    borderColor: catColor(cat),
+    borderWidth: 1, borderRadius: 4,
+  }));
+
+  new Chart(canvas, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: TICK, font: FONT, boxWidth: 10, boxHeight: 10 } },
+        tooltip: { backgroundColor: TOOLTIP_BG,
+          callbacks: { label: c => ` ${c.dataset.label}: ${fmt(c.raw)} ₸` } }
+      },
+      scales: {
+        x: { stacked: true, grid: { color: GRID }, ticks: { color: TICK, font: FONT } },
+        y: { stacked: true, grid: { color: GRID }, beginAtZero: true,
+             ticks: { color: TICK, font: FONT, callback: v => fmt(v) } }
+      }
+    }
+  });
+})();
+
+// ── SKU PRICE MODAL ───────────────────────────────────────────────────────────
+function openSkuModal(sku) {
+  const rows = ALL_LINES
+    .filter(([s]) => s === sku)
+    .sort((a, b) => a[3] < b[3] ? -1 : 1);
+
+  if (!rows.length) return;
+
+  const sups = [...new Set(rows.map(r => r[1]))];
+  const byDS = {};
+  rows.forEach(([, sup, , date, price]) => {
+    if (!byDS[date]) byDS[date] = {};
+    byDS[date][sup] = +price;
+  });
+  const dates = Object.keys(byDS).sort();
+
+  // Price delta for latest vs earliest
+  const prices = rows.map(r => +r[4]);
+  const first = prices[0], last = prices[prices.length - 1];
+  const deltaStr = first > 0
+    ? (last > first ? `▲ +${((last-first)/first*100).toFixed(1)}%` : last < first ? `▼ ${((last-first)/first*100).toFixed(1)}%` : '= без изменений')
+    : '';
+  const deltaColor = last > first ? 'var(--red)' : last < first ? 'var(--milana)' : 'var(--muted)';
+
+  const tableRows = rows.map(([, sup, , date, price, qty, total]) => {
+    const ds = date.split('-').reverse().join('.');
+    return `<tr><td>${ds}</td><td>${supTag(sup)}</td>
+      <td class="num"><strong>${fmt(Math.round(+price))} ₸</strong></td>
+      <td class="num" style="color:var(--muted)">${(+qty).toFixed(2)}</td>
+      <td class="num" style="color:var(--muted)">${fmt(+total)} ₸</td></tr>`;
+  }).join('');
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-title">${sku}</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--muted)">${rows.length} закупок · ${sups.length} поставщик</span>
+      ${deltaStr ? `<span style="font-size:12px;font-weight:700;color:${deltaColor}">${deltaStr}</span>` : ''}
+    </div>
+    <div style="height:210px;margin-bottom:16px"><canvas id="skuModalCanvas"></canvas></div>
+    <div class="modal-section">История закупок</div>
+    <table class="modal-table">
+      <thead><tr><th>Дата</th><th>Поставщик</th><th class="num">Цена ₸</th><th class="num">Кол-во</th><th class="num">Итого ₸</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>`;
+
+  document.getElementById('modalOverlay').classList.add('open');
+
+  setTimeout(() => {
+    const canvas = document.getElementById('skuModalCanvas');
+    if (!canvas) return;
+    if (window._skuModalChart) { window._skuModalChart.destroy(); window._skuModalChart = null; }
+    const COLORS = [MILANA_COLOR, OSMANOV_COLOR, SALMURZ_COLOR, '#60a5fa'];
+    const datasets = sups.map((sup, i) => ({
+      label: sup,
+      data: dates.map(d => byDS[d]?.[sup] ?? null),
+      borderColor: COLORS[i % 4],
+      backgroundColor: COLORS[i % 4] + '22',
+      tension: 0.3, spanGaps: true, pointRadius: 5, fill: false, borderWidth: 2,
+    }));
+    window._skuModalChart = new Chart(canvas, {
+      type: 'line',
+      data: { labels: dates.map(d => d.split('-').slice(1).reverse().join('.')), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: TICK, font: FONT } },
+          tooltip: { backgroundColor: TOOLTIP_BG,
+            callbacks: { label: c => `${c.dataset.label}: ${c.raw != null ? fmt(Math.round(c.raw))+' ₸' : '—'}` } }
+        },
+        scales: {
+          x: { grid: { color: GRID }, ticks: { color: TICK, font: FONT } },
+          y: { grid: { color: GRID }, beginAtZero: false,
+               ticks: { color: TICK, font: FONT, callback: v => fmt(v)+' ₸' } }
+        }
+      }
+    });
+  }, 60);
 }
 
 // ── THEME ─────────────────────────────────────────────────────────────────────
