@@ -824,33 +824,51 @@ new Chart(document.getElementById('spendChart'), {
   }
 });
 
-// ── SUPPLIER PIE ──────────────────────────────────────────────────────────────
-new Chart(document.getElementById('supPieChart'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Ақтау', 'Алматы'],
-    datasets: [{ data: [2923335, 526695],
-      backgroundColor: [MILANA_COLOR, OSMANOV_COLOR], borderWidth: 0, hoverOffset: 6 }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false, cutout: '68%',
-    plugins: {
-      legend: { display: false },
-      tooltip: { backgroundColor: TOOLTIP_BG,
-        callbacks: { label: c => ` ${fmt(c.raw)} ₸ (${(c.raw/TOTAL*100).toFixed(1)}%)` } }
+// ── SUPPLIER PIE (dynamic, city-normalized) ───────────────────────────────────
+(function() {
+  const normCity = c => (c || '').replace(/Актау/i, 'Ақтау').replace(/Aktau/i, 'Ақтау');
+  const cityTot = {}, cityPrimSup = {};
+  ALL_LINES.forEach(([, sup, city, , , , total]) => {
+    const c = normCity(city);
+    cityTot[c] = (cityTot[c] || 0) + total;
+    if (!cityPrimSup[c] || total > (cityTot[c] - total)) cityPrimSup[c] = sup;
+  });
+  const entries = Object.entries(cityTot).sort((a, b) => b[1] - a[1]);
+  const cityColors = entries.map(([city]) => {
+    const sups = [];
+    ALL_LINES.forEach(([, sup, c]) => { if (normCity(c) === city) sups.push(sup); });
+    return supColor(sups[0] || '');
+  });
+  const grand = entries.reduce((s, [, v]) => s + v, 0);
+  new Chart(document.getElementById('supPieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(([c]) => c),
+      datasets: [{ data: entries.map(([, v]) => v),
+        backgroundColor: cityColors, borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: TOOLTIP_BG,
+          callbacks: { label: c => ` ${fmt(c.raw)} ₸ (${(c.raw/grand*100).toFixed(1)}%)` } }
+      }
     }
-  }
-});
+  });
+})();
 
 // ── CITY BARS ─────────────────────────────────────────────────────────────────
 (function buildCityBars() {
   const el = document.getElementById('cityBars');
   if (!el) return;
+  const normCity = c => (c || '').replace(/Актау/i, 'Ақтау').replace(/Aktau/i, 'Ақтау');
   const cityTot = {}, citySupTot = {};
   ALL_LINES.forEach(([, sup, city, , , , total]) => {
-    cityTot[city] = (cityTot[city] || 0) + total;
-    if (!citySupTot[city]) citySupTot[city] = {};
-    citySupTot[city][sup] = (citySupTot[city][sup] || 0) + total;
+    const c = normCity(city);
+    cityTot[c] = (cityTot[c] || 0) + total;
+    if (!citySupTot[c]) citySupTot[c] = {};
+    citySupTot[c][sup] = (citySupTot[c][sup] || 0) + total;
   });
   const grand = Object.values(cityTot).reduce((s, v) => s + v, 0);
   const cities = Object.entries(cityTot).sort((a, b) => b[1] - a[1]);
