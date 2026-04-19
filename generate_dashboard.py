@@ -471,12 +471,13 @@ def js_detail_lines():
 
 new_data = f"""// ── DATA ──────────────────────────────────────────────────────────────────────
 const TOTAL = {int(total)};
-const MILANA_COLOR  = '#22c55e';
-const OSMANOV_COLOR = '#f59e0b';
-const GRID   = 'rgba(255,255,255,0.06)';
-const TICK   = '#64748b';
-const FONT   = {{ family: "'Segoe UI', system-ui, sans-serif", size: 11 }};
-const TOOLTIP_BG = '#1e2235';
+const MILANA_COLOR   = '#2dd4a0';
+const OSMANOV_COLOR  = '#f4a942';
+const SALMURZ_COLOR  = '#c084fc';
+const GRID      = 'rgba(255,255,255,0.04)';
+const TICK      = '#6b7999';
+const FONT      = {{ family: "'Segoe UI', system-ui, sans-serif", size: 11 }};
+const TOOLTIP_BG = '#1d2540';
 
 {js_invoices()}
 

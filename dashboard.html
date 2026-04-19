@@ -7,25 +7,31 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg:      #0f1117;
-    --surf:    #1a1d27;
-    --surf2:   #20243a;
-    --border:  #2a2d3e;
-    --accent:  #6366f1;
-    --milana:  #22c55e;
-    --osmanov: #f59e0b;
-    --red:     #ef4444;
-    --text:    #e2e8f0;
-    --muted:   #64748b;
+    --bg:      #0d1117;
+    --surf:    #161c2a;
+    --surf2:   #1d2540;
+    --border:  #263050;
+    --accent:  #7c85f5;
+    --milana:  #2dd4a0;
+    --osmanov: #f4a942;
+    --salmurz: #c084fc;
+    --red:     #fb7185;
+    --text:    #dde4f0;
+    --muted:   #6b7999;
     --font:    'Segoe UI', system-ui, sans-serif;
   }
   [data-theme="light"] {
-    --bg:      #f1f5f9;
+    --bg:      #f4f6fb;
     --surf:    #ffffff;
-    --surf2:   #f8fafc;
-    --border:  #e2e8f0;
-    --text:    #0f172a;
-    --muted:   #64748b;
+    --surf2:   #eef1f8;
+    --border:  #dde3ef;
+    --text:    #1c2540;
+    --muted:   #7481a6;
+    --accent:  #6366f1;
+    --milana:  #059669;
+    --osmanov: #d97706;
+    --salmurz: #9333ea;
+    --red:     #e11d48;
   }
   .theme-btn {
     background: var(--surf); border: 1px solid var(--border);
@@ -115,8 +121,9 @@
   .num { text-align: right; font-variant-numeric: tabular-nums; font-family: monospace; font-size: 12px; }
 
   /* Supplier tag in tables */
-  .tag-m { background: rgba(34,197,94,.12);  color: var(--milana);  padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap; }
-  .tag-o { background: rgba(245,158,11,.12); color: var(--osmanov); padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .tag-m { background: rgba(45,212,160,.12);  color: var(--milana);  padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .tag-o { background: rgba(244,169,66,.12);  color: var(--osmanov); padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .tag-s { background: rgba(192,132,252,.12); color: var(--salmurz); padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap; }
 
   /* Pill badges */
   .pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
@@ -308,27 +315,33 @@
   </div>
 
 
-  <!-- SPEND TIMELINE + SUPPLIER SPLIT -->
-  <div class="grid-3">
+  <!-- РАСХОДЫ + ГОРОДА + МЕСЯЦ VS МЕСЯЦ -->
+  <div class="grid-equal3">
     <div class="card">
       <div class="sec">Расходы по накладным</div>
       <div class="ch"><canvas id="spendChart"></canvas></div>
     </div>
     <div class="card">
+      <div class="sec">Недельный ритм</div>
+      <div class="ch-med"><canvas id="weeklyChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="sec">Месяц к месяцу</div>
+      <div class="month-cmp" id="monthCmp" style="min-height:100px"></div>
+      <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5" id="monthNote"></div>
+    </div>
+  </div>
+
+  <!-- ГОРОД + ПОСТАВЩИКИ -->
+  <div class="grid-3">
+    <div class="card">
       <div class="sec">Доля по городам</div>
       <div class="ch-sm"><canvas id="supPieChart"></canvas></div>
-      <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--milana)"></span>Ақтау</span>
-          <span style="font-family:monospace;font-size:12px;">2 923 335 ₸</span>
-        </div>
-        <div class="bar-bg"><div class="bar-fill" style="width:84.7%;background:var(--milana)"></div></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="display:flex;align-items:center;gap:6px;font-size:11px;"><span class="dot" style="background:var(--osmanov)"></span>Алматы</span>
-          <span style="font-family:monospace;font-size:12px;">526 695 ₸</span>
-        </div>
-        <div class="bar-bg"><div class="bar-fill" style="width:15.3%;background:var(--osmanov)"></div></div>
-      </div>
+      <div id="cityBars" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <div class="card">
+      <div class="sec">Поставщики · сводка</div>
+      <div id="supCards" style="display:flex;flex-direction:column;gap:10px;margin-top:4px;"></div>
     </div>
   </div>
 
@@ -341,10 +354,7 @@
     </div>
     <div class="card">
       <div class="sec">Сравнение поставщиков <span class="sec-sub">/ скоркард</span></div>
-      <div style="margin-bottom:10px;display:flex;justify-content:flex-end;gap:12px;">
-        <span style="font-size:10px;color:var(--milana);font-weight:700;">МИЛАНА</span>
-        <span style="font-size:10px;color:var(--osmanov);font-weight:700;">ИП Османов</span>
-      </div>
+      <div id="scorecardHeader" style="margin-bottom:10px;display:flex;justify-content:flex-end;gap:12px;"></div>
       <div class="scorecard" id="scorecard"></div>
     </div>
   </div>
@@ -443,12 +453,6 @@
     </div>
   </div>
 
-  <!-- CROSS-SUPPLIER COMPARISON -->
-  <div class="card g-full">
-    <div class="sec">Сравнение цен между поставщиками</div>
-    <div id="crossPrices"></div>
-  </div>
-
   <!-- ANOMALIES TABLE -->
   <div class="card g-full">
     <div class="sec">Детализация ценовых аномалий</div>
@@ -469,6 +473,8 @@
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
       <div class="sec" style="margin:0;flex:1">Все накладные</div>
       <div class="inv-filter-bar">
+        <input id="invSearch" type="text" placeholder="Поиск..." oninput="renderInvTable()"
+          style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;outline:none;width:140px;">
         <span style="font-size:10px;color:var(--muted)">Период:</span>
         <button class="filter-btn active" data-m="all"  onclick="setFilter(this)">Все</button>
         <button class="filter-btn"        data-m="03"   onclick="setFilter(this)">Март</button>
@@ -486,20 +492,6 @@
     </div>
   </div>
 
-  <!-- SUSPICIOUS -->
-  <div class="card g-full">
-    <div class="sec">Подозрительно высокие цены за единицу</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr>
-          <th>SKU</th><th>Ед.</th>
-          <th class="num">Цена ₸/ед</th><th class="num">Итого ₸</th>
-          <th>Поставщик</th><th>Доля бюджета</th>
-        </tr></thead>
-        <tbody id="suspTbody"></tbody>
-      </table>
-    </div>
-  </div>
 
 </div>
 
@@ -514,12 +506,13 @@
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const TOTAL = 3450030;
-const MILANA_COLOR  = '#22c55e';
-const OSMANOV_COLOR = '#f59e0b';
-const GRID   = 'rgba(255,255,255,0.06)';
-const TICK   = '#64748b';
-const FONT   = { family: "'Segoe UI', system-ui, sans-serif", size: 11 };
-const TOOLTIP_BG = '#1e2235';
+const MILANA_COLOR   = '#2dd4a0';
+const OSMANOV_COLOR  = '#f4a942';
+const SALMURZ_COLOR  = '#c084fc';
+const GRID      = 'rgba(255,255,255,0.04)';
+const TICK      = '#6b7999';
+const FONT      = { family: "'Segoe UI', system-ui, sans-serif", size: 11 };
+const TOOLTIP_BG = '#1d2540';
 
 const invoices = [
   ["59",        "ИП МИЛАНА",  "Ақтау",  "04.03.2026",  94736, 10],
@@ -611,16 +604,16 @@ const fmt  = n => Math.round(n).toLocaleString('ru-RU');
 const fmtD = n => n.toFixed(1);
 
 const CAT_COLORS = {
-  'Молочные':   '#60a5fa',
-  'Масла':      '#fbbf24',
-  'Крупы':      '#a78bfa',
+  'Молочные':   '#7cb9f4',
+  'Масла':      '#f4c55a',
+  'Крупы':      '#a98ef7',
   'Мясо':       '#f87171',
-  'Яйца':       '#fb923c',
-  'Овощи':      '#4ade80',
-  'Специи':     '#e879f9',
-  'Хлеб':       '#f59e0b',
-  'Хозтовары':  '#94a3b8',
-  'Прочее':     '#475569',
+  'Яйца':       '#f4934a',
+  'Овощи':      '#2dd4a0',
+  'Специи':     '#e073e8',
+  'Хлеб':       '#e8a93a',
+  'Хозтовары':  '#8898b8',
+  'Прочее':     '#4a5680',
 };
 
 function catColor(cat) { return CAT_COLORS[cat] || '#6366f1'; }
@@ -632,14 +625,22 @@ function catColorAlpha(cat, a=0.7) {
   return `rgba(${r},${g},${b},${a})`;
 }
 
+function supTagClass(name) {
+  const u = (name || '').toUpperCase();
+  if (u.includes('ОСМАН') || u.includes('OSMAN')) return 'tag-o';
+  if (u.includes('САЛМУРЗ') || u.includes('SALMURZ')) return 'tag-s';
+  return 'tag-m';
+}
 function supTag(name) {
-  const isO = name.includes('Осман') || name.includes('Osman');
-  return `<span class="${isO ? 'tag-o' : 'tag-m'}">${name}</span>`;
+  return `<span class="${supTagClass(name)}">${name}</span>`;
 }
 function supColor(name) {
-  return (name.includes('Осман') || name.includes('Osman')) ? OSMANOV_COLOR : MILANA_COLOR;
+  const u = (name || '').toUpperCase();
+  if (u.includes('ОСМАН') || u.includes('OSMAN')) return OSMANOV_COLOR;
+  if (u.includes('САЛМУРЗ') || u.includes('SALMURZ')) return typeof SALMURZ_COLOR !== 'undefined' ? SALMURZ_COLOR : '#c084fc';
+  return MILANA_COLOR;
 }
-function isOsman(name) { return name.includes('Осман') || name.includes('Osman'); }
+function isOsman(name) { return (name||'').toUpperCase().includes('ОСМАН') || (name||'').includes('Osman'); }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
 function openModal(skuName) {
@@ -775,11 +776,14 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); }
     });
   }
 
+  const supNames = [...new Set(invoices.map(r => r[1]))];
+  const supCities = {};
+  invoices.forEach(r => { supCities[r[1]] = r[2]; });
   alerts.push({
     cls: 'alert-green',
     icon: '✅',
     title: `Поставщики в норме`,
-    sub: `МИЛАНА (Ақтау) · Osmanов (Алматы) · 2 активных`
+    sub: supNames.map(s => `${s} (${supCities[s]})`).join(' · ') + ` · ${supNames.length} активных`
   });
 
   alerts.forEach(a => {
@@ -837,6 +841,71 @@ new Chart(document.getElementById('supPieChart'), {
     }
   }
 });
+
+// ── CITY BARS ─────────────────────────────────────────────────────────────────
+(function buildCityBars() {
+  const el = document.getElementById('cityBars');
+  if (!el) return;
+  const cityTot = {}, citySupTot = {};
+  ALL_LINES.forEach(([, sup, city, , , , total]) => {
+    cityTot[city] = (cityTot[city] || 0) + total;
+    if (!citySupTot[city]) citySupTot[city] = {};
+    citySupTot[city][sup] = (citySupTot[city][sup] || 0) + total;
+  });
+  const grand = Object.values(cityTot).reduce((s, v) => s + v, 0);
+  const cities = Object.entries(cityTot).sort((a, b) => b[1] - a[1]);
+  el.innerHTML = cities.map(([city, tot]) => {
+    const pct = grand ? (tot / grand * 100).toFixed(1) : 0;
+    const primarySup = Object.entries(citySupTot[city]).sort((a,b)=>b[1]-a[1])[0]?.[0] || '';
+    const col = supColor(primarySup);
+    const supStr = Object.entries(citySupTot[city]).sort((a,b)=>b[1]-a[1])
+      .map(([s]) => `<span class="${supTagClass(s)}" style="font-size:10px">${s}</span>`).join(' ');
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-size:12px;font-weight:600">${city}</span>
+        <span style="font-size:12px;font-family:monospace;font-weight:700;color:${col}">${fmt(tot)} ₸</span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <span style="font-size:10px;color:var(--muted);margin-right:2px">${pct}%</span>${supStr}
+      </div>
+    </div>`;
+  }).join('');
+})();
+
+// ── SUPPLIER CARDS ────────────────────────────────────────────────────────────
+(function buildSupCards() {
+  const el = document.getElementById('supCards');
+  if (!el) return;
+  const sd = {};
+  ALL_LINES.forEach(([sku, sup, city, , , , total, inv_id]) => {
+    if (!sd[sup]) sd[sup] = { city, total: 0, invs: new Set(), skus: new Set() };
+    sd[sup].total += total;
+    sd[sup].invs.add(inv_id);
+    sd[sup].skus.add(sku);
+  });
+  const grand = Object.values(sd).reduce((s, d) => s + d.total, 0);
+  const sups = Object.entries(sd).sort((a, b) => b[1].total - a[1].total);
+  el.innerHTML = sups.map(([name, d]) => {
+    const pct = grand ? (d.total / grand * 100).toFixed(1) : 0;
+    const avgInv = d.invs.size ? Math.round(d.total / d.invs.size) : 0;
+    const col = supColor(name);
+    return `<div style="padding:12px;border:1px solid var(--border);border-radius:10px;border-left:3px solid ${col}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span class="${supTagClass(name)}" style="font-size:11px">${name}</span>
+        <span style="font-size:10px;color:var(--muted)">${d.city}</span>
+      </div>
+      <div style="font-size:17px;font-weight:700;font-family:monospace;color:${col};margin-bottom:6px">${fmt(d.total)} ₸</div>
+      <div class="bar-bg" style="margin-bottom:6px"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div>
+      <div style="display:flex;gap:12px;font-size:10px;color:var(--muted);flex-wrap:wrap">
+        <span>${d.invs.size} накл</span>
+        <span>${d.skus.size} SKU</span>
+        <span>~${fmt(avgInv)} ₸/накл</span>
+        <span style="margin-left:auto;font-weight:700;color:var(--text)">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+})();
 
 // ── CATEGORY PIE ──────────────────────────────────────────────────────────────
 window.chartCat = new Chart(document.getElementById('catPieChart'), {
@@ -900,34 +969,45 @@ window.chartWeekly = document.getElementById('weeklyChart') && new Chart(documen
   }
 });
 
-// ── SUPPLIER SCORECARD ────────────────────────────────────────────────────────
+// ── SUPPLIER SCORECARD (dynamic from ALL_LINES) ───────────────────────────────
 (function buildScorecard() {
-  const sc = document.getElementById('scorecard');
-  const milanaTotal = invoices.filter(r => !isOsman(r[1])).reduce((s,r) => s+r[4], 0);
-  const osmanTotal  = invoices.filter(r =>  isOsman(r[1])).reduce((s,r) => s+r[4], 0);
-  const milanaInv   = invoices.filter(r => !isOsman(r[1])).length;
-  const osmanInv    = invoices.filter(r =>  isOsman(r[1])).length;
-  const milanaAvg   = milanaInv ? Math.round(milanaTotal / milanaInv) : 0;
-  const osmanAvg    = osmanInv  ? Math.round(osmanTotal  / osmanInv)  : 0;
-  const milanaSkus  = topSku.filter(s => !isOsman(s[0])).length;
+  const sc  = document.getElementById('scorecard');
+  const hdr = document.getElementById('scorecardHeader');
+  if (!sc) return;
 
-  const rows = [
-    ['Общие расходы', `${fmt(milanaTotal)} ₸`, `${fmt(osmanTotal)} ₸`],
-    ['Накладных',     milanaInv,                 osmanInv],
-    ['Ср. накладная', `${fmt(milanaAvg)} ₸`,     `${fmt(osmanAvg)} ₸`],
-    ['Город',         'Ақтау',                   'Алматы'],
-    ['Доля бюджета',  '84.7%',                   '15.3%'],
+  const sd = {};
+  ALL_LINES.forEach(([sku, sup, city, , , , total, inv_id]) => {
+    if (!sd[sup]) sd[sup] = { city, total: 0, invs: new Set(), skus: new Set() };
+    sd[sup].total += total;
+    sd[sup].invs.add(inv_id);
+    sd[sup].skus.add(sku);
+  });
+  const grand = Object.values(sd).reduce((s, d) => s + d.total, 0);
+  const sups  = Object.entries(sd).sort((a, b) => b[1].total - a[1].total);
+
+  if (hdr) {
+    hdr.innerHTML = sups.map(([n]) =>
+      `<span style="font-size:10px;font-weight:700;color:${supColor(n)}">${n.replace(/ИП /i,'')}</span>`
+    ).join('');
+  }
+
+  const metrics = [
+    ['Расходы',      sups.map(([,d]) => fmt(d.total) + ' ₸')],
+    ['Накладных',    sups.map(([,d]) => d.invs.size)],
+    ['SKU',          sups.map(([,d]) => d.skus.size)],
+    ['Ср. накладная',sups.map(([,d]) => d.invs.size ? fmt(Math.round(d.total/d.invs.size))+' ₸' : '—')],
+    ['Город',        sups.map(([,d]) => d.city)],
+    ['Доля',         sups.map(([,d]) => grand ? (d.total/grand*100).toFixed(1)+'%' : '—')],
   ];
 
-  rows.forEach(([label, mv, ov]) => {
-    sc.innerHTML += `<div class="scorecard-row">
+  sc.innerHTML = metrics.map(([label, vals]) =>
+    `<div class="scorecard-row">
       <span class="scorecard-label">${label}</span>
-      <div class="scorecard-vals">
-        <span class="sc-m">${mv}</span>
-        <span class="sc-o">${ov}</span>
-      </div>
-    </div>`;
-  });
+      <div class="scorecard-vals">${vals.map((v, i) =>
+        `<span style="font-family:monospace;font-weight:600;font-size:11px;color:${supColor(sups[i][0])}">${v}</span>`
+      ).join('')}</div>
+    </div>`
+  ).join('');
 })();
 
 // ── PRICE TRENDS ──────────────────────────────────────────────────────────────
@@ -1037,39 +1117,6 @@ catSpend.forEach(([cat, amt, pct]) => {
   </tr>`;
 });
 
-// ── CROSS-SUPPLIER COMPARISON ─────────────────────────────────────────────────
-const crossDiv = document.getElementById('crossPrices');
-if (crossSupplier.length === 0) {
-  crossDiv.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:11px;text-align:center;">Добавляйте накладных — появятся новые пересечения для сравнения</div>';
-} else {
-  crossSupplier.forEach(([sku, sup1n, p1, sup2n, p2, diffPct, cheaper]) => {
-    const isOsm1 = isOsman(sup1n);
-    const c1 = isOsm1 ? OSMANOV_COLOR : MILANA_COLOR;
-    const c2 = isOsman(sup2n) ? OSMANOV_COLOR : MILANA_COLOR;
-    const cheaperCheap = cheaper === sup1n ? p1 : p2;
-    const saving = Math.round(Math.abs(p2-p1) * 600);
-    crossDiv.innerHTML += `<div class="cmp-row">
-      <div>
-        <div class="cmp-name">${sku}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;">шт · 2 поставщика</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:var(--muted)">${sup1n}</div>
-        <div class="cmp-price" style="color:${c1}">${fmt(p1)} ₸</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:var(--muted)">${sup2n}</div>
-        <div class="cmp-price" style="color:${c2}">${fmt(p2)} ₸</div>
-      </div>
-      <div style="text-align:right">
-        <span class="pill pill-amber">+${diffPct}%</span>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px">${cheaper} дешевле</div>
-        <div style="font-size:10px;color:var(--red);font-weight:600">~−${fmt(saving)} ₸/мес</div>
-      </div>
-    </div>`;
-  });
-  crossDiv.innerHTML += '<div style="padding:12px 0 0;color:var(--muted);font-size:10px;text-align:center;">Добавляйте накладных — появятся новые пересечения</div>';
-}
 
 // ── ANOMALIES TABLE ───────────────────────────────────────────────────────────
 const anomTbody = document.getElementById('anomTbody');
@@ -1108,9 +1155,11 @@ function setFilter(btn) {
 function renderInvTable() {
   const tbody = document.getElementById('invTbody');
   tbody.innerHTML = '';
-  const list = _activeMonth === 'all'
+  const q = (document.getElementById('invSearch')?.value || '').trim().toLowerCase();
+  let list = _activeMonth === 'all'
     ? invoices
     : invoices.filter(r => r[3].split('.')[1] === _activeMonth);
+  if (q) list = list.filter(r => r[1].toLowerCase().includes(q) || r[2].toLowerCase().includes(q) || r[3].includes(q) || String(r[0]).includes(q));
 
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Нет накладных за этот период</td></tr>';
@@ -1119,12 +1168,11 @@ function renderInvTable() {
   const periodTotal = list.reduce((s,r) => s + r[4], 0);
   list.forEach(r => {
     const [inv, sup, city, dt, sum, lines] = r;
-    const isO = isOsman(sup);
     const pct = (sum / TOTAL * 100).toFixed(1);
     const bw  = Math.min(100, parseFloat(pct) * 1.5);
-    const col = isO ? OSMANOV_COLOR : MILANA_COLOR;
+    const col = supColor(sup);
     tbody.innerHTML += `<tr>
-      <td><span class="${isO?'tag-o':'tag-m'}">${sup}</span></td>
+      <td><span class="${supTagClass(sup)}">${sup}</span></td>
       <td style="color:var(--muted)">${city}</td>
       <td>${dt}</td>
       <td class="num"><strong style="color:${sum>900000?'#ef4444':col}">${fmt(sum)} ₸</strong></td>
@@ -1138,27 +1186,6 @@ function renderInvTable() {
 }
 renderInvTable();
 
-// ── SUSPICIOUS TABLE ──────────────────────────────────────────────────────────
-const suspTbody = document.getElementById('suspTbody');
-suspicious.forEach((r) => {
-  const [name, unit, price, total, sup, city] = r;
-  const pct = (total / TOTAL * 100).toFixed(1);
-  const bw  = Math.min(100, parseFloat(pct) * 5);
-  const isO = isOsman(sup);
-  suspTbody.innerHTML += `<tr>
-    <td>${name}</td>
-    <td>${unit}</td>
-    <td class="num"><strong style="color:${price>10000?'#ef4444':'#f59e0b'}">${fmt(price)} ₸</strong></td>
-    <td class="num">${fmt(total)} ₸</td>
-    <td><span class="${isO?'tag-o':'tag-m'}">${sup}</span></td>
-    <td>
-      <div style="display:flex;align-items:center;gap:7px;">
-        <div class="bar-bg" style="width:80px"><div class="bar-fill" style="width:${bw}%;background:linear-gradient(90deg,var(--accent),#a78bfa)"></div></div>
-        <span style="color:var(--muted);font-size:10px">${pct}%</span>
-      </div>
-    </td>
-  </tr>`;
-});
 
 // ── TIMESTAMP ─────────────────────────────────────────────────────────────────
 { const _ts = document.getElementById('ts');
@@ -1654,6 +1681,9 @@ function toggleTheme() {
 window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
   if (!localStorage.getItem('theme')) _applyTheme(e.matches ? 'light' : 'dark');
 });
+
+// ── INITIAL RENDER FROM ALL_LINES ─────────────────────────────────────────────
+if (typeof ALL_LINES !== 'undefined' && ALL_LINES.length) runFilter();
 </script>
 </body>
 </html>
