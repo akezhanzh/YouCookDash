@@ -189,13 +189,17 @@
   .ph-searchbox:focus-within { border-color:var(--accent); }
   .ph-searchbox input { flex:1; border:none; outline:none; background:transparent; color:var(--text); font-size:13px; }
   .ph-searchbox input::placeholder { color:var(--muted); font-size:12px; }
-  .ph-searchbox button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:0; line-height:1; }
-  .ph-frow { display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .ph-searchbox button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:0; line-height:1; display:none; }
+  .ph-frow { display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
   .ph-fg { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .ph-flbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); white-space:nowrap; }
+  .ph-flbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); white-space:nowrap; margin-right:2px; }
   .ph-p { padding:4px 13px; border-radius:20px; border:1.5px solid var(--border); background:var(--surf); color:var(--muted); font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; white-space:nowrap; }
   .ph-p:hover { border-color:var(--accent); color:var(--text); }
   .ph-p.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+  .ph-cnt { opacity:.65; font-size:10px; margin-left:2px; }
+  .ph-summary { display:flex; flex-wrap:wrap; gap:16px; font-size:11px; color:var(--muted); padding:8px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:14px; }
+  .ph-summary b { color:var(--text); font-weight:600; }
+  .ph-stat { display:flex; align-items:center; gap:4px; }
 
   /* Export button */
   .btn-export { background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.3); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:#a5b4fc; cursor:pointer; transition:all .15s; user-select:none; }
@@ -405,12 +409,7 @@
 
     <!-- Pill filters -->
     <div class="ph-frow">
-      <div class="ph-fg">
-        <span class="ph-flbl">Поставщик</span>
-        <button class="ph-p active" data-g="sup" data-v="" onclick="phPill(this)">Все</button>
-        <button class="ph-p" data-g="sup" data-v="МИЛАНА" onclick="phPill(this)">МИЛАНА</button>
-        <button class="ph-p" data-g="sup" data-v="ИП Османов" onclick="phPill(this)">ИП Османов</button>
-      </div>
+      <div class="ph-fg" id="phSupPills"><span class="ph-flbl">Поставщик</span></div>
       <div class="ph-fg" style="margin-left:auto">
         <span class="ph-flbl">Период</span>
         <button class="ph-p active" data-g="per" data-v="all" onclick="phPill(this)">Все</button>
@@ -418,6 +417,9 @@
         <button class="ph-p" data-g="per" data-v="7" onclick="phPill(this)">7 дней</button>
       </div>
     </div>
+
+    <!-- Summary stats -->
+    <div id="phSummary" class="ph-summary" style="display:none"></div>
 
     <!-- Chart (shows when search is active) -->
     <div id="phChartBox" style="display:none;margin-bottom:16px">
@@ -1408,22 +1410,57 @@ function resetFilter(){
 
 // ── PRICE ANALYSIS (chart + table unified) ───────────────────────────────────
 (function() {
+  // 1. Precompute price deltas per sku+supplier
   const byKey = {};
   ALL_LINES.forEach(([sku, sup, , date, price]) => {
     const k = sku + '|' + sup;
     if (!byKey[k]) byKey[k] = [];
-    byKey[k].push({ date, price });
+    byKey[k].push({ date, price: +price });
   });
   window._phDelta = {};
   Object.entries(byKey).forEach(([k, entries]) => {
     entries.sort((a, b) => a.date < b.date ? -1 : 1);
-    entries.forEach((e, i) => {
-      const prev = i > 0 ? entries[i-1].price : null;
-      window._phDelta[k + '|' + e.date] = (prev && prev > 0) ? (e.price - prev) / prev * 100 : null;
+    // Deduplicate same-date entries (keep last price for that date)
+    const deduped = [];
+    entries.forEach(e => {
+      if (deduped.length && deduped[deduped.length-1].date === e.date) {
+        deduped[deduped.length-1].price = e.price;
+      } else {
+        deduped.push({...e});
+      }
+    });
+    deduped.forEach((e, i) => {
+      const prev = i > 0 ? deduped[i-1].price : null;
+      window._phDelta[k + '|' + e.date] = (prev != null && prev > 0) ? (e.price - prev) / prev * 100 : null;
     });
   });
+
+  // 2. Per-supplier stats: maxDate and row count
+  const supStats = {};
+  ALL_LINES.forEach(([, sup, , date]) => {
+    if (!supStats[sup]) supStats[sup] = { maxDate: '', count: 0 };
+    if (date > supStats[sup].maxDate) supStats[sup].maxDate = date;
+    supStats[sup].count++;
+  });
+  window._phSupStats = supStats;
+
+  // 3. Overall max date
   const allDates = ALL_LINES.map(l => l[3]).filter(Boolean);
   window._phMaxDate = allDates.length ? allDates.reduce((a, b) => a > b ? a : b) : '';
+
+  // 4. Build supplier pills dynamically (includes all suppliers)
+  const supPills = document.getElementById('phSupPills');
+  if (supPills) {
+    const supNames = Object.keys(supStats).sort();
+    let html = '<span class="ph-flbl">Поставщик</span>';
+    html += `<button class="ph-p active" data-g="sup" data-v="" onclick="phPill(this)">Все <span class="ph-cnt">${ALL_LINES.length}</span></button>`;
+    supNames.forEach(s => {
+      const lbl = s.length > 20 ? s.slice(0, 18) + '…' : s;
+      html += `<button class="ph-p" data-g="sup" data-v="${s.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onclick="phPill(this)">${lbl} <span class="ph-cnt">${supStats[s].count}</span></button>`;
+    });
+    supPills.innerHTML = html;
+  }
+
   window._phSt  = { sup: '', per: 'all', col: 'date', dir: -1 };
   window._phC2  = null;
   phRender();
@@ -1459,30 +1496,30 @@ function phRender() {
   const clrBtn = document.getElementById('phClear');
   if (clrBtn) clrBtn.style.display = q ? 'block' : 'none';
 
-  // Period cutoff
+  // Period cutoff — relative to the SELECTED supplier's latest date, not global max
   let cutoff = '';
-  if (st.per !== 'all' && window._phMaxDate) {
-    const d = new Date(window._phMaxDate);
-    d.setDate(d.getDate() - parseInt(st.per, 10) + 1);
-    cutoff = d.toISOString().slice(0, 10);
+  if (st.per !== 'all') {
+    const stats = window._phSupStats || {};
+    const maxD = st.sup ? (stats[st.sup] || {}).maxDate || window._phMaxDate : window._phMaxDate;
+    if (maxD) {
+      const d = new Date(maxD);
+      d.setDate(d.getDate() - parseInt(st.per, 10) + 1);
+      cutoff = d.toISOString().slice(0, 10);
+    }
   }
 
-  // Build rows
-  const seen = new Set();
-  let rows = ALL_LINES
-    .filter(([sku, s, , date]) => {
-      if (st.sup  && s !== st.sup)   return false;
-      if (cutoff  && date < cutoff)  return false;
-      if (q && !sku.toLowerCase().includes(q) && !s.toLowerCase().includes(q)) return false;
-      return true;
-    })
-    .map(([sku, s, , date, price, qty]) => ({
-      sku, sup: s, date,
-      price: +price || 0,
-      qty:   +qty   || 0,
-      delta: del[sku + '|' + s + '|' + date] ?? null
-    }))
-    .filter(r => { const k = r.sku + r.sup + r.date; if (seen.has(k)) return false; seen.add(k); return true; });
+  // Build rows (dedup by sku+sup+date, keep highest qty)
+  const seen = new Map();
+  ALL_LINES.forEach(([sku, s, , date, price, qty]) => {
+    if (st.sup  && s !== st.sup) return;
+    if (cutoff  && date < cutoff) return;
+    if (q && !sku.toLowerCase().includes(q) && !s.toLowerCase().includes(q)) return;
+    const k = sku + '|' + s + '|' + date;
+    if (!seen.has(k)) {
+      seen.set(k, { sku, sup:s, date, price:+price||0, qty:+qty||0, delta: del[k] !== undefined ? del[k] : null });
+    }
+  });
+  let rows = [...seen.values()];
 
   // Sort
   rows.sort((a, b) => {
@@ -1501,6 +1538,24 @@ function phRender() {
   const badge = document.getElementById('phBadge');
   if (badge) { badge.textContent = rows.length + ' записей'; badge.style.display = rows.length ? '' : 'none'; }
 
+  // Summary stats bar
+  const summaryEl = document.getElementById('phSummary');
+  if (summaryEl && rows.length) {
+    const totalSpend = rows.reduce((s, r) => s + r.price * r.qty, 0);
+    const deltaRows  = rows.filter(r => r.delta !== null);
+    const risers     = deltaRows.filter(r => r.delta > 0).length;
+    const fallers    = deltaRows.filter(r => r.delta < 0).length;
+    let html = `<span class="ph-stat"><b>${rows.length}</b> закупок</span>`;
+    if (totalSpend > 0) html += `<span class="ph-stat">Сумма: <b>${fmt(Math.round(totalSpend))} ₸</b></span>`;
+    if (risers)  html += `<span class="ph-stat" style="color:var(--red)">▲ ${risers} подорожали</span>`;
+    if (fallers) html += `<span class="ph-stat" style="color:var(--milana)">▼ ${fallers} подешевели</span>`;
+    if (cutoff)  html += `<span class="ph-stat" style="opacity:.6">с ${cutoff.split('-').reverse().join('.')}</span>`;
+    summaryEl.innerHTML = html;
+    summaryEl.style.display = 'flex';
+  } else if (summaryEl) {
+    summaryEl.style.display = 'none';
+  }
+
   // Chart — show when searching
   const chartBox = document.getElementById('phChartBox');
   if (q && rows.length) {
@@ -1515,22 +1570,26 @@ function phRender() {
   const tbody = document.getElementById('phBody');
   if (!tbody) return;
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px">Ничего не найдено — попробуйте другой запрос или снимите фильтр</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Ничего не найдено<br><span style="font-size:11px;opacity:.6">Попробуйте другой запрос или смените фильтр периода</span></td></tr>';
     return;
   }
   tbody.innerHTML = rows.slice(0, 300).map(r => {
     const ds = r.date ? r.date.split('-').reverse().join('.') : '—';
     const ps = r.price ? fmt(Math.round(r.price)) : '—';
     const qs = r.qty   ? (+r.qty.toFixed(2)) + '' : '—';
-    let dh = '<span style="color:var(--muted)">—</span>';
-    if (r.delta !== null && r.delta !== undefined) {
-      const sign = r.delta > 0 ? '▲' : '▼';
-      const col  = r.delta > 0 ? 'var(--red)' : 'var(--milana)';
-      dh = `<span style="color:${col};font-weight:700">${sign} ${Math.abs(r.delta).toFixed(1)}%</span>`;
+    let dh = '<span style="color:var(--muted);opacity:.4">—</span>';
+    let rowStyle = 'cursor:pointer';
+    if (r.delta !== null) {
+      const sign  = r.delta > 0 ? '▲' : r.delta < 0 ? '▼' : '=';
+      const clr   = r.delta > 0 ? 'var(--red)' : r.delta < 0 ? 'var(--milana)' : 'var(--muted)';
+      const bg    = r.delta > 0 ? '#ef444418' : r.delta < 0 ? '#22c55e18' : 'transparent';
+      dh = `<span style="color:${clr};font-weight:700;background:${bg};padding:2px 8px;border-radius:6px;font-size:11px;white-space:nowrap">${sign} ${Math.abs(r.delta).toFixed(1)}%</span>`;
+      if (Math.abs(r.delta) > 5) rowStyle += ';background:' + (r.delta > 0 ? 'rgba(239,68,68,.03)' : 'rgba(34,197,94,.03)');
     }
-    const st2 = r.sup.toUpperCase().includes('МИЛАН') ? `<span class="tag-m">${r.sup}</span>` : `<span class="tag-o">${r.sup}</span>`;
+    const isM = r.sup.toUpperCase().includes('МИЛАН');
+    const st2 = isM ? `<span class="tag-m">${r.sup}</span>` : `<span class="tag-o">${r.sup}</span>`;
     const se  = r.sku.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<tr style="cursor:pointer" onclick="phClickRow('${se}')"><td>${r.sku}</td><td>${st2}</td><td>${ds}</td><td class="num">${ps}</td><td class="num">${qs}</td><td class="num">${dh}</td></tr>`;
+    return `<tr style="${rowStyle}" onclick="phClickRow('${se}')"><td>${r.sku}</td><td>${st2}</td><td>${ds}</td><td class="num">${ps}</td><td class="num">${qs}</td><td class="num">${dh}</td></tr>`;
   }).join('');
 }
 
