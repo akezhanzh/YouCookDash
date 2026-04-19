@@ -184,6 +184,13 @@
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
   .ph-period-btn { padding:3px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surf); color:var(--muted); font-size:11px; cursor:pointer; transition:all .15s; }
   .ph-period-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .ph-slicers { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:6px 0 14px; }
+  .ph-slicers select, .ph-slicers input[type=text], .ph-slicers input[type=date] { padding:5px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:11px; outline:none; }
+  .ph-slicers select { min-width:140px; }
+  .ph-slicers input[type=text] { width:180px; }
+  .ph-slicers input[type=date] { width:135px; }
+  .ph-reset-btn { padding:4px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surf); color:var(--muted); font-size:11px; cursor:pointer; transition:all .15s; }
+  .ph-reset-btn:hover { border-color:var(--accent); color:var(--accent); }
 
   /* Export button */
   .btn-export { background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.3); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:#a5b4fc; cursor:pointer; transition:all .15s; user-select:none; }
@@ -402,25 +409,35 @@
 
   <!-- PRICE HISTORY DAY BY DAY -->
   <div class="card g-full">
-    <div class="sec" style="flex-wrap:wrap;gap:8px;">
-      История цен по товарам
-      <span class="sec-sub">/ день за днём · фильтр сверху применяется</span>
-      <div style="display:flex;gap:6px;align-items:center;margin-left:auto;">
-        <input id="phSearch" type="text" placeholder="Поиск товара..." oninput="phRender()"
-          style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;outline:none;width:220px;">
-        <button onclick="document.getElementById('phSearch').value='';phRender()"
-          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;">✕</button>
-      </div>
-      <span id="phCount" style="font-size:10px;color:var(--muted);margin-left:4px;"></span>
+    <div class="sec">История цен по товарам <span class="sec-sub">/ день за днём</span>
+      <span id="phCount" style="font-size:10px;color:var(--muted);margin-left:auto;"></span>
     </div>
+
+    <!-- Slicers (Power BI style) -->
+    <div class="ph-slicers">
+      <select id="phFCity" onchange="phRender()">
+        <option value="">Все города</option>
+      </select>
+      <select id="phFSup" onchange="phRender()">
+        <option value="">Все поставщики</option>
+      </select>
+      <input id="phSearch" type="text" placeholder="Поиск товара..." oninput="phRender()">
+      <span style="font-size:11px;color:var(--muted)">С</span>
+      <input id="phFFrom" type="date" onchange="phRender()">
+      <span style="font-size:11px;color:var(--muted)">По</span>
+      <input id="phFTo"   type="date" onchange="phRender()">
+      <button onclick="phReset()" class="ph-reset-btn">Сбросить</button>
+    </div>
+
     <div class="tbl-wrap">
       <table id="phTable">
         <thead><tr>
-          <th onclick="phSortBy('sku')" style="cursor:pointer">Товар <span id="ph-sort-sku">↕</span></th>
-          <th onclick="phSortBy('sup')" style="cursor:pointer">Поставщик <span id="ph-sort-sup">↕</span></th>
-          <th onclick="phSortBy('date')" style="cursor:pointer">Дата <span id="ph-sort-date">↓</span></th>
+          <th onclick="phSortBy('sku')"   style="cursor:pointer">Товар <span id="ph-sort-sku">↕</span></th>
+          <th onclick="phSortBy('sup')"   style="cursor:pointer">Поставщик <span id="ph-sort-sup">↕</span></th>
+          <th onclick="phSortBy('city')"  style="cursor:pointer">Город <span id="ph-sort-city">↕</span></th>
+          <th onclick="phSortBy('date')"  style="cursor:pointer">Дата <span id="ph-sort-date">↓</span></th>
           <th class="num" onclick="phSortBy('price')" style="cursor:pointer">Цена, ₸ <span id="ph-sort-price">↕</span></th>
-          <th class="num" onclick="phSortBy('qty')" style="cursor:pointer">Кол-во <span id="ph-sort-qty">↕</span></th>
+          <th class="num" onclick="phSortBy('qty')"   style="cursor:pointer">Кол-во <span id="ph-sort-qty">↕</span></th>
           <th class="num">Изменение</th>
         </tr></thead>
         <tbody id="phBody"></tbody>
@@ -1392,7 +1409,6 @@ function runFilter(){
     chartWeekly.update('none');
   }
   runSkuChart();
-  phRender();
 }
 
 function resetFilter(){
@@ -1450,8 +1466,8 @@ function runSkuChart(){
 }
 
 // ── PRICE HISTORY TABLE ───────────────────────────────────────────────────────
-// Pre-compute deltas across ALL history (not affected by filter period)
 (function() {
+  // Pre-compute delta% for every sku+supplier across ALL history
   const byKey = {};
   ALL_LINES.forEach(([sku, sup, , date, price]) => {
     const k = sku + '||' + sup;
@@ -1463,27 +1479,47 @@ function runSkuChart(){
     entries.sort((a, b) => a.date < b.date ? -1 : 1);
     entries.forEach((e, i) => {
       const prev = i > 0 ? entries[i - 1].price : null;
-      const d = (prev && prev > 0) ? (e.price - prev) / prev * 100 : null;
-      window._phDelta[k + '||' + e.date] = d;
+      window._phDelta[k + '||' + e.date] = (prev && prev > 0) ? (e.price - prev) / prev * 100 : null;
     });
   });
+
+  // Populate slicer dropdowns
+  const cities = [...new Set(ALL_LINES.map(l => l[2]))].sort();
+  const sups   = [...new Set(ALL_LINES.map(l => l[1]))].sort();
+  const cityEl = document.getElementById('phFCity');
+  const supEl  = document.getElementById('phFSup');
+  cities.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; cityEl && cityEl.appendChild(o); });
+  sups.forEach(s   => { const o = document.createElement('option'); o.value = s; o.textContent = s; supEl  && supEl.appendChild(o);  });
+
   window._phSort = { col: 'date', dir: -1 };
   phRender();
 })();
 
 function phRender() {
-  const sort = window._phSort || { col: 'date', dir: -1 };
+  const city  = document.getElementById('phFCity').value;
+  const sup   = document.getElementById('phFSup').value;
+  const q     = (document.getElementById('phSearch').value || '').trim().toLowerCase();
+  const from  = document.getElementById('phFFrom').value;
+  const to    = document.getElementById('phFTo').value;
   const delta = window._phDelta || {};
-  const q = (document.getElementById('phSearch').value || '').trim().toLowerCase();
+  const { col, dir } = window._phSort || { col: 'date', dir: -1 };
 
-  // Use the same filtered data as the rest of the dashboard (Power BI: one filter context)
+  // Filter ALL_LINES with slicer values
   const seen = new Set();
-  let rows = _filterLines()
-    .map(([sku, sup, , date, price, qty]) => ({
-      sku, sup, date,
+  let rows = ALL_LINES
+    .filter(([sku, s, c, date]) => {
+      if (city && c !== city)  return false;
+      if (sup  && s !== sup)   return false;
+      if (from && date < from) return false;
+      if (to   && date > to)   return false;
+      if (q && !sku.toLowerCase().includes(q) && !s.toLowerCase().includes(q)) return false;
+      return true;
+    })
+    .map(([sku, s, c, date, price, qty]) => ({
+      sku, sup: s, city: c, date,
       price: +price || 0,
       qty:   +qty   || 0,
-      delta: delta[sku + '||' + sup + '||' + date] ?? null
+      delta: delta[sku + '||' + s + '||' + date] ?? null
     }))
     .filter(r => {
       const k = r.sku + r.sup + r.date;
@@ -1491,19 +1527,17 @@ function phRender() {
       seen.add(k); return true;
     });
 
-  if (q) rows = rows.filter(r =>
-    r.sku.toLowerCase().includes(q) || r.sup.toLowerCase().includes(q)
-  );
-
-  const { col, dir } = sort;
+  // Sort
   rows.sort((a, b) => {
-    const av = a[col], bv = b[col];
+    let av = a[col], bv = b[col];
+    if (col === 'price' || col === 'qty') { av = +av || 0; bv = +bv || 0; }
     if (av < bv) return dir;
     if (av > bv) return -dir;
     return 0;
   });
 
-  ['sku','sup','date','price','qty'].forEach(c => {
+  // Update sort arrows
+  ['sku','sup','city','date','price','qty'].forEach(c => {
     const el = document.getElementById('ph-sort-' + c);
     if (el) el.textContent = c === col ? (dir === -1 ? '↓' : '↑') : '↕';
   });
@@ -1513,16 +1547,16 @@ function phRender() {
   if (!tbody) return;
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">Нет данных</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">Нет данных</td></tr>';
     if (countEl) countEl.textContent = '';
     return;
   }
   if (countEl) countEl.textContent = rows.length + ' записей';
 
   tbody.innerHTML = rows.slice(0, 300).map(r => {
-    const dateStr  = r.date ? r.date.split('-').reverse().join('.') : '—';
+    const dateStr  = r.date  ? r.date.split('-').reverse().join('.') : '—';
     const priceStr = r.price ? fmt(Math.round(r.price)) : '—';
-    const qtyStr   = r.qty  ? (+r.qty.toFixed(2)) + '' : '—';
+    const qtyStr   = r.qty   ? (+r.qty.toFixed(2)) + '' : '—';
     let dHtml = '<span style="color:var(--muted)">—</span>';
     if (r.delta !== null && r.delta !== undefined) {
       const sign  = r.delta > 0 ? '▲' : '▼';
@@ -1534,7 +1568,7 @@ function phRender() {
       : `<span class="tag-o">${r.sup}</span>`;
     const skuEsc = r.sku.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     return `<tr style="cursor:pointer" onclick="phClickRow('${skuEsc}')">
-      <td>${r.sku}</td><td>${supTag}</td><td>${dateStr}</td>
+      <td>${r.sku}</td><td>${supTag}</td><td>${r.city}</td><td>${dateStr}</td>
       <td class="num">${priceStr}</td><td class="num">${qtyStr}</td>
       <td class="num">${dHtml}</td>
     </tr>`;
@@ -1545,6 +1579,15 @@ function phSortBy(col) {
   const s = window._phSort;
   if (s.col === col) s.dir *= -1;
   else { s.col = col; s.dir = -1; }
+  phRender();
+}
+
+function phReset() {
+  document.getElementById('phFCity').value = '';
+  document.getElementById('phFSup').value  = '';
+  document.getElementById('phSearch').value = '';
+  document.getElementById('phFFrom').value  = '';
+  document.getElementById('phFTo').value    = '';
   phRender();
 }
 
