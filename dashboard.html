@@ -872,7 +872,7 @@ catSpend.slice(0, 6).forEach(([cat, amt, pct]) => {
 });
 
 // ── WEEKLY SPEND ──────────────────────────────────────────────────────────────
-window.chartWeekly = new Chart(document.getElementById('weeklyChart'), {
+window.chartWeekly = document.getElementById('weeklyChart') && new Chart(document.getElementById('weeklyChart'), {
   type: 'bar',
   data: {
     labels: weeklySpend.map(d => 'Нед ' + d[0]),
@@ -1161,8 +1161,8 @@ suspicious.forEach((r) => {
 });
 
 // ── TIMESTAMP ─────────────────────────────────────────────────────────────────
-document.getElementById('ts').textContent =
-  new Date().toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
+{ const _ts = document.getElementById('ts');
+  if (_ts) _ts.textContent = new Date().toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'}); }
 
 // ── FORECAST ──────────────────────────────────────────────────────────────────
 (function renderForecast() {
