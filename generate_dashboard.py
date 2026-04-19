@@ -163,8 +163,10 @@ anomalies = conn.execute("""
            MIN(p.unit), MIN(p.price), MAX(p.price),
            ROUND((MAX(p.price)-MIN(p.price))/MIN(p.price)*100,1),
            COUNT(DISTINCT p.supplier_id)
-    FROM prices p JOIN sku_catalog sc ON sc.id=p.sku_id
-    GROUP BY p.sku_id
+    FROM prices p
+    JOIN sku_catalog sc ON sc.id=p.sku_id
+    JOIN suppliers s ON s.id=p.supplier_id
+    GROUP BY p.sku_id, s.city
     HAVING (MAX(p.price)/MIN(p.price)) > 1.10
     ORDER BY 5 DESC LIMIT 8
 """).fetchall()
@@ -278,9 +280,12 @@ cross_raw = conn.execute("""
     FROM prices p
     JOIN sku_catalog sc ON sc.id=p.sku_id
     JOIN suppliers s ON s.id=p.supplier_id
-    WHERE p.sku_id IN (
-        SELECT sku_id FROM prices
-        GROUP BY sku_id HAVING COUNT(DISTINCT supplier_id) > 1
+    WHERE EXISTS (
+        SELECT 1 FROM prices p2
+        JOIN suppliers s2 ON s2.id=p2.supplier_id
+        WHERE p2.sku_id=p.sku_id
+          AND s2.city=s.city
+          AND p2.supplier_id != p.supplier_id
     )
     GROUP BY p.sku_id, p.supplier_id
     ORDER BY sc.name
@@ -301,8 +306,10 @@ anomaly_detail_raw = conn.execute("""
     JOIN invoices i ON i.id = il.invoice_id
     JOIN suppliers s ON s.id = i.supplier_id
     WHERE sc.id IN (
-        SELECT sku_id FROM prices
-        GROUP BY sku_id HAVING (MAX(price)/MIN(price)) > 1.10
+        SELECT p.sku_id FROM prices p
+        JOIN suppliers s ON s.id=p.supplier_id
+        GROUP BY p.sku_id, s.city
+        HAVING (MAX(p.price)/MIN(p.price)) > 1.10
     )
     GROUP BY sc.id, i.id
     ORDER BY sc.name, i.invoice_date
