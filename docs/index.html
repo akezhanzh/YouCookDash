@@ -1442,7 +1442,7 @@ document.getElementById('ts').textContent =
 // ── INVOICE TIMELINE ─────────────────────────────────────────────────────────
 (function renderTimeline() {
   const track = document.getElementById('tlTrack');
-  if (!invoices.length) return;
+  if (!track || !invoices.length) return;
   const parsed = invoices.map(r => {
     const [d,m,y] = r[3].split('.');
     return { ts: new Date(+y,+m-1,+d).getTime(), sup:r[1], amt:r[4], lbl:r[3].slice(0,5) };
