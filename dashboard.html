@@ -343,7 +343,7 @@
       <div class="sec">Сравнение поставщиков <span class="sec-sub">/ скоркард</span></div>
       <div style="margin-bottom:10px;display:flex;justify-content:flex-end;gap:12px;">
         <span style="font-size:10px;color:var(--milana);font-weight:700;">МИЛАНА</span>
-        <span style="font-size:10px;color:var(--osmanov);font-weight:700;">Osmanов</span>
+        <span style="font-size:10px;color:var(--osmanov);font-weight:700;">ИП Османов</span>
       </div>
       <div class="scorecard" id="scorecard"></div>
     </div>
@@ -1203,6 +1203,10 @@ document.getElementById('ts').textContent =
 
 // ── MONTHLY COMPARISON ────────────────────────────────────────────────────────
 (function renderMonthly() {
+  const cmp  = document.getElementById('monthCmp');
+  const note = document.getElementById('monthNote');
+  if (!cmp) return;
+
   const by = {};
   invoices.forEach(r => {
     const mm = r[3].split('.')[1];
@@ -1219,7 +1223,7 @@ document.getElementById('ts').textContent =
   const isUp  = delta >= 0;
   const aprColor = apr.amt > mar.amt ? '#f87171' : '#4ade80';
 
-  document.getElementById('monthCmp').innerHTML = `
+  cmp.innerHTML = `
     <div class="month-col">
       <div class="month-name">Март 2026</div>
       <div class="month-amt" style="color:var(--milana)">${fmt(mar.amt)} ₸</div>
@@ -1232,7 +1236,7 @@ document.getElementById('ts').textContent =
       <div class="month-cnt">${apr.cnt} накл · ${isUp?'+':''}${pct}%</div>
     </div>`;
 
-  document.getElementById('monthNote').textContent =
+  if (note) note.textContent =
     apr.cnt > 0
       ? `В апреле уже ${apr.cnt} накл (из ~${mar.cnt} в марте). ` +
         (isUp ? `На ${Math.abs(pct)}% больше — следите за ростом расходов.`

@@ -530,7 +530,7 @@ html = r(r'\d[\d\s]+ ₸/нед среднее',
 html = r(r'(🏢 Поставщики</div>.*?card-sub">)[^<]+',
          f'\\g<1>{sup1_name} {sup1_spend:,} ₸ · {sup2_name} {sup2_spend:,} ₸'.replace(',', '\u00a0'), html)
 html = r(r'(delta-green">)[^<]+(</div>\s*</div>\s*<div class="card">\s*<div class="card-title">🗺️)',
-         f'\\g<1>МИЛАНА {sup1_inv} накл · Osmanов {sup2_inv} накл\\g<2>', html)
+         f'\\g<1>{sup1_name} {sup1_inv} накл · {sup2_name} {sup2_inv} накл\\g<2>', html)
 
 # KPI 3 — города
 html = r(r'(Ақтау )\d[\d\s]+( ₸ · Алматы )\d[\d\s]+( ₸</div>)',
