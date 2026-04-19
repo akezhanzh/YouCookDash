@@ -257,24 +257,8 @@
     </div>
   </div>
 
-  <!-- FILTER BAR -->
-  <div class="fbar">
-    <div class="fbar-group">
-      <label class="fbar-lbl">От</label>
-      <input type="date" id="fFrom" class="fbar-inp" onchange="runFilter()">
-    </div>
-    <div class="fbar-group">
-      <label class="fbar-lbl">До</label>
-      <input type="date" id="fTo" class="fbar-inp" onchange="runFilter()">
-    </div>
-    <div class="fbar-group">
-      <label class="fbar-lbl">Поставщик</label>
-      <select id="fSup" class="fbar-inp" onchange="runFilter()">
-        <option value="">Все</option>
-      </select>
-    </div>
-    <button class="fbar-reset" onclick="resetFilter()">✕ Сброс</button>
-  </div>
+  <!-- hidden inputs kept for _filterLines() compatibility -->
+  <input type="hidden" id="fFrom"><input type="hidden" id="fTo"><select id="fSup" style="display:none"><option value="">Все</option></select>
 
   <!-- ALERT STRIP -->
   <div class="alert-strip" id="alertStrip"></div>
