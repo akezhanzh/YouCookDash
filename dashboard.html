@@ -182,18 +182,20 @@
   .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
   .filter-btn:hover { border-color:var(--accent); color:var(--text); }
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
-  /* Price history filter panel */
-  .ph-panel { background:var(--bg); border-radius:12px; padding:14px 16px; margin-bottom:16px; display:flex; flex-direction:column; gap:10px; }
-  .ph-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .ph-lbl { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; min-width:72px; }
-  .ph-pill { padding:5px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surf); color:var(--text); font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; line-height:1.2; }
-  .ph-pill:hover { border-color:var(--accent); color:var(--accent); }
-  .ph-pill.active { background:var(--accent); color:#fff !important; border-color:var(--accent); }
-  .ph-search { flex:1; min-width:180px; padding:6px 14px; border-radius:10px; border:1.5px solid var(--border); background:var(--surf); color:var(--text); font-size:12px; outline:none; transition:border .15s; }
-  .ph-search:focus { border-color:var(--accent); }
-  .ph-reset { padding:5px 14px; border-radius:10px; border:1.5px solid var(--border); background:var(--surf); color:var(--muted); font-size:11px; cursor:pointer; transition:all .15s; white-space:nowrap; }
-  .ph-reset:hover { border-color:#ef4444; color:#ef4444; }
-  .ph-badge { display:inline-block; background:var(--accent); color:#fff; border-radius:20px; padding:1px 10px; font-size:11px; font-weight:700; margin-left:8px; }
+  /* Unified price analysis */
+  .ph-head { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .ph-badge { background:var(--accent); color:#fff; border-radius:12px; padding:2px 10px; font-size:11px; font-weight:700; }
+  .ph-searchbox { display:flex; align-items:center; gap:10px; border:2px solid var(--border); border-radius:12px; padding:9px 14px; margin-bottom:14px; transition:border-color .2s; background:var(--bg); }
+  .ph-searchbox:focus-within { border-color:var(--accent); }
+  .ph-searchbox input { flex:1; border:none; outline:none; background:transparent; color:var(--text); font-size:13px; }
+  .ph-searchbox input::placeholder { color:var(--muted); font-size:12px; }
+  .ph-searchbox button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:0; line-height:1; }
+  .ph-frow { display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .ph-fg { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .ph-flbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); white-space:nowrap; }
+  .ph-p { padding:4px 13px; border-radius:20px; border:1.5px solid var(--border); background:var(--surf); color:var(--muted); font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; white-space:nowrap; }
+  .ph-p:hover { border-color:var(--accent); color:var(--text); }
+  .ph-p.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
 
   /* Export button */
   .btn-export { background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.3); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:#a5b4fc; cursor:pointer; transition:all .15s; user-select:none; }
@@ -271,18 +273,7 @@
         <option value="">Все</option>
       </select>
     </div>
-    <div class="fbar-group" style="flex:1;min-width:200px">
-      <label class="fbar-lbl">Товар — история цены</label>
-      <input type="text" id="fSku" class="fbar-inp" placeholder="Введи товар..." list="skuDL" oninput="runSkuChart()" style="width:100%">
-      <datalist id="skuDL"></datalist>
-    </div>
     <button class="fbar-reset" onclick="resetFilter()">✕ Сброс</button>
-  </div>
-
-  <!-- SKU PRICE CHART -->
-  <div class="card" id="skuCard" style="display:none;margin-bottom:16px">
-    <div class="sec" id="skuCardTitle">История цены</div>
-    <div class="ch"><canvas id="skuCanvas"></canvas></div>
   </div>
 
   <!-- ALERT STRIP -->
@@ -410,44 +401,56 @@
     </div>
   </div>
 
-  <!-- PRICE HISTORY DAY BY DAY -->
+  <!-- UNIFIED PRICE ANALYSIS -->
   <div class="card g-full">
-    <div style="display:flex;align-items:center;margin-bottom:14px;">
-      <div class="sec" style="margin:0">История цен по товарам</div>
-      <span id="phBadge" class="ph-badge"></span>
+
+    <div class="ph-head">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">Анализ цен на товары</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">история закупок · изменение цен день за днём</div>
+      </div>
+      <span id="phBadge" class="ph-badge" style="display:none"></span>
     </div>
 
-    <div class="ph-panel">
-      <div class="ph-row">
-        <span class="ph-lbl">Город</span>
-        <div id="phCityBtns" class="ph-row" style="gap:6px;flex:1;"></div>
+    <!-- Search -->
+    <div class="ph-searchbox">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="phSearch" type="text" placeholder="Найдите товар — например «мука» или «яйцо»..." oninput="phRender()">
+      <button id="phClear" onclick="phResetSearch()" title="Очистить">✕</button>
+    </div>
+
+    <!-- Pill filters -->
+    <div class="ph-frow">
+      <div class="ph-fg">
+        <span class="ph-flbl">Поставщик</span>
+        <button class="ph-p active" data-g="sup" data-v="" onclick="phPill(this)">Все</button>
+        <button class="ph-p" data-g="sup" data-v="МИЛАНА" onclick="phPill(this)">МИЛАНА</button>
+        <button class="ph-p" data-g="sup" data-v="ИП Османов" onclick="phPill(this)">ИП Османов</button>
       </div>
-      <div class="ph-row">
-        <span class="ph-lbl">Поставщик</span>
-        <div id="phSupBtns" class="ph-row" style="gap:6px;flex:1;"></div>
-      </div>
-      <div class="ph-row">
-        <span class="ph-lbl">Период</span>
-        <button class="ph-pill active" data-p="all" onclick="phSetPeriod(this)">Все время</button>
-        <button class="ph-pill"        data-p="30"  onclick="phSetPeriod(this)">30 дней</button>
-        <button class="ph-pill"        data-p="7"   onclick="phSetPeriod(this)">7 дней</button>
-      </div>
-      <div class="ph-row">
-        <span class="ph-lbl">Товар</span>
-        <input id="phSearch" type="text" class="ph-search" placeholder="Начните вводить название...">
-        <button onclick="phReset()" class="ph-reset">Сбросить</button>
+      <div class="ph-fg" style="margin-left:auto">
+        <span class="ph-flbl">Период</span>
+        <button class="ph-p active" data-g="per" data-v="all" onclick="phPill(this)">Все</button>
+        <button class="ph-p" data-g="per" data-v="30" onclick="phPill(this)">30 дней</button>
+        <button class="ph-p" data-g="per" data-v="7" onclick="phPill(this)">7 дней</button>
       </div>
     </div>
 
+    <!-- Chart (shows when search is active) -->
+    <div id="phChartBox" style="display:none;margin-bottom:16px">
+      <div id="phChartTitle" style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px"></div>
+      <div class="ch"><canvas id="phCanvas"></canvas></div>
+    </div>
+
+    <!-- Table -->
     <div class="tbl-wrap">
       <table>
         <thead><tr>
-          <th onclick="phSortBy('sku')"  style="cursor:pointer">Товар <span id="ph-sort-sku">↕</span></th>
-          <th onclick="phSortBy('sup')"  style="cursor:pointer">Поставщик <span id="ph-sort-sup">↕</span></th>
-          <th onclick="phSortBy('date')" style="cursor:pointer">Дата <span id="ph-sort-date">↓</span></th>
-          <th class="num" onclick="phSortBy('price')" style="cursor:pointer">Цена ₸ <span id="ph-sort-price">↕</span></th>
-          <th class="num" onclick="phSortBy('qty')"   style="cursor:pointer">Кол-во <span id="ph-sort-qty">↕</span></th>
-          <th class="num">Изменение</th>
+          <th onclick="phSort('sku')"   style="cursor:pointer;user-select:none">Товар <span id="ph-s-sku">↕</span></th>
+          <th onclick="phSort('sup')"   style="cursor:pointer;user-select:none">Поставщик <span id="ph-s-sup">↕</span></th>
+          <th onclick="phSort('date')"  style="cursor:pointer;user-select:none">Дата <span id="ph-s-date">↓</span></th>
+          <th class="num" onclick="phSort('price')" style="cursor:pointer;user-select:none">Цена ₸ <span id="ph-s-price">↕</span></th>
+          <th class="num" onclick="phSort('qty')"   style="cursor:pointer;user-select:none">Кол-во <span id="ph-s-qty">↕</span></th>
+          <th class="num">Изм.</th>
         </tr></thead>
         <tbody id="phBody"></tbody>
       </table>
@@ -1318,19 +1321,12 @@ fetch('/api/me').then(r=>r.json()).then(d=>{
 const CAT_MAP_JS=[['яйцо','Яйца'],['сливки','Молочные'],['творог','Молочные'],['молоко','Молочные'],['сыр','Молочные'],['масло растительное','Масло/жиры'],['подсолнечн','Масло/жиры'],['масло','Масло/жиры'],['маргарин','Масло/жиры'],['майонез','Масло/жиры'],['мясо','Мясо'],['говядина','Мясо'],['свинина','Мясо'],['колбас','Мясо'],['сосиск','Мясо'],['курица','Птица'],['бройлер','Птица'],['рыба','Рыба/морепродукты'],['горбуша','Рыба/морепродукты'],['хлеб','Хлеб/выпечка'],['батон','Хлеб/выпечка'],['мука','Сухие продукты'],['рис','Сухие продукты'],['греча','Сухие продукты'],['геркулес','Сухие продукты'],['крупа','Сухие продукты'],['макарон','Сухие продукты'],['соль','Специи/соусы'],['сахар','Специи/соусы'],['перец','Специи/соусы'],['приправ','Специи/соусы'],['соус','Специи/соусы'],['томат','Специи/соусы'],['картофел','Овощи/фрукты'],['морковь','Овощи/фрукты'],['лук','Овощи/фрукты'],['капуст','Овощи/фрукты'],['огурец','Овощи/фрукты'],['помидор','Овощи/фрукты'],['фрукт','Овощи/фрукты'],['яблок','Овощи/фрукты'],['банан','Овощи/фрукты'],['пакет','Упаковка'],['контейнер','Упаковка'],['мешок','Упаковка'],['перчатк','Хозяйство']];
 function getCatJS(n){const l=(n||'').toLowerCase();for(const[k,c]of CAT_MAP_JS)if(l.includes(k))return c;return'Прочее';}
 
-let _skuChart=null;
-
-// Populate dropdowns (script runs at bottom of body — DOM already ready)
+// Populate global supplier dropdown
 (function(){
   const sel=document.getElementById('fSup');
   if(sel){
     const sups=[...new Set(ALL_LINES.map(l=>l[1]))].sort();
     sups.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
-  }
-  const dl=document.getElementById('skuDL');
-  if(dl){
-    const skus=[...new Set(ALL_LINES.map(l=>l[0]))].sort();
-    skus.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});
   }
 })();
 
@@ -1417,69 +1413,20 @@ function runFilter(){
     chartWeekly.data.datasets[1].data=s.map(([,v])=>v.o);
     chartWeekly.update('none');
   }
-  runSkuChart();
 }
 
 function resetFilter(){
   document.getElementById('fFrom').value='';
   document.getElementById('fTo').value='';
   document.getElementById('fSup').value='';
-  document.getElementById('fSku').value='';
-  document.getElementById('skuCard').style.display='none';
   runFilter();
 }
 
-// ── SKU PRICE HISTORY ─────────────────────────────────────────────────────────
-function runSkuChart(){
-  const q=(document.getElementById('fSku').value||'').trim().toLowerCase();
-  const card=document.getElementById('skuCard');
-  if(!q){card.style.display='none';return;}
-  const from=document.getElementById('fFrom').value;
-  const to  =document.getElementById('fTo').value;
-  const sup =document.getElementById('fSup').value;
-  const lines=ALL_LINES.filter(([sku,s,,date])=>{
-    if(!sku.toLowerCase().includes(q))return false;
-    if(from && date<from)return false;
-    if(to   && date>to)  return false;
-    if(sup  && s!==sup)  return false;
-    return true;
-  });
-  if(!lines.length){card.style.display='none';return;}
-  card.style.display='';
-  document.getElementById('skuCardTitle').textContent='История цены: '+lines[0][0];
-  const byDS={};
-  lines.forEach(([,s,,date,price])=>{
-    if(!date||!price)return;
-    if(!byDS[date])byDS[date]={};
-    if(!byDS[date][s])byDS[date][s]=[];
-    byDS[date][s].push(price);
-  });
-  const dates=Object.keys(byDS).sort();
-  const sups=[...new Set(lines.map(l=>l[1]))];
-  const colors=['#6366f1','#22c55e','#f59e0b','#ef4444','#8b5cf6'];
-  const datasets=sups.map((s,i)=>({
-    label:s,
-    data:dates.map(d=>{const p=byDS[d]?.[s];return p?p.reduce((a,b)=>a+b,0)/p.length:null;}),
-    borderColor:colors[i%5],backgroundColor:colors[i%5]+'33',
-    tension:.3,spanGaps:true,pointRadius:5,fill:false,borderWidth:2,
-  }));
-  if(_skuChart){_skuChart.destroy();}
-  _skuChart=new Chart(document.getElementById('skuCanvas'),{
-    type:'line',
-    data:{labels:dates.map(d=>{const[y,m,day]=d.split('-');return`${day}.${m}`;}).concat(),datasets},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:TICK,font:FONT}},tooltip:{backgroundColor:TOOLTIP_BG,callbacks:{label:c=>`${c.dataset.label}: ${c.raw?Math.round(c.raw)+' ₸':'—'}`}}},
-      scales:{x:{grid:{color:GRID},ticks:{color:TICK,font:FONT}},y:{grid:{color:GRID},ticks:{color:TICK,font:FONT,callback:v=>fmt(v)+' ₸'}}}
-    }
-  });
-}
-
-// ── PRICE HISTORY TABLE ───────────────────────────────────────────────────────
+// ── PRICE ANALYSIS (chart + table unified) ───────────────────────────────────
 (function() {
-  // Pre-compute delta% across all history (period filter doesn't affect deltas)
   const byKey = {};
   ALL_LINES.forEach(([sku, sup, , date, price]) => {
-    const k = sku + '||' + sup;
+    const k = sku + '|' + sup;
     if (!byKey[k]) byKey[k] = [];
     byKey[k].push({ date, price });
   });
@@ -1487,77 +1434,61 @@ function runSkuChart(){
   Object.entries(byKey).forEach(([k, entries]) => {
     entries.sort((a, b) => a.date < b.date ? -1 : 1);
     entries.forEach((e, i) => {
-      const prev = i > 0 ? entries[i - 1].price : null;
-      window._phDelta[k + '||' + e.date] = (prev && prev > 0) ? (e.price - prev) / prev * 100 : null;
+      const prev = i > 0 ? entries[i-1].price : null;
+      window._phDelta[k + '|' + e.date] = (prev && prev > 0) ? (e.price - prev) / prev * 100 : null;
     });
   });
-
-  // Build city + supplier pill buttons dynamically
-  const maxDate = ALL_LINES.map(l => l[3]).filter(Boolean).reduce((a, b) => a > b ? a : b, '');
-  window._phMaxDate = maxDate;
-  window._phState   = { city: '', sup: '', period: 'all' };
-  window._phSort    = { col: 'date', dir: -1 };
-
-  function makePills(containerId, values, stateKey) {
-    const wrap = document.getElementById(containerId);
-    if (!wrap) return;
-    const allBtn = document.createElement('button');
-    allBtn.className = 'ph-pill active';
-    allBtn.textContent = 'Все';
-    allBtn.onclick = () => phSetPill(containerId, allBtn, '', stateKey);
-    wrap.appendChild(allBtn);
-    values.forEach(v => {
-      const btn = document.createElement('button');
-      btn.className = 'ph-pill';
-      btn.textContent = v;
-      btn.onclick = () => phSetPill(containerId, btn, v, stateKey);
-      wrap.appendChild(btn);
-    });
-  }
-
-  const cities = [...new Set(ALL_LINES.map(l => l[2]))].sort();
-  const sups   = [...new Set(ALL_LINES.map(l => l[1]))].sort();
-  makePills('phCityBtns', cities, 'city');
-  makePills('phSupBtns',  sups,   'sup');
-
+  const allDates = ALL_LINES.map(l => l[3]).filter(Boolean);
+  window._phMaxDate = allDates.length ? allDates.reduce((a, b) => a > b ? a : b) : '';
+  window._phSt  = { sup: '', per: 'all', col: 'date', dir: -1 };
+  window._phC2  = null;
   phRender();
 })();
 
-function phSetPill(containerId, activeBtn, value, stateKey) {
-  document.getElementById(containerId).querySelectorAll('.ph-pill')
-    .forEach(b => b.classList.remove('active'));
-  activeBtn.classList.add('active');
-  window._phState[stateKey] = value;
+function phPill(btn) {
+  const g = btn.dataset.g, v = btn.dataset.v;
+  document.querySelectorAll('.ph-p[data-g="' + g + '"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (g === 'sup') window._phSt.sup = v;
+  if (g === 'per') window._phSt.per = v;
   phRender();
 }
 
-function phSetPeriod(btn) {
-  btn.closest('.ph-row').querySelectorAll('.ph-pill').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  window._phState.period = btn.dataset.p;
+function phSort(col) {
+  const s = window._phSt;
+  s.dir = s.col === col ? s.dir * -1 : -1;
+  s.col = col;
+  phRender();
+}
+
+function phResetSearch() {
+  document.getElementById('phSearch').value = '';
   phRender();
 }
 
 function phRender() {
-  const { city, sup, period } = window._phState || { city:'', sup:'', period:'all' };
-  const q     = (document.getElementById('phSearch').value || '').trim().toLowerCase();
-  const delta = window._phDelta || {};
-  const maxDate = window._phMaxDate || '';
-  const { col, dir } = window._phSort || { col: 'date', dir: -1 };
+  const st  = window._phSt || { sup:'', per:'all', col:'date', dir:-1 };
+  const del = window._phDelta || {};
+  const q   = (document.getElementById('phSearch').value || '').trim().toLowerCase();
 
+  // Clear button visibility
+  const clrBtn = document.getElementById('phClear');
+  if (clrBtn) clrBtn.style.display = q ? 'block' : 'none';
+
+  // Period cutoff
   let cutoff = '';
-  if (period !== 'all' && maxDate) {
-    const d = new Date(maxDate);
-    d.setDate(d.getDate() - parseInt(period, 10) + 1);
+  if (st.per !== 'all' && window._phMaxDate) {
+    const d = new Date(window._phMaxDate);
+    d.setDate(d.getDate() - parseInt(st.per, 10) + 1);
     cutoff = d.toISOString().slice(0, 10);
   }
 
+  // Build rows
   const seen = new Set();
   let rows = ALL_LINES
-    .filter(([sku, s, c, date]) => {
-      if (city   && c !== city)    return false;
-      if (sup    && s !== sup)     return false;
-      if (cutoff && date < cutoff) return false;
+    .filter(([sku, s, , date]) => {
+      if (st.sup  && s !== st.sup)   return false;
+      if (cutoff  && date < cutoff)  return false;
       if (q && !sku.toLowerCase().includes(q) && !s.toLowerCase().includes(q)) return false;
       return true;
     })
@@ -1565,83 +1496,95 @@ function phRender() {
       sku, sup: s, date,
       price: +price || 0,
       qty:   +qty   || 0,
-      delta: delta[sku + '||' + s + '||' + date] ?? null
+      delta: del[sku + '|' + s + '|' + date] ?? null
     }))
-    .filter(r => {
-      const k = r.sku + r.sup + r.date;
-      if (seen.has(k)) return false;
-      seen.add(k); return true;
-    });
+    .filter(r => { const k = r.sku + r.sup + r.date; if (seen.has(k)) return false; seen.add(k); return true; });
 
+  // Sort
   rows.sort((a, b) => {
-    let av = a[col], bv = b[col];
-    if (col === 'price' || col === 'qty') { av = +av || 0; bv = +bv || 0; }
-    if (av < bv) return dir;
-    if (av > bv) return -dir;
-    return 0;
+    let av = a[st.col], bv = b[st.col];
+    if (st.col === 'price' || st.col === 'qty') { av = +av||0; bv = +bv||0; }
+    if (av < bv) return st.dir; if (av > bv) return -st.dir; return 0;
   });
 
+  // Sort arrows
   ['sku','sup','date','price','qty'].forEach(c => {
-    const el = document.getElementById('ph-sort-' + c);
-    if (el) el.textContent = c === col ? (dir === -1 ? '↓' : '↑') : '↕';
+    const el = document.getElementById('ph-s-' + c);
+    if (el) el.textContent = c === st.col ? (st.dir === -1 ? '↓' : '↑') : '↕';
   });
 
-  const tbody  = document.getElementById('phBody');
-  const badge  = document.getElementById('phBadge');
-  if (!tbody) return;
+  // Badge
+  const badge = document.getElementById('phBadge');
+  if (badge) { badge.textContent = rows.length + ' записей'; badge.style.display = rows.length ? '' : 'none'; }
 
+  // Chart — show when searching
+  const chartBox = document.getElementById('phChartBox');
+  if (q && rows.length) {
+    _phDrawChart(rows, q);
+    if (chartBox) chartBox.style.display = '';
+  } else {
+    if (chartBox) chartBox.style.display = 'none';
+    if (window._phC2) { window._phC2.destroy(); window._phC2 = null; }
+  }
+
+  // Table
+  const tbody = document.getElementById('phBody');
+  if (!tbody) return;
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">Нет данных по выбранным фильтрам</td></tr>';
-    if (badge) badge.textContent = '';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px">Ничего не найдено — попробуйте другой запрос или снимите фильтр</td></tr>';
     return;
   }
-  if (badge) badge.textContent = rows.length + ' записей';
-
   tbody.innerHTML = rows.slice(0, 300).map(r => {
-    const dateStr  = r.date  ? r.date.split('-').reverse().join('.') : '—';
-    const priceStr = r.price ? fmt(Math.round(r.price)) : '—';
-    const qtyStr   = r.qty   ? (+r.qty.toFixed(2)) + '' : '—';
-    let dHtml = '<span style="color:var(--muted)">—</span>';
+    const ds = r.date ? r.date.split('-').reverse().join('.') : '—';
+    const ps = r.price ? fmt(Math.round(r.price)) : '—';
+    const qs = r.qty   ? (+r.qty.toFixed(2)) + '' : '—';
+    let dh = '<span style="color:var(--muted)">—</span>';
     if (r.delta !== null && r.delta !== undefined) {
-      const sign  = r.delta > 0 ? '▲' : '▼';
-      const color = r.delta > 0 ? 'var(--red)' : 'var(--milana)';
-      dHtml = `<span style="color:${color};font-weight:700">${sign} ${Math.abs(r.delta).toFixed(1)}%</span>`;
+      const sign = r.delta > 0 ? '▲' : '▼';
+      const col  = r.delta > 0 ? 'var(--red)' : 'var(--milana)';
+      dh = `<span style="color:${col};font-weight:700">${sign} ${Math.abs(r.delta).toFixed(1)}%</span>`;
     }
-    const supTag = r.sup.toUpperCase().includes('МИЛАН')
-      ? `<span class="tag-m">${r.sup}</span>`
-      : `<span class="tag-o">${r.sup}</span>`;
-    const skuEsc = r.sku.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<tr style="cursor:pointer" onclick="phClickRow('${skuEsc}')">
-      <td>${r.sku}</td><td>${supTag}</td><td>${dateStr}</td>
-      <td class="num">${priceStr}</td><td class="num">${qtyStr}</td>
-      <td class="num">${dHtml}</td>
-    </tr>`;
+    const st2 = r.sup.toUpperCase().includes('МИЛАН') ? `<span class="tag-m">${r.sup}</span>` : `<span class="tag-o">${r.sup}</span>`;
+    const se  = r.sku.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<tr style="cursor:pointer" onclick="phClickRow('${se}')"><td>${r.sku}</td><td>${st2}</td><td>${ds}</td><td class="num">${ps}</td><td class="num">${qs}</td><td class="num">${dh}</td></tr>`;
   }).join('');
 }
 
-function phSortBy(col) {
-  const s = window._phSort;
-  if (s.col === col) s.dir *= -1;
-  else { s.col = col; s.dir = -1; }
-  phRender();
-}
-
-function phReset() {
-  window._phState = { city: '', sup: '', period: 'all' };
-  document.getElementById('phSearch').value = '';
-  // Reset all pill groups
-  ['phCityBtns','phSupBtns'].forEach(id => {
-    const wrap = document.getElementById(id);
-    if (!wrap) return;
-    wrap.querySelectorAll('.ph-pill').forEach((b, i) => b.classList.toggle('active', i === 0));
+function _phDrawChart(rows, q) {
+  const title = document.getElementById('phChartTitle');
+  if (title) title.textContent = 'График цен: ' + rows[0].sku;
+  const byDS = {};
+  rows.forEach(r => {
+    if (!r.date || !r.price) return;
+    if (!byDS[r.date]) byDS[r.date] = {};
+    if (!byDS[r.date][r.sup]) byDS[r.date][r.sup] = [];
+    byDS[r.date][r.sup].push(r.price);
   });
-  document.querySelectorAll('.ph-row .ph-pill[data-p]').forEach((b, i) => b.classList.toggle('active', i === 0));
-  phRender();
+  const dates   = Object.keys(byDS).sort();
+  const sups    = [...new Set(rows.map(r => r.sup))];
+  const colors  = ['#6366f1','#22c55e','#f59e0b','#ef4444'];
+  const datasets = sups.map((s, i) => ({
+    label: s,
+    data: dates.map(d => { const p = byDS[d]?.[s]; return p ? p.reduce((a,b)=>a+b,0)/p.length : null; }),
+    borderColor: colors[i%4], backgroundColor: colors[i%4]+'22',
+    tension:.35, spanGaps:true, pointRadius:5, fill:false, borderWidth:2
+  }));
+  const canvas = document.getElementById('phCanvas');
+  if (!canvas) return;
+  if (window._phC2) { window._phC2.destroy(); window._phC2 = null; }
+  window._phC2 = new Chart(canvas, {
+    type:'line',
+    data:{ labels: dates.map(d => { const[,m,day]=d.split('-'); return day+'.'+m; }), datasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:TICK,font:FONT}}, tooltip:{backgroundColor:TOOLTIP_BG, callbacks:{label:c=>`${c.dataset.label}: ${c.raw?Math.round(c.raw)+' ₸':'—'}`}} },
+      scales:{ x:{grid:{color:GRID},ticks:{color:TICK,font:FONT}}, y:{grid:{color:GRID},ticks:{color:TICK,font:FONT,callback:v=>fmt(v)+' ₸'}} }
+    }
+  });
 }
 
 function phClickRow(sku) {
-  const inp = document.getElementById('fSku');
-  if (inp) { inp.value = sku; runSkuChart(); }
+  const inp = document.getElementById('phSearch');
+  if (inp) { inp.value = sku; phRender(); inp.focus(); }
 }
 
 // ── THEME ─────────────────────────────────────────────────────────────────────
