@@ -241,6 +241,14 @@
   .month-cnt  { font-size:10px; color:var(--muted); margin-top:4px; }
   .month-mid  { text-align:center; color:var(--muted); font-size:18px; }
 
+  /* Section group divider */
+  .grp { display:flex; align-items:center; gap:12px; margin:28px 0 16px; }
+  .grp-title { font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; letter-spacing:-.2px; }
+  .grp::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* Section plain subtitle */
+  .sec-desc { font-size:11px; color:var(--muted); font-weight:400; margin-top:2px; margin-bottom:14px; }
+
   /* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
   @media(max-width:1300px) {
     .grid-6{grid-template-columns:repeat(3,1fr)}
@@ -328,108 +336,12 @@
   </div>
 
 
-  <!-- РАСХОДЫ + ГОРОДА + МЕСЯЦ VS МЕСЯЦ -->
-  <div class="grid-equal3">
-    <div class="card">
-      <div class="sec">Расходы по накладным</div>
-      <div class="ch"><canvas id="spendChart"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="sec">Недельный ритм</div>
-      <div class="ch-med"><canvas id="weeklyChart"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="sec">Месяц к месяцу</div>
-      <div class="month-cmp" id="monthCmp" style="min-height:100px"></div>
-      <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5" id="monthNote"></div>
-    </div>
-  </div>
-
-  <!-- HEATMAP -->
-  <div class="card g-full">
-    <div class="sec">Тепловая карта закупок <span class="sec-sub">/ активность по дням</span></div>
-    <div id="heatmapWrap"></div>
-  </div>
-
-  <!-- ГОРОД + ПОСТАВЩИКИ -->
-  <div class="grid-3">
-    <div class="card">
-      <div class="sec">Доля по городам</div>
-      <div class="ch-sm"><canvas id="supPieChart"></canvas></div>
-      <div id="cityBars" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
-    </div>
-    <div class="card">
-      <div class="sec">Поставщики · сводка</div>
-      <div id="supCards" style="display:flex;flex-direction:column;gap:10px;margin-top:4px;"></div>
-    </div>
-  </div>
-
-  <!-- КАТЕГОРИИ + ПОСТАВЩИКИ SCORECARD -->
-  <div class="grid-2">
-    <div class="card">
-      <div class="sec">Расходы по категориям</div>
-      <div class="ch-sm"><canvas id="catPieChart"></canvas></div>
-      <div id="catLegend" style="margin-top:12px;display:flex;flex-direction:column;gap:5px;"></div>
-    </div>
-    <div class="card">
-      <div class="sec">Сравнение поставщиков <span class="sec-sub">/ скоркард</span></div>
-      <div id="scorecardHeader" style="margin-bottom:10px;display:flex;justify-content:flex-end;gap:12px;"></div>
-      <div class="scorecard" id="scorecard"></div>
-    </div>
-  </div>
-
-  <!-- ТРЕНД ПО КАТЕГОРИЯМ -->
-  <div class="card g-full">
-    <div class="sec">Тренд по категориям <span class="sec-sub">/ месяц к месяцу</span></div>
-    <div class="ch"><canvas id="catTrendChart"></canvas></div>
-  </div>
-
-  <!-- ТРЕНДЫ ЦЕН -->
-  <div class="card g-full">
-    <div class="sec">Динамика цен · как менялись цены от накладной к накладной</div>
-    <div class="ch-trend"><canvas id="trendChart"></canvas></div>
-  </div>
-
-  <!-- TOP SKU + ANOMALY CHART -->
-  <div class="grid-2">
-    <div class="card">
-      <div class="sec">Топ-15 SKU по сумме закупок</div>
-      <div class="ch-tall"><canvas id="skuChart"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="sec">Ценовые аномалии · мин vs макс</div>
-      <div class="ch-tall"><canvas id="anomalyChart"></canvas></div>
-    </div>
-  </div>
-
-  <!-- FREQ SKU -->
-  <div class="card g-full">
-    <div class="sec">Топ SKU по частоте · в скольких накладных встречается</div>
-    <div style="position:relative;height:300px;"><canvas id="freqSkuChart"></canvas></div>
-  </div>
-
-  <!-- РАЗБИВКА ПО КАТЕГОРИЯМ -->
-  <div class="card g-full">
-    <div class="sec">Разбивка бюджета по категориям</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr>
-          <th>Категория</th>
-          <th class="num">Сумма ₸</th>
-          <th class="num">Доля</th>
-          <th style="min-width:160px;">Визуализация</th>
-        </tr></thead>
-        <tbody id="catTbody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- PRICE MONITOR -->
+  <!-- PRICE MONITOR (top — most actionable) -->
   <div class="card g-full">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
       <div>
-        <div style="font-size:14px;font-weight:700;color:var(--text)">Мониторинг цен</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">последняя закупка vs предыдущая · по каждому товару</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">🔔 Мониторинг цен</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">сравнение последней закупки с предыдущей по каждому товару — сразу видно что подорожало</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <span id="pmCount" style="font-size:10px;color:var(--muted)"></span>
@@ -454,13 +366,127 @@
     </div>
   </div>
 
+  <!-- РАСХОДЫ + ГОРОДА + МЕСЯЦ VS МЕСЯЦ -->
+  <div class="grp"><span class="grp-title">💰 Расходы и динамика</span></div>
+  <div class="grid-equal3">
+    <div class="card">
+      <div class="sec">Расходы по накладным</div>
+      <div class="sec-desc">каждый столбик — одна накладная, высота = сумма</div>
+      <div class="ch"><canvas id="spendChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="sec">Расходы по неделям</div>
+      <div class="sec-desc">сколько потратили за каждую неделю, цвет — поставщик</div>
+      <div class="ch-med"><canvas id="weeklyChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="sec">Этот месяц vs прошлый</div>
+      <div class="month-cmp" id="monthCmp" style="min-height:100px"></div>
+      <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5" id="monthNote"></div>
+    </div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="card g-full">
+    <div class="sec">Активность закупок по дням</div>
+    <div class="sec-desc">темнее клетка — больше потратили в этот день. Нажмите на день чтобы увидеть детали</div>
+    <div id="heatmapWrap"></div>
+  </div>
+
+  <!-- ГОРОД + ПОСТАВЩИКИ -->
+  <div class="grp"><span class="grp-title">🏢 Поставщики</span></div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="sec">Закупки по городам</div>
+      <div class="sec-desc">какой процент бюджета идёт в каждый город</div>
+      <div class="ch-sm"><canvas id="supPieChart"></canvas></div>
+      <div id="cityBars" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <div class="card">
+      <div class="sec">Сводка по поставщикам</div>
+      <div class="sec-desc">общая сумма, количество накладных и ассортимент каждого поставщика</div>
+      <div id="supCards" style="display:flex;flex-direction:column;gap:10px;margin-top:4px;"></div>
+    </div>
+  </div>
+
+  <!-- КАТЕГОРИИ + ПОСТАВЩИКИ SCORECARD -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="sec">На что тратим деньги</div>
+      <div class="sec-desc">доля каждой категории продуктов в общем бюджете</div>
+      <div class="ch-sm"><canvas id="catPieChart"></canvas></div>
+      <div id="catLegend" style="margin-top:12px;display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
+    <div class="card">
+      <div class="sec">Кто сколько поставляет</div>
+      <div class="sec-desc">сравнение поставщиков по бюджету, накладным и позициям</div>
+      <div id="scorecardHeader" style="margin-bottom:10px;display:flex;justify-content:flex-end;gap:12px;"></div>
+      <div class="scorecard" id="scorecard"></div>
+    </div>
+  </div>
+
+  <!-- ТРЕНД ПО КАТЕГОРИЯМ -->
+  <div class="grp"><span class="grp-title">📈 Цены и товары</span></div>
+  <div class="card g-full">
+    <div class="sec">Расходы по категориям месяц к месяцу</div>
+    <div class="sec-desc">как изменился бюджет на каждую группу продуктов по сравнению с прошлым месяцем</div>
+    <div class="ch"><canvas id="catTrendChart"></canvas></div>
+  </div>
+
+  <!-- ТРЕНДЫ ЦЕН -->
+  <div class="card g-full">
+    <div class="sec">Как менялись цены</div>
+    <div class="sec-desc">линии показывают цену одного товара в разных накладных — видно рост или снижение</div>
+    <div class="ch-trend"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <!-- TOP SKU + ANOMALY CHART -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="sec">Топ-15 самых дорогих позиций</div>
+      <div class="sec-desc">товары с наибольшей суммой закупок за весь период</div>
+      <div class="ch-tall"><canvas id="skuChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="sec">Подозрительные цены</div>
+      <div class="sec-desc">товары где минимальная и максимальная цена сильно отличаются — возможные ошибки</div>
+      <div class="ch-tall"><canvas id="anomalyChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- FREQ SKU -->
+  <div class="card g-full">
+    <div class="sec">Самые часто закупаемые товары</div>
+    <div class="sec-desc">в скольких накладных встречается каждый товар — показывает регулярность закупки</div>
+    <div style="position:relative;height:300px;"><canvas id="freqSkuChart"></canvas></div>
+  </div>
+
+  <!-- ДЕТАЛИ -->
+  <div class="grp"><span class="grp-title">📋 Детали и история</span></div>
+  <!-- РАЗБИВКА ПО КАТЕГОРИЯМ -->
+  <div class="card g-full">
+    <div class="sec">Бюджет по категориям</div>
+    <div class="sec-desc">полная разбивка: сколько и какой процент бюджета потрачен на каждую группу</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Категория</th>
+          <th class="num">Сумма ₸</th>
+          <th class="num">Доля</th>
+          <th style="min-width:160px;">Визуализация</th>
+        </tr></thead>
+        <tbody id="catTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- UNIFIED PRICE ANALYSIS -->
   <div class="card g-full">
 
     <div class="ph-head">
       <div>
-        <div style="font-size:14px;font-weight:700;color:var(--text)">Анализ цен на товары</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">история закупок · изменение цен день за днём</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">🔍 История цен на товары</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">введите название товара — увидите всю историю закупок и как менялась цена</div>
       </div>
       <span id="phBadge" class="ph-badge" style="display:none"></span>
     </div>
@@ -510,7 +536,8 @@
 
   <!-- ANOMALIES TABLE -->
   <div class="card g-full">
-    <div class="sec">Детализация ценовых аномалий</div>
+    <div class="sec">Подробно: товары с резкими скачками цен</div>
+    <div class="sec-desc">минимальная и максимальная цена на один и тот же товар — большой разброс = стоит разобраться</div>
     <div class="tbl-wrap">
       <table>
         <thead><tr>
@@ -526,7 +553,7 @@
   <!-- ALL INVOICES -->
   <div class="card g-full">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-      <div class="sec" style="margin:0;flex:1">Все накладные</div>
+      <div class="sec" style="margin:0;flex:1">Все накладные <span class="sec-sub">/ полный список закупок</span></div>
       <div class="inv-filter-bar">
         <input id="invSearch" type="text" placeholder="Поиск..." oninput="renderInvTable()"
           style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;outline:none;width:140px;">
