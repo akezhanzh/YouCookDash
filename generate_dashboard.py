@@ -20,7 +20,14 @@ OUT.parent.mkdir(exist_ok=True)
 
 # ── Вспомогательные функции ────────────────────────────────────────────────────
 def js_str(s):
-    return '"' + str(s).replace('\\', '\\\\').replace('"', '\\"') + '"'
+    return '"' + (
+        str(s)
+        .replace('\\', '\\\\')
+        .replace('"', '\\"')
+        .replace('\n', '\\n')
+        .replace('\r', '\\r')
+        .replace('\t', '\\t')
+    ) + '"'
 
 def fmt_date(d):
     """'2026-03-04' → '04.03.2026'"""
@@ -508,7 +515,7 @@ html = TPL.read_text(encoding="utf-8")
 
 html = re.sub(
     r"// ── DATA ──.*?(?=// ── HELPERS ──)",
-    new_data,
+    lambda _m: new_data,
     html,
     flags=re.DOTALL,
 )
