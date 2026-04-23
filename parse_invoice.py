@@ -619,10 +619,13 @@ def parse_xlsx(xlsx_path: Path) -> dict:
         if len(cells) < 3:
             continue
 
-        # Separate strings from numbers
+        # Separate strings from numbers. Пропускаем длинные digit-only строки —
+        # это номенклатурные коды вроде '00000000259', они не число а ID.
         strings, numbers = [], []
         for i, v in cells:
             s = str(v).strip()
+            if re.fullmatch(r"\d{7,}", s):  # 7+ цифр подряд = SKU-код
+                continue
             try:
                 n = to_float(s)
                 numbers.append(n)
@@ -637,13 +640,25 @@ def parse_xlsx(xlsx_path: Path) -> dict:
         unit = next((s for s in strings[1:] if len(s) <= 5 and s.replace(".", "").isalpha()), "кг")
         nums = [n for n in numbers if n > 0]
 
-        # Find triplet qty * price ≈ total
+        # Ищем тройку (qty, price, total) где qty*price ≈ total. Сначала точные
+        # совпадения (tolerance 0.01), только потом fuzzy. Это предотвращает
+        # случайные ложные совпадения вроде (3 × 259 ≈ 775.86) когда рядом есть
+        # настоящая точная пара (3 × 1875 = 5625).
         qty = price = line_total = None
-        for a, b, c in [(nums[i], nums[j], nums[k])
-                        for i in range(len(nums))
-                        for j in range(len(nums)) if j != i
-                        for k in range(len(nums)) if k != i and k != j]:
-            if abs(a * b - c) < max(0.5, c * 0.002):
+        triplets = [(nums[i], nums[j], nums[k])
+                    for i in range(len(nums))
+                    for j in range(len(nums)) if j != i
+                    for k in range(len(nums)) if k != i and k != j]
+        for tol in (0.01, max(0.5, 0)):  # сначала точно, потом fuzzy
+            best = None
+            for a, b, c in triplets:
+                tolerance = max(tol, c * 0.002) if tol > 0.1 else tol
+                err = abs(a * b - c)
+                if err < tolerance:
+                    if best is None or err < best[3]:
+                        best = (a, b, c, err)
+            if best:
+                a, b, c, _ = best
                 qty, price, line_total = (a, b, c) if a <= b else (b, a, c)
                 break
 
