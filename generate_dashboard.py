@@ -215,7 +215,7 @@ cat_spend = sorted(cat_totals.items(), key=lambda x: x[1], reverse=True)
 detail_lines_raw = conn.execute("""
     SELECT sc.name, COALESCE(s.short_name, s.name), s.city,
            i.invoice_date, il.unit_price, il.qty, COALESCE(il.line_total, 0),
-           i.invoice_id
+           i.invoice_id, COALESCE(il.unit, sc.unit, 'кг')
     FROM invoice_lines il
     JOIN invoices i ON i.id = il.invoice_id
     JOIN suppliers s ON s.id = i.supplier_id
@@ -468,11 +468,11 @@ def js_cross_supplier():
 
 def js_detail_lines():
     rows = []
-    for sku, sup, city, dt, price, qty, total, inv_id in detail_lines_raw:
+    for sku, sup, city, dt, price, qty, total, inv_id, unit in detail_lines_raw:
         rows.append(
             f'  [{js_str(sku)},{js_str(clean_sup(sup))},{js_str(city or "—")},'
             f'{js_str(dt or "")},{float(price or 0):.2f},{float(qty or 0):.3f},'
-            f'{int(total or 0)},{js_str(str(inv_id or ""))}]'
+            f'{int(total or 0)},{js_str(str(inv_id or ""))},{js_str(unit or "кг")}]'
         )
     return "const ALL_LINES=[\n" + ",\n".join(rows) + "\n];"
 

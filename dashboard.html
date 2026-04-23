@@ -357,8 +357,9 @@
           <th onclick="pmSort('sku')"   style="cursor:pointer;user-select:none">Товар <span id="pm-s-sku">↕</span></th>
           <th>Поставщик</th>
           <th onclick="pmSort('date')"  style="cursor:pointer;user-select:none">Дата <span id="pm-s-date">↕</span></th>
-          <th class="num" onclick="pmSort('price')" style="cursor:pointer;user-select:none">Цена ₸ <span id="pm-s-price">↕</span></th>
-          <th class="num">Предыдущая ₸</th>
+          <th class="num" onclick="pmSort('qty')" style="cursor:pointer;user-select:none">Кол-во <span id="pm-s-qty">↕</span></th>
+          <th class="num" onclick="pmSort('price')" style="cursor:pointer;user-select:none">Цена <span id="pm-s-price">↕</span></th>
+          <th class="num">Предыдущая</th>
           <th class="num" onclick="pmSort('delta')" style="cursor:pointer;user-select:none">Изменение <span id="pm-s-delta">↓</span></th>
         </tr></thead>
         <tbody id="pmBody"></tbody>
@@ -740,7 +741,9 @@ function openModal(skuName) {
 
   const anom = anomalies.find(a => skuName.includes(a[0]) || a[0].includes(skuName.split(' ')[0]));
   const spread = anom ? anom[4] : 0;
-  const unit   = anom ? anom[1] : 'шт';
+  // Единицу берём из ALL_LINES по точному совпадению имени товара
+  const unitLine = ALL_LINES.find(l => l[0] === skuName);
+  const unit   = (unitLine && unitLine[8]) ? unitLine[8] : (anom ? anom[1] : 'шт');
 
   // Направление цены
   const sorted = [...detail].sort((a,b) => a.date.localeCompare(b.date));
@@ -769,10 +772,10 @@ function openModal(skuName) {
   const trendCls  = direction === 'up' ? 'trend-up' : direction === 'down' ? 'trend-down' : 'trend-mix';
   const trendIcon = direction === 'up' ? '📈' : direction === 'down' ? '📉' : '➡️';
   const trendText = direction === 'up'
-    ? `Цена РАСТЁТ: ${fmt(firstPrice)} → ${fmt(lastPrice)} ₸`
+    ? `Цена РАСТЁТ: ${fmt(firstPrice)} → ${fmt(lastPrice)} ₸/${unit}`
     : direction === 'down'
-    ? `Цена СНИЗИЛАСЬ: ${fmt(firstPrice)} → ${fmt(lastPrice)} ₸`
-    : `Цена стабильна: ${fmt(firstPrice)} ₸`;
+    ? `Цена СНИЗИЛАСЬ: ${fmt(firstPrice)} → ${fmt(lastPrice)} ₸/${unit}`
+    : `Цена стабильна: ${fmt(firstPrice)} ₸/${unit}`;
 
   // Строки таблицы
   const rows = detail.map(o => {
@@ -783,7 +786,7 @@ function openModal(skuName) {
       <td>${o.date}</td>
       <td><strong>№${o.inv}</strong></td>
       <td><span class="${isO?'tag-o':'tag-m'}" style="font-size:10px">${o.sup}</span></td>
-      <td class="num"><strong style="color:${priceColor}">${fmt(o.price)} ₸</strong></td>
+      <td class="num"><strong style="color:${priceColor}">${fmt(o.price)} ₸<span style="color:var(--muted);font-weight:400;font-size:10px">/${unit}</span></strong></td>
       <td class="num" style="color:#94a3b8">${o.qty} ${unit}</td>
       <td class="num" style="color:#94a3b8">${fmt(o.total)} ₸</td>
     </tr>`;
@@ -1782,10 +1785,10 @@ function phClickRow(sku) {
 // ── PRICE MONITOR ─────────────────────────────────────────────────────────────
 (function buildPriceMonitor() {
   const byKey = {};
-  ALL_LINES.forEach(([sku, sup, , date, price]) => {
+  ALL_LINES.forEach(([sku, sup, , date, price, qty, , , unit]) => {
     const k = sku + '|||' + sup;
     if (!byKey[k]) byKey[k] = [];
-    byKey[k].push({ sku, sup, date, price: +price });
+    byKey[k].push({ sku, sup, date, price: +price, qty: +qty || 0, unit: unit || 'кг' });
   });
 
   window._pmRows = [];
@@ -1799,7 +1802,8 @@ function phClickRow(sku) {
     if (deduped.length < 2) return;
     const cur = deduped[0], prev = deduped[1];
     const delta = prev.price > 0 ? (cur.price - prev.price) / prev.price * 100 : null;
-    window._pmRows.push({ sku: cur.sku, sup: cur.sup, date: cur.date, price: cur.price,
+    window._pmRows.push({ sku: cur.sku, sup: cur.sup, date: cur.date,
+      price: cur.price, qty: cur.qty, unit: cur.unit,
       prevPrice: prev.price, prevDate: prev.date, delta });
   });
 
@@ -1836,13 +1840,14 @@ function pmRender() {
   rows.sort((a, b) => {
     let av = a[col], bv = b[col];
     if (col === 'price') { av = a.price; bv = b.price; }
+    if (col === 'qty')   { av = +a.qty || 0; bv = +b.qty || 0; }
     if (col === 'delta') { av = a.delta ?? 0; bv = b.delta ?? 0; }
     if (typeof av === 'string') return dir * av.localeCompare(bv, 'ru');
     if (av < bv) return dir; if (av > bv) return -dir; return 0;
   });
 
   // Sort indicator arrows
-  ['sku','date','price','delta'].forEach(c => {
+  ['sku','date','qty','price','delta'].forEach(c => {
     const el = document.getElementById('pm-s-' + c);
     if (el) el.textContent = c === col ? (dir === -1 ? '↓' : '↑') : '↕';
   });
@@ -1853,13 +1858,15 @@ function pmRender() {
   if (cntEl) cntEl.textContent = `${rows.length} товаров · ${up > 0 ? `▲ ${up} подорожало` : ''} ${dn > 0 ? `▼ ${dn} подешевело` : ''}`.trim();
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Нет данных — нужно минимум 2 закупки одного товара</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Нет данных — нужно минимум 2 закупки одного товара</td></tr>';
     return;
   }
 
   tbody.innerHTML = rows.map(r => {
     const ds  = r.date.split('-').reverse().join('.');
     const pds = r.prevDate.split('-').reverse().join('.');
+    const unit = r.unit || 'кг';
+    const qtyStr = r.qty ? (+r.qty).toFixed(Number.isInteger(+r.qty) ? 0 : 2) : '—';
     let dh = '<span style="color:var(--muted);font-size:11px">—</span>';
     let rowBg = '';
     if (r.delta !== null && Math.abs(r.delta) > 0.1) {
@@ -1874,9 +1881,10 @@ function pmRender() {
       <td style="font-weight:500;max-width:200px">${r.sku}</td>
       <td>${supTag(r.sup)}</td>
       <td style="color:var(--muted);font-size:11px;white-space:nowrap">${ds}</td>
-      <td class="num" style="font-weight:700;font-family:monospace">${fmt(Math.round(r.price))} ₸</td>
+      <td class="num" style="font-family:monospace;white-space:nowrap">${qtyStr} <span style="color:var(--muted);font-size:10px">${unit}</span></td>
+      <td class="num" style="font-weight:700;font-family:monospace;white-space:nowrap">${fmt(Math.round(r.price))} ₸<span style="color:var(--muted);font-weight:400;font-size:10px">/${unit}</span></td>
       <td class="num" style="color:var(--muted);font-size:11px">
-        ${fmt(Math.round(r.prevPrice))} ₸
+        ${fmt(Math.round(r.prevPrice))} ₸/${unit}
         <span style="font-size:9px;opacity:.7">(${pds})</span>
       </td>
       <td class="num">${dh}</td>
