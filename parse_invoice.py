@@ -412,7 +412,18 @@ def get_market_min(conn, sku_id: int):
     return row[0] if row and row[0] else None
 
 
-def is_duplicate(conn, supplier_id: int, date: str, total: float) -> bool:
+def is_duplicate(conn, supplier_id: int, date: str, total: float, invoice_id: str = None) -> bool:
+    # Надёжный матч: у того же поставщика уже есть накладная с этим номером.
+    # Разные парсеры (PDF vs XLSX) могут давать слегка разные суммы — а номер
+    # накладной всё равно остаётся тот же.
+    if invoice_id:
+        row = conn.execute(
+            "SELECT 1 FROM invoices WHERE supplier_id=? AND invoice_id=?",
+            (supplier_id, invoice_id),
+        ).fetchone()
+        if row:
+            return True
+    # Fallback: совпадение (поставщик, дата, сумма) — на случай если номер не распознался
     row = conn.execute(
         "SELECT 1 FROM invoices WHERE supplier_id=? AND invoice_date=? AND ABS(total_amount-?)< 0.5",
         (supplier_id, date, total),
@@ -436,7 +447,7 @@ def ingest(conn, data: dict) -> dict:
         city=data.get("supplier_city"),
     )
 
-    if data["date"] and is_duplicate(conn, supplier_id, data["date"], data["total"]):
+    if data["date"] and is_duplicate(conn, supplier_id, data["date"], data["total"], data.get("invoice_id")):
         conn.execute(
             "INSERT INTO anomalies (anomaly_type, supplier_id, detail, severity) VALUES (?,?,?,?)",
             ("duplicate", supplier_id, f"PDF: {data['pdf_filename']}", "high"),
