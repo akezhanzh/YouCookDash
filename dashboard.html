@@ -2438,7 +2438,8 @@ function vbRender() {
     A.dimKeys.forEach((dk, i) => {
       const v = A.modeVals[i];
       const color = VB_COLORS[i % VB_COLORS.length];
-      html += `<div style="background:var(--surf);border:1px solid var(--border);border-left:3px solid ${color};border-radius:10px;padding:14px;cursor:pointer" onclick="vbDrill('${A.dim}', '${String(dk).replace(/'/g,\"\\\\'\")}' )">
+      const seDk = String(dk).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += `<div style="background:var(--surf);border:1px solid var(--border);border-left:3px solid ${color};border-radius:10px;padding:14px;cursor:pointer" onclick="vbDrill('${A.dim}', '${seDk}')">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">${_vbFormatLabel(dk, A.dim, 30)}</div>
         <div style="font-size:22px;font-weight:700;color:${color};margin-top:4px">${fmt(Math.round(v))}${modeSuffix}</div>
       </div>`;
