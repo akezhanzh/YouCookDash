@@ -182,7 +182,6 @@ async def handle_document(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             # Сохраняем данные и просим ввести поставщика вручную
             ctx.user_data["pending_data"] = data
             ctx.user_data["pending_msg"]  = msg
-            ctx.user_data["pending_conn"] = conn
             await msg.edit_text(
                 "❓ Не удалось определить поставщика автоматически.\n\n"
                 "Напиши название поставщика ответным сообщением\n"
@@ -222,11 +221,11 @@ async def handle_document(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             + ovr_text,
             parse_mode="Markdown",
         )
+        await _push_dashboard(update)
 
     except Exception as e:
         log.exception("Ошибка при обработке %s", fname)
         await msg.edit_text(f"❌ Ошибка:\n`{str(e)[:400]}`", parse_mode="Markdown")
-        await _push_dashboard(update)
 
     finally:
         try:
@@ -258,15 +257,15 @@ async def handle_supplier_reply(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     supplier_name = update.message.text.strip()
     data  = ctx.user_data.get("pending_data")
     msg   = ctx.user_data.get("pending_msg")
-    conn  = ctx.user_data.get("pending_conn")
 
-    if not data or not conn:
+    if not data:
         await update.message.reply_text("⚠️ Нет ожидающего файла. Отправь накладную заново.")
         return ConversationHandler.END
 
     data["supplier"] = supplier_name
     ctx.user_data.clear()
 
+    conn = get_conn()
     try:
         summary = ingest(conn, data)
 
