@@ -89,12 +89,22 @@
   .grid-equal3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
   .g-full { margin-bottom: 20px; }
 
-  /* Card */
-  .card { background: var(--surf); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
-  .card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: var(--muted); margin-bottom: 10px; }
-  .card-value { font-size: 26px; font-weight: 700; line-height: 1.1; }
-  .card-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
-  .card-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-top: 8px; }
+  /* Card — modernised */
+  .card {
+    background: linear-gradient(145deg, var(--surf) 0%, color-mix(in srgb, var(--surf) 92%, var(--accent)) 140%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,.22); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+  .grid-6 .card::before { content:''; position:absolute; inset:0; border-radius:16px; background: radial-gradient(80% 60% at 0% 0%, rgba(124,133,245,.08), transparent 70%); pointer-events:none; }
+  .card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: var(--muted); margin-bottom: 10px; display:flex; align-items:center; gap:6px; }
+  .card-value { font-size: 28px; font-weight: 800; line-height: 1.1; letter-spacing: -.5px; background: linear-gradient(135deg, var(--text), color-mix(in srgb, var(--accent) 35%, var(--text))); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .card-sub { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+  .card-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-top: 8px; }
   .delta-red    { background: rgba(239,68,68,.15);  color: var(--red); }
   .delta-green  { background: rgba(34,197,94,.15);  color: var(--milana); }
   .delta-amber  { background: rgba(245,158,11,.15); color: var(--osmanov); }
@@ -191,20 +201,59 @@
   .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
   .filter-btn:hover { border-color:var(--accent); color:var(--text); }
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
-  /* Power BI-like constructor */
-  .vb-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; padding:10px 12px; background:rgba(99,102,241,.04); border:1px solid var(--border); border-radius:8px; align-items:flex-end; }
-  .vb-ctrl { display:flex; flex-direction:column; gap:4px; min-width:120px; }
-  .vb-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:600; white-space:nowrap; }
-  .vb-ctrl select, .vb-ctrl input[type=date], .vb-ctrl input[type=text] { background:var(--surf); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:12px; outline:none; min-width:120px; cursor:pointer; font-family:inherit; }
+  /* Power BI-like constructor — polished */
+  .vb-row {
+    display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px;
+    padding:12px 14px;
+    background: linear-gradient(135deg, rgba(124,133,245,.06), rgba(124,133,245,.02));
+    border:1px solid var(--border); border-radius:10px; align-items:flex-end;
+    backdrop-filter: blur(6px);
+  }
+  .vb-ctrl { display:flex; flex-direction:column; gap:5px; min-width:120px; }
+  .vb-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:700; white-space:nowrap; }
+  .vb-ctrl select, .vb-ctrl input[type=date], .vb-ctrl input[type=text] {
+    background:var(--surf); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:7px 10px; font-size:12px; outline:none; min-width:120px;
+    cursor:pointer; font-family:inherit; transition: all .15s ease;
+  }
   .vb-ctrl input[type=text] { cursor:text; width:100%; }
-  .vb-ctrl select:focus, .vb-ctrl input:focus { border-color:var(--accent); }
-  .vb-btn { background:var(--surf); border:1px solid var(--border); border-radius:6px; padding:6px 12px; font-size:12px; color:var(--muted); cursor:pointer; height:30px; white-space:nowrap; }
-  .vb-btn:hover { border-color:var(--accent); color:var(--text); }
+  .vb-ctrl select:hover, .vb-ctrl input:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+  .vb-ctrl select:focus, .vb-ctrl input:focus { border-color:var(--accent); box-shadow: 0 0 0 3px rgba(124,133,245,.15); }
+  .vb-btn {
+    background:var(--surf); border:1px solid var(--border); border-radius:8px;
+    padding:7px 12px; font-size:12px; color:var(--text); cursor:pointer; height:32px;
+    white-space:nowrap; transition: all .15s ease; font-weight: 600;
+  }
+  .vb-btn:hover { border-color:var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surf)); transform: translateY(-1px); }
+  .vb-btn:active { transform: translateY(0); }
   .vb-pills { display:flex; gap:4px; }
-  .vb-pill { background:var(--surf); border:1px solid var(--border); border-radius:6px; padding:5px 10px; font-size:11px; color:var(--muted); cursor:pointer; font-weight:600; }
-  .vb-pill.active { background:rgba(99,102,241,.2); border-color:var(--accent); color:var(--accent); }
-  .vb-check { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text); cursor:pointer; padding:6px 0; }
-  .vb-check input { cursor:pointer; }
+  .vb-pill {
+    background:var(--surf); border:1px solid var(--border); border-radius:8px;
+    padding:6px 12px; font-size:11px; color:var(--muted); cursor:pointer;
+    font-weight:600; transition: all .15s ease;
+  }
+  .vb-pill:hover { border-color:var(--accent); color: var(--text); }
+  .vb-pill.active {
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #fff));
+    border-color:var(--accent); color:#fff;
+    box-shadow: 0 4px 12px rgba(124,133,245,.35);
+  }
+  .vb-check { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text); cursor:pointer; padding:7px 0; user-select: none; }
+  .vb-check input { cursor:pointer; accent-color: var(--accent); }
+  #vbTitle { font-size:15px; font-weight:800; letter-spacing:-.3px; }
+  #vbSubtitle { font-size:11px; color:var(--muted); }
+  #vbCanvasWrap { transition: opacity .15s ease; }
+  #vbCanvasWrap.vb-loading { opacity:.5; }
+  .vb-spinner { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:26px; height:26px; border:3px solid var(--border); border-top-color: var(--accent); border-radius:50%; animation: vb-spin .8s linear infinite; display:none; }
+  #vbCanvasWrap.vb-loading .vb-spinner { display: block; }
+  @keyframes vb-spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+  /* Smooth chart/table transitions */
+  #vbTableMain table tr { transition: background-color .15s; }
+  #vbTableMain table tbody tr:hover { background: rgba(124,133,245,.06); }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--accent) 40%, var(--border)); }
 
   /* Unified price analysis */
   /* Price monitor tabs */
@@ -524,7 +573,7 @@
     <!-- Row 1: What to show -->
     <div class="vb-row">
       <div class="vb-ctrl"><div class="vb-label">Показатель (Y)</div>
-        <select id="vbMeasure" onchange="vbRender()">
+        <select id="vbMeasure" onchange="vbSchedule()">
           <option value="total">Сумма ₸</option>
           <option value="qty">Количество</option>
           <option value="avgPrice">Средняя цена ₸</option>
@@ -535,7 +584,7 @@
         </select>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Разрез (X)</div>
-        <select id="vbDim" onchange="vbRender()">
+        <select id="vbDim" onchange="vbSchedule()">
           <option value="sup">Поставщик</option>
           <option value="city">Город</option>
           <option value="cat">Категория</option>
@@ -546,7 +595,7 @@
         </select>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Разбивка (цвет)</div>
-        <select id="vbBreak" onchange="vbRender()">
+        <select id="vbBreak" onchange="vbSchedule()">
           <option value="">— нет —</option>
           <option value="sup">Поставщик</option>
           <option value="city">Город</option>
@@ -555,7 +604,7 @@
         </select>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Тип графика</div>
-        <select id="vbType" onchange="vbRender()">
+        <select id="vbType" onchange="vbSchedule()">
           <option value="bar">📊 Столбцы</option>
           <option value="barStack">📊 Столбцы (стек)</option>
           <option value="bar100">📊 Столбцы 100%</option>
@@ -577,13 +626,13 @@
     <!-- Row 2: Filters -->
     <div class="vb-row">
       <div class="vb-ctrl" style="flex:1;min-width:180px"><div class="vb-label">🔍 Поиск товара</div>
-        <input id="vbSearch" type="text" placeholder="например: мука, яйцо, масло..." oninput="vbRenderDebounced()">
+        <input id="vbSearch" type="text" placeholder="например: мука, яйцо, масло..." oninput="vbSchedule()">
       </div>
       <div class="vb-ctrl"><div class="vb-label">Поставщик</div>
-        <select id="vbFiltSup" onchange="vbRender()"><option value="">Все</option></select>
+        <select id="vbFiltSup" onchange="vbSchedule()"><option value="">Все</option></select>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Категория</div>
-        <select id="vbFiltCat" onchange="vbRender()"><option value="">Все</option></select>
+        <select id="vbFiltCat" onchange="vbSchedule()"><option value="">Все</option></select>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Период</div>
         <div class="vb-pills">
@@ -593,17 +642,17 @@
         </div>
       </div>
       <div class="vb-ctrl"><div class="vb-label">С</div>
-        <input id="vbFrom" type="date" onchange="vbRender()">
+        <input id="vbFrom" type="date" onchange="vbSchedule()">
       </div>
       <div class="vb-ctrl"><div class="vb-label">По</div>
-        <input id="vbTo" type="date" onchange="vbRender()">
+        <input id="vbTo" type="date" onchange="vbSchedule()">
       </div>
     </div>
 
     <!-- Row 3: Options -->
     <div class="vb-row">
       <div class="vb-ctrl"><div class="vb-label">Показать Топ</div>
-        <select id="vbTopN" onchange="vbRender()">
+        <select id="vbTopN" onchange="vbSchedule()">
           <option value="5">5</option>
           <option value="10">10</option>
           <option value="20" selected>20</option>
@@ -612,7 +661,7 @@
         </select>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Сортировка</div>
-        <select id="vbSort" onchange="vbRender()">
+        <select id="vbSort" onchange="vbSchedule()">
           <option value="valDesc">По значению ↓</option>
           <option value="valAsc">По значению ↑</option>
           <option value="labelAsc">По названию A-Я</option>
@@ -620,7 +669,7 @@
         </select>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Режим</div>
-        <select id="vbMode" onchange="vbRender()">
+        <select id="vbMode" onchange="vbSchedule()">
           <option value="abs">Абсолют</option>
           <option value="pct">% от общего</option>
           <option value="cum">Накопительно</option>
@@ -628,13 +677,13 @@
         </select>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Другое</div>
-        <label class="vb-check"><input type="checkbox" id="vbOther" onchange="vbRender()"> бакет «Другое»</label>
+        <label class="vb-check"><input type="checkbox" id="vbOther" onchange="vbSchedule()"> бакет «Другое»</label>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Подписи</div>
-        <label class="vb-check"><input type="checkbox" id="vbLabels" onchange="vbRender()"> на графике</label>
+        <label class="vb-check"><input type="checkbox" id="vbLabels" onchange="vbSchedule()"> на графике</label>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Детали</div>
-        <label class="vb-check"><input type="checkbox" id="vbShowTable" onchange="vbRender()"> таблица внизу</label>
+        <label class="vb-check"><input type="checkbox" id="vbShowTable" onchange="vbSchedule()"> таблица внизу</label>
       </div>
       <div class="vb-ctrl" style="margin-left:auto"><div class="vb-label">Пресеты</div>
         <div style="display:flex;gap:6px">
@@ -648,6 +697,7 @@
       <div class="vb-ctrl"><div class="vb-label">&nbsp;</div>
         <div style="display:flex;gap:6px">
           <button onclick="vbExport()" class="vb-btn" title="Скачать текущие данные в CSV">⬇ CSV</button>
+          <button onclick="vbExportPNG()" class="vb-btn" title="Скачать график как PNG">🖼 PNG</button>
           <button onclick="vbFullscreen()" class="vb-btn" title="На весь экран">⛶</button>
           <button onclick="vbReset()" class="vb-btn" title="Сбросить все настройки">↻ Сброс</button>
         </div>
@@ -659,7 +709,7 @@
       <div id="vbTitle" style="font-size:14px;font-weight:700;color:var(--text)"></div>
       <div id="vbSubtitle" style="font-size:11px;color:var(--muted);margin-top:2px"></div>
     </div>
-    <div id="vbCanvasWrap" class="ch" style="height:380px"><canvas id="vbCanvas"></canvas></div>
+    <div id="vbCanvasWrap" class="ch" style="height:380px"><canvas id="vbCanvas"></canvas><div class="vb-spinner"></div></div>
     <div id="vbTableMain" style="display:none;margin-top:10px" class="tbl-wrap"></div>
     <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
 
@@ -2088,7 +2138,24 @@ const VB_COLORS = ['#6366f1','#2dd4a0','#f4a942','#c084fc','#ef4444','#06b6d4','
 
 const _vbCurrencyMeas = new Set(['total','avgPrice','minPrice','maxPrice']);
 let _vbDebounceT = null;
-function vbRenderDebounced() { clearTimeout(_vbDebounceT); _vbDebounceT = setTimeout(vbRender, 150); }
+let _vbRendering = false;
+function vbRenderDebounced() {
+  clearTimeout(_vbDebounceT);
+  const wrap = document.getElementById('vbCanvasWrap');
+  if (wrap) wrap.classList.add('vb-loading');
+  _vbDebounceT = setTimeout(() => { vbRender(); }, 180);
+}
+// Alias: all controls use this (smooth, no stutter)
+function vbSchedule() { vbRenderDebounced(); }
+
+// Precomputed lookups for fast filtering
+const _VB_CAT = new Map();
+(function () {
+  if (typeof ALL_LINES !== 'undefined') {
+    ALL_LINES.forEach(l => { if (!_VB_CAT.has(l[0])) _VB_CAT.set(l[0], getCatJS(l[0])); });
+  }
+})();
+function getCatCached(sku) { return _VB_CAT.get(sku) || getCatJS(sku); }
 
 function _vbIsoWeek(dateStr) {
   if (!dateStr) return null;
@@ -2106,7 +2173,7 @@ function _vbDimValue(line, dim) {
   switch (dim) {
     case 'sup':   return line[1];
     case 'city':  return line[2];
-    case 'cat':   return getCatJS(line[0]);
+    case 'cat':   return getCatCached(line[0]);
     case 'sku':   return line[0];
     case 'day':   return line[3];
     case 'week':  return _vbIsoWeek(line[3]);
@@ -2140,7 +2207,7 @@ function vbPeriod(btn) {
   const fromEl = document.getElementById('vbFrom');
   const toEl   = document.getElementById('vbTo');
   const dts = ALL_LINES.map(l => l[3]).filter(Boolean).sort();
-  if (!dts.length) { vbRender(); return; }
+  if (!dts.length) { vbSchedule(); return; }
   const maxD = dts[dts.length - 1];
   if (per === 'all') {
     fromEl.value = dts[0];
@@ -2152,7 +2219,7 @@ function vbPeriod(btn) {
     fromEl.value = d.toISOString().slice(0, 10);
     toEl.value   = maxD;
   }
-  vbRender();
+  vbSchedule();
 }
 
 function vbReset() {
@@ -2276,7 +2343,7 @@ function _vbAgg() {
   // Filter
   const lines = ALL_LINES.filter(l => {
     if (fSup && l[1] !== fSup) return false;
-    if (fCat && getCatJS(l[0]) !== fCat) return false;
+    if (fCat && getCatCached(l[0]) !== fCat) return false;
     if (fFrom && l[3] && l[3] < fFrom) return false;
     if (fTo   && l[3] && l[3] > fTo)   return false;
     if (search) {
@@ -2396,6 +2463,15 @@ function _vbAgg() {
 
 function vbRender() {
   if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
+  // Auto-switch to horizontal bars when dimension has long/many labels (e.g., SKU)
+  // Only auto-switch on demand — don't override user's explicit choice if they picked horizontal already
+  const dimSel = document.getElementById('vbDim');
+  const typeSel = document.getElementById('vbType');
+  if (dimSel && typeSel && !typeSel.dataset.userPicked) {
+    if (dimSel.value === 'sku' && (typeSel.value === 'bar' || typeSel.value === 'barStack')) {
+      typeSel.value = dimSel.value === 'sku' ? (typeSel.value === 'barStack' ? 'barHStack' : 'barH') : typeSel.value;
+    }
+  }
   const A = _vbAgg();
   const baseSuffix = _vbCurrencyMeas.has(A.meas) ? ' ₸' : '';
   const modeSuffix = A.mode === 'pct' ? '%' : (A.mode === 'rank' ? '' : baseSuffix);
@@ -2715,6 +2791,27 @@ function vbRender() {
   detailHtml += '</tbody></table>';
   if (rows.length > MAX) detailHtml += `<div style="text-align:center;color:var(--muted);font-size:11px;padding:8px">показано ${MAX} из ${rows.length}</div>`;
   detail.innerHTML = detailHtml;
+
+  // Remove loading overlay
+  const lwrap = document.getElementById('vbCanvasWrap');
+  if (lwrap) lwrap.classList.remove('vb-loading');
+}
+
+function vbExportPNG() {
+  const canvas = document.getElementById('vbCanvas');
+  if (!canvas) return alert('Нет графика для экспорта');
+  try {
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    const meas = document.getElementById('vbMeasure').value;
+    const dim  = document.getElementById('vbDim').value;
+    a.download = `youcook_${meas}_${dim}_${new Date().toISOString().slice(0,10)}.png`;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => document.body.removeChild(a), 100);
+  } catch (e) {
+    alert('Не удалось экспортировать: ' + e.message);
+  }
 }
 
 // Click-to-drill: when user clicks a bar/slice/table row, apply that value as a filter
@@ -2723,22 +2820,21 @@ function vbDrill(dim, value) {
     document.getElementById('vbFiltSup').value = value;
   } else if (dim === 'cat') {
     document.getElementById('vbFiltCat').value = value;
-  } else if (dim === 'city') {
-    // No dedicated city filter → put in search as a hint
-    document.getElementById('vbSearch').value = value;
-  } else if (dim === 'sku') {
+  } else if (dim === 'city' || dim === 'sku') {
     document.getElementById('vbSearch').value = value;
   } else if (dim === 'day') {
     document.getElementById('vbFrom').value = value;
     document.getElementById('vbTo').value   = value;
-  } else if (dim === 'month') {
+  } else if (dim === 'month' && /^\d{4}-\d{2}$/.test(value)) {
     document.getElementById('vbFrom').value = value + '-01';
-    // Last day of month
     const [y, m] = value.split('-');
     const last = new Date(parseInt(y,10), parseInt(m,10), 0).getDate();
     document.getElementById('vbTo').value = `${value}-${String(last).padStart(2,'0')}`;
   }
-  vbRender();
+  // Visual feedback: scroll the chart into view so user sees the drilled result
+  const title = document.getElementById('vbTitle');
+  if (title) title.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  vbSchedule();
 }
 
 function vbExport() {
@@ -2798,6 +2894,9 @@ function vbExport() {
     });
   }
   _vbRefreshPresetList();
+  // Initial render is sync (no debounce), no spinner
+  const lwrap = document.getElementById('vbCanvasWrap');
+  if (lwrap) lwrap.classList.remove('vb-loading');
   vbRender();
 })();
 
