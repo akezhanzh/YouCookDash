@@ -45,19 +45,22 @@ def init_db():
     """)
 
     # ── INVOICES (header) ──────────────────────────────────────────────────────
+    # invoice_id не глобально уникален: у разных поставщиков своя нумерация,
+    # поэтому уникальность проверяется парой (supplier_id, invoice_id).
     c.execute("""
         CREATE TABLE IF NOT EXISTS invoices (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            invoice_id      TEXT    UNIQUE,
+            invoice_id      TEXT,
             supplier_id     INTEGER REFERENCES suppliers(id),
             invoice_date    TEXT,
             total_amount    REAL,
             pdf_filename    TEXT,
-            source          TEXT    DEFAULT 'pdf',  -- 'pdf' | 'whatsapp' | 'manual'
+            source          TEXT    DEFAULT 'pdf',
             is_processed    INTEGER DEFAULT 0,
             is_duplicate    INTEGER DEFAULT 0,
             created_at      TEXT    DEFAULT (datetime('now')),
-            notes           TEXT
+            notes           TEXT,
+            UNIQUE(supplier_id, invoice_id)
         )
     """)
 
