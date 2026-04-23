@@ -551,6 +551,7 @@
           <option value="sup">Поставщик</option>
           <option value="city">Город</option>
           <option value="cat">Категория</option>
+          <option value="sku">Товар</option>
         </select>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Тип графика</div>
@@ -559,10 +560,15 @@
           <option value="barStack">📊 Столбцы (стек)</option>
           <option value="bar100">📊 Столбцы 100%</option>
           <option value="barH">📋 Горизонт. столбцы</option>
+          <option value="barHStack">📋 Горизонт. стек</option>
           <option value="line">📈 Линия</option>
           <option value="area">🌊 Area</option>
+          <option value="areaStack">🌊 Area (стек)</option>
           <option value="pie">🥧 Круговая</option>
           <option value="donut">🍩 Донат</option>
+          <option value="radar">🎯 Radar</option>
+          <option value="scatter">🔵 Scatter (цена×кол-во)</option>
+          <option value="kpi">💠 KPI-карточки</option>
           <option value="table">📄 Таблица</option>
         </select>
       </div>
@@ -613,15 +619,36 @@
           <option value="labelDesc">По названию Я-A</option>
         </select>
       </div>
+      <div class="vb-ctrl"><div class="vb-label">Режим</div>
+        <select id="vbMode" onchange="vbRender()">
+          <option value="abs">Абсолют</option>
+          <option value="pct">% от общего</option>
+          <option value="cum">Накопительно</option>
+          <option value="rank">Ранг</option>
+        </select>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">Другое</div>
+        <label class="vb-check"><input type="checkbox" id="vbOther" onchange="vbRender()"> бакет «Другое»</label>
+      </div>
       <div class="vb-ctrl"><div class="vb-label">Подписи</div>
         <label class="vb-check"><input type="checkbox" id="vbLabels" onchange="vbRender()"> на графике</label>
       </div>
       <div class="vb-ctrl"><div class="vb-label">Детали</div>
         <label class="vb-check"><input type="checkbox" id="vbShowTable" onchange="vbRender()"> таблица внизу</label>
       </div>
-      <div class="vb-ctrl" style="margin-left:auto"><div class="vb-label">&nbsp;</div>
+      <div class="vb-ctrl" style="margin-left:auto"><div class="vb-label">Пресеты</div>
+        <div style="display:flex;gap:6px">
+          <select id="vbPresets" onchange="vbLoadPreset(this.value)" class="vb-btn" style="padding:6px 8px">
+            <option value="">— загрузить —</option>
+          </select>
+          <button onclick="vbSavePreset()" class="vb-btn" title="Сохранить текущий вид">💾</button>
+          <button onclick="vbDeletePreset()" class="vb-btn" title="Удалить выбранный">🗑</button>
+        </div>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">&nbsp;</div>
         <div style="display:flex;gap:6px">
           <button onclick="vbExport()" class="vb-btn" title="Скачать текущие данные в CSV">⬇ CSV</button>
+          <button onclick="vbFullscreen()" class="vb-btn" title="На весь экран">⛶</button>
           <button onclick="vbReset()" class="vb-btn" title="Сбросить все настройки">↻ Сброс</button>
         </div>
       </div>
@@ -2088,20 +2115,22 @@ function _vbDimValue(line, dim) {
   return null;
 }
 
-function _vbFormatLabel(val, dim) {
+function _vbFormatLabel(val, dim, maxLen) {
+  let s;
   if (dim === 'day' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
     const [y, m, d] = val.split('-');
-    return `${d}.${m}`;
-  }
-  if (dim === 'month' && /^\d{4}-\d{2}$/.test(val)) {
+    s = `${d}.${m}`;
+  } else if (dim === 'month' && /^\d{4}-\d{2}$/.test(val)) {
     const [y, m] = val.split('-');
     const names = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
-    return `${names[parseInt(m,10)-1]} ${y}`;
+    s = `${names[parseInt(m,10)-1]} ${y}`;
+  } else if (dim === 'week' && /^\d{4}-W\d{2}$/.test(val)) {
+    s = val.replace('-W', ' н.');
+  } else {
+    s = String(val);
   }
-  if (dim === 'week' && /^\d{4}-W\d{2}$/.test(val)) {
-    return val.replace('-W', ' нед. ');
-  }
-  return String(val);
+  if (maxLen && s.length > maxLen) s = s.slice(0, maxLen - 1) + '…';
+  return s;
 }
 
 function vbPeriod(btn) {
@@ -2136,6 +2165,8 @@ function vbReset() {
   document.getElementById('vbFiltCat').value = '';
   document.getElementById('vbTopN').value    = '20';
   document.getElementById('vbSort').value    = 'valDesc';
+  document.getElementById('vbMode').value    = 'abs';
+  document.getElementById('vbOther').checked     = false;
   document.getElementById('vbLabels').checked    = false;
   document.getElementById('vbShowTable').checked = false;
   document.querySelectorAll('.vb-pill[data-per]').forEach(b => b.classList.remove('active'));
@@ -2149,6 +2180,84 @@ function vbReset() {
   vbRender();
 }
 
+// Snapshot all current settings — used by presets and history
+function _vbState() {
+  return {
+    meas:   document.getElementById('vbMeasure').value,
+    dim:    document.getElementById('vbDim').value,
+    brk:    document.getElementById('vbBreak').value,
+    type:   document.getElementById('vbType').value,
+    topN:   document.getElementById('vbTopN').value,
+    sort:   document.getElementById('vbSort').value,
+    mode:   document.getElementById('vbMode').value,
+    other:  document.getElementById('vbOther').checked,
+    labels: document.getElementById('vbLabels').checked,
+    table:  document.getElementById('vbShowTable').checked,
+    search: document.getElementById('vbSearch').value,
+    fSup:   document.getElementById('vbFiltSup').value,
+    fCat:   document.getElementById('vbFiltCat').value,
+    fFrom:  document.getElementById('vbFrom').value,
+    fTo:    document.getElementById('vbTo').value,
+  };
+}
+
+function _vbApplyState(s) {
+  if (!s) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
+  const setChk = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.checked = !!val; };
+  set('vbMeasure', s.meas); set('vbDim', s.dim); set('vbBreak', s.brk); set('vbType', s.type);
+  set('vbTopN', s.topN); set('vbSort', s.sort); set('vbMode', s.mode);
+  setChk('vbOther', s.other); setChk('vbLabels', s.labels); setChk('vbShowTable', s.table);
+  set('vbSearch', s.search); set('vbFiltSup', s.fSup); set('vbFiltCat', s.fCat);
+  set('vbFrom', s.fFrom); set('vbTo', s.fTo);
+  vbRender();
+}
+
+// ── PRESETS (localStorage) ────────────────────────────────────────────────────
+const VB_PRESET_KEY = 'youcook_vb_presets_v1';
+function _vbLoadPresetMap() { try { return JSON.parse(localStorage.getItem(VB_PRESET_KEY) || '{}'); } catch (e) { return {}; } }
+function _vbSavePresetMap(m) { localStorage.setItem(VB_PRESET_KEY, JSON.stringify(m)); }
+function _vbRefreshPresetList() {
+  const sel = document.getElementById('vbPresets');
+  if (!sel) return;
+  const m = _vbLoadPresetMap();
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— загрузить —</option>' +
+    Object.keys(m).sort().map(n => `<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+  if (cur && m[cur]) sel.value = cur;
+}
+function vbSavePreset() {
+  const name = prompt('Название пресета:');
+  if (!name) return;
+  const m = _vbLoadPresetMap();
+  m[name] = _vbState();
+  _vbSavePresetMap(m);
+  _vbRefreshPresetList();
+  document.getElementById('vbPresets').value = name;
+}
+function vbLoadPreset(name) {
+  if (!name) return;
+  const m = _vbLoadPresetMap();
+  if (m[name]) _vbApplyState(m[name]);
+}
+function vbDeletePreset() {
+  const sel = document.getElementById('vbPresets');
+  const name = sel.value;
+  if (!name) return alert('Выбери пресет для удаления');
+  if (!confirm(`Удалить пресет «${name}»?`)) return;
+  const m = _vbLoadPresetMap();
+  delete m[name];
+  _vbSavePresetMap(m);
+  _vbRefreshPresetList();
+}
+
+function vbFullscreen() {
+  const card = document.querySelector('#vbCanvasWrap').closest('.card');
+  if (!card) return;
+  if (!document.fullscreenElement) card.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+
 function _vbAgg() {
   const meas  = document.getElementById('vbMeasure').value;
   const dim   = document.getElementById('vbDim').value;
@@ -2156,6 +2265,8 @@ function _vbAgg() {
   const type  = document.getElementById('vbType').value;
   const topN  = parseInt(document.getElementById('vbTopN').value, 10);
   const sort  = document.getElementById('vbSort').value;
+  const mode  = document.getElementById('vbMode').value || 'abs';
+  const useOther = document.getElementById('vbOther').checked;
   const search = (document.getElementById('vbSearch').value || '').trim().toLowerCase();
   const fSup  = document.getElementById('vbFiltSup').value;
   const fCat  = document.getElementById('vbFiltCat').value;
@@ -2175,8 +2286,8 @@ function _vbAgg() {
     return true;
   });
 
-  // Aggregate by (dim, break)
-  const cells = {}; // cells[dimKey][brkKey] = { total, qty, ... }
+  // Aggregate
+  const cells = {};
   const dimKeys = new Set();
   const brkKeys = new Set();
   lines.forEach(l => {
@@ -2187,7 +2298,7 @@ function _vbAgg() {
     if (bk == null) return;
     brkKeys.add(bk);
     if (!cells[dk]) cells[dk] = {};
-    if (!cells[dk][bk]) cells[dk][bk] = { total:0, qty:0, priceSum:0, priceCnt:0, minP:Infinity, maxP:-Infinity, invIds:new Set() };
+    if (!cells[dk][bk]) cells[dk][bk] = { total:0, qty:0, priceSum:0, priceCnt:0, minP:Infinity, maxP:-Infinity, invIds:new Set(), lines:[] };
     const c = cells[dk][bk];
     c.total    += +l[6] || 0;
     c.qty      += +l[5] || 0;
@@ -2196,6 +2307,7 @@ function _vbAgg() {
     if (+l[4] < c.minP) c.minP = +l[4];
     if (+l[4] > c.maxP) c.maxP = +l[4];
     c.invIds.add(l[7]);
+    c.lines.push(l);
   });
 
   const measFn = (c) => {
@@ -2212,7 +2324,7 @@ function _vbAgg() {
     return 0;
   };
 
-  // Row totals (for sorting / top N)
+  // Row totals for sort / Top-N
   const rowTot = {};
   dimKeys.forEach(dk => {
     let t = 0;
@@ -2220,7 +2332,7 @@ function _vbAgg() {
     rowTot[dk] = t;
   });
 
-  // Sort & topN
+  // Sort + topN + Другое
   const isTimeDim = ['day','week','month'].includes(dim);
   let dkOrdered = [...dimKeys];
   if (isTimeDim) {
@@ -2230,10 +2342,36 @@ function _vbAgg() {
     if (sort === 'valAsc')    dkOrdered.sort((a, b) => rowTot[a] - rowTot[b]);
     if (sort === 'labelAsc')  dkOrdered.sort((a, b) => String(a).localeCompare(String(b), 'ru'));
     if (sort === 'labelDesc') dkOrdered.sort((a, b) => String(b).localeCompare(String(a), 'ru'));
-    if (topN > 0 && dkOrdered.length > topN) dkOrdered = dkOrdered.slice(0, topN);
+    if (topN > 0 && dkOrdered.length > topN) {
+      const top = dkOrdered.slice(0, topN);
+      const rest = dkOrdered.slice(topN);
+      if (useOther && rest.length) {
+        // Build a synthetic "Другое" cell
+        cells['Другое'] = {};
+        brkKeys.forEach(bk => {
+          const agg = { total:0, qty:0, priceSum:0, priceCnt:0, minP:Infinity, maxP:-Infinity, invIds:new Set(), lines:[] };
+          rest.forEach(dk => {
+            const c = cells[dk] && cells[dk][bk];
+            if (!c) return;
+            agg.total += c.total; agg.qty += c.qty; agg.priceSum += c.priceSum; agg.priceCnt += c.priceCnt;
+            if (c.minP < agg.minP) agg.minP = c.minP;
+            if (c.maxP > agg.maxP) agg.maxP = c.maxP;
+            c.invIds.forEach(id => agg.invIds.add(id));
+            agg.lines.push(...c.lines);
+          });
+          cells['Другое'][bk] = agg;
+        });
+        let otherTot = 0;
+        brkKeys.forEach(bk => { otherTot += measFn(cells['Другое'][bk]); });
+        rowTot['Другое'] = otherTot;
+        dkOrdered = [...top, 'Другое'];
+      } else {
+        dkOrdered = top;
+      }
+    }
   }
 
-  // Order breakdown keys by total desc
+  // Breakdown order by total
   const brkTot = {};
   brkKeys.forEach(bk => {
     let t = 0;
@@ -2242,17 +2380,25 @@ function _vbAgg() {
   });
   const bkOrdered = [...brkKeys].sort((a, b) => brkTot[b] - brkTot[a]);
 
+  // Apply mode transform to rowTot
+  let vals = dkOrdered.map(dk => rowTot[dk] || 0);
+  const total = vals.reduce((s, v) => s + v, 0);
+  if (mode === 'pct' && total) vals = vals.map(v => v / total * 100);
+  if (mode === 'cum') { let acc = 0; vals = vals.map(v => (acc += v)); }
+  if (mode === 'rank') { const ranked = [...vals].map((v, i) => [v, i]).sort((a,b) => b[0] - a[0]); vals = vals.map((_, i) => ranked.findIndex(r => r[1] === i) + 1); }
+
   return {
-    dimKeys: dkOrdered, brkKeys: bkOrdered, cells, measFn,
-    meas, dim, brk, type, totalLines: lines.length,
-    filteredTotal: Object.values(rowTot).reduce((s, v) => s + v, 0),
+    dimKeys: dkOrdered, brkKeys: bkOrdered, cells, measFn, rowTot,
+    meas, dim, brk, type, mode, useOther, totalLines: lines.length,
+    filteredTotal: total, modeVals: vals,
   };
 }
 
 function vbRender() {
   if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
   const A = _vbAgg();
-  const unitSuffix = _vbCurrencyMeas.has(A.meas) ? ' ₸' : '';
+  const baseSuffix = _vbCurrencyMeas.has(A.meas) ? ' ₸' : '';
+  const modeSuffix = A.mode === 'pct' ? '%' : (A.mode === 'rank' ? '' : baseSuffix);
   const showLabels = document.getElementById('vbLabels').checked;
   const showDetail = document.getElementById('vbShowTable').checked;
 
@@ -2261,7 +2407,11 @@ function vbRender() {
   const subEl = document.getElementById('vbSubtitle');
   let title = `${VB_MEAS_LBL[A.meas]} по ${VB_DIM_LBL[A.dim]}`;
   if (A.brk) title += `, с разбивкой по ${VB_DIM_LBL[A.brk]}`;
+  if (A.mode === 'pct') title += ' (% от общего)';
+  if (A.mode === 'cum') title += ' (нарастающий итог)';
+  if (A.mode === 'rank') title += ' (ранг)';
   titleEl.textContent = title;
+
   const fFrom = document.getElementById('vbFrom').value;
   const fTo   = document.getElementById('vbTo').value;
   const fSup  = document.getElementById('vbFiltSup').value;
@@ -2274,55 +2424,121 @@ function vbRender() {
   if (srch)  parts.push(`поиск: «${srch}»`);
   subEl.textContent = parts.join(' · ') || 'все данные';
 
-  // Prepare chart data
-  const labels = A.dimKeys.map(k => _vbFormatLabel(k, A.dim));
   const canvasWrap = document.getElementById('vbCanvasWrap');
   const tableMain  = document.getElementById('vbTableMain');
 
   if (window._vbChart) { window._vbChart.destroy(); window._vbChart = null; }
 
-  // TABLE view — full data table
-  if (A.type === 'table') {
+  // KPI cards view — show each dim as a big number
+  if (A.type === 'kpi') {
+    canvasWrap.style.display = 'none';
+    tableMain.style.display  = 'block';
+    const COL_COUNT = Math.min(6, Math.max(2, A.dimKeys.length));
+    let html = `<div style="display:grid;grid-template-columns:repeat(${COL_COUNT},1fr);gap:10px">`;
+    A.dimKeys.forEach((dk, i) => {
+      const v = A.modeVals[i];
+      const color = VB_COLORS[i % VB_COLORS.length];
+      html += `<div style="background:var(--surf);border:1px solid var(--border);border-left:3px solid ${color};border-radius:10px;padding:14px;cursor:pointer" onclick="vbDrill('${A.dim}', '${String(dk).replace(/'/g,\"\\\\'\")}' )">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">${_vbFormatLabel(dk, A.dim, 30)}</div>
+        <div style="font-size:22px;font-weight:700;color:${color};margin-top:4px">${fmt(Math.round(v))}${modeSuffix}</div>
+      </div>`;
+    });
+    html += '</div>';
+    tableMain.innerHTML = html;
+  }
+  // TABLE view — full matrix
+  else if (A.type === 'table') {
     canvasWrap.style.display = 'none';
     tableMain.style.display  = 'block';
     let html = '<table><thead><tr>';
-    html += `<th>${VB_DIM_LBL[A.dim]}</th>`;
+    html += `<th style="min-width:30px">#</th><th>${VB_DIM_LBL[A.dim]}</th>`;
     if (A.brk) {
-      A.brkKeys.forEach(bk => { html += `<th class="num">${bk}</th>`; });
+      A.brkKeys.forEach(bk => { html += `<th class="num" title="${String(bk).replace(/"/g,'&quot;')}">${_vbFormatLabel(bk, A.brk, 20)}</th>`; });
       html += `<th class="num"><b>Всего</b></th>`;
     } else {
       html += `<th class="num">${VB_MEAS_LBL[A.meas]}</th>`;
+      if (A.mode === 'abs') html += `<th class="num">%</th>`;
     }
     html += '</tr></thead><tbody>';
-    A.dimKeys.forEach(dk => {
-      html += `<tr><td>${_vbFormatLabel(dk, A.dim)}</td>`;
+    const total = A.filteredTotal || 1;
+    A.dimKeys.forEach((dk, idx) => {
+      const se = String(dk).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += `<tr style="cursor:pointer" onclick="vbDrill('${A.dim}', '${se}')"><td class="num" style="color:var(--muted)">${idx+1}</td><td>${_vbFormatLabel(dk, A.dim)}</td>`;
       if (A.brk) {
         let rowTot = 0;
         A.brkKeys.forEach(bk => {
           const v = A.measFn(A.cells[dk] ? A.cells[dk][bk] : null);
           rowTot += v;
-          html += `<td class="num">${v ? fmt(Math.round(v)) + unitSuffix : '—'}</td>`;
+          html += `<td class="num">${v ? fmt(Math.round(v)) + baseSuffix : '—'}</td>`;
         });
-        html += `<td class="num"><b>${fmt(Math.round(rowTot))}${unitSuffix}</b></td>`;
+        html += `<td class="num"><b>${fmt(Math.round(rowTot))}${baseSuffix}</b></td>`;
       } else {
-        const v = A.measFn(A.cells[dk] ? A.cells[dk]['__single__'] : null);
-        html += `<td class="num">${fmt(Math.round(v))}${unitSuffix}</td>`;
+        const v = A.modeVals[idx];
+        html += `<td class="num">${fmt(Math.round(v))}${modeSuffix}</td>`;
+        if (A.mode === 'abs') html += `<td class="num" style="color:var(--muted)">${(v / total * 100).toFixed(1)}%</td>`;
       }
       html += '</tr>';
     });
     html += '</tbody></table>';
     tableMain.innerHTML = html;
-  } else {
+  }
+  // SCATTER — price × qty per line within the filtered selection
+  else if (A.type === 'scatter') {
+    tableMain.style.display  = 'none';
+    canvasWrap.style.display = 'block';
+    // Gather all underlying lines, grouped by breakdown
+    const lines = [];
+    A.dimKeys.forEach(dk => {
+      A.brkKeys.forEach(bk => {
+        const c = A.cells[dk] && A.cells[dk][bk];
+        if (!c) return;
+        c.lines.forEach(l => lines.push([l, bk]));
+      });
+    });
+    const datasets = A.brk
+      ? A.brkKeys.map((bk, i) => ({
+          label: String(bk),
+          data: lines.filter(([, b]) => b === bk).map(([l]) => ({ x: +l[4], y: +l[5], sku: l[0] })),
+          backgroundColor: VB_COLORS[i % VB_COLORS.length] + 'cc',
+          borderColor: VB_COLORS[i % VB_COLORS.length],
+        }))
+      : [{
+          label: 'Закупки',
+          data: lines.map(([l]) => ({ x: +l[4], y: +l[5], sku: l[0] })),
+          backgroundColor: 'rgba(99,102,241,.55)',
+          borderColor: '#6366f1',
+        }];
+    const ctx = document.getElementById('vbCanvas').getContext('2d');
+    window._vbChart = new Chart(ctx, {
+      type: 'scatter',
+      data: { datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: !!A.brk, labels: { color: TICK, font: FONT } },
+          tooltip: { callbacks: { label: (c) => `${c.raw.sku || ''}: ${fmt(Math.round(c.raw.x))} ₸ × ${(+c.raw.y).toFixed(2)}` } },
+          datalabels: { display: false }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Цена ₸', color: TICK }, ticks: { color: TICK, font: FONT, callback: v => fmt(v) }, grid: { color: GRID } },
+          y: { title: { display: true, text: 'Количество', color: TICK }, ticks: { color: TICK, font: FONT }, grid: { color: GRID } }
+        }
+      }
+    });
+  }
+  else {
     tableMain.style.display  = 'none';
     canvasWrap.style.display = 'block';
 
-    // Build datasets
-    const isPie = A.type === 'pie' || A.type === 'donut';
-    const isBar = A.type === 'bar' || A.type === 'barStack' || A.type === 'bar100' || A.type === 'barH';
-    const isArea = A.type === 'area';
-    const isLine = A.type === 'line';
-    const stacked = A.type === 'barStack' || A.type === 'bar100';
+    const isPie     = A.type === 'pie' || A.type === 'donut';
+    const isRadar   = A.type === 'radar';
+    const isStack   = A.type === 'barStack' || A.type === 'bar100' || A.type === 'barHStack' || A.type === 'areaStack';
+    const isHoriz   = A.type === 'barH' || A.type === 'barHStack';
+    const isBar     = A.type.startsWith('bar');
+    const isArea    = A.type === 'area' || A.type === 'areaStack';
+    const isLine    = A.type === 'line';
     const percent100 = A.type === 'bar100';
+    const labelMax  = (A.dim === 'sku') ? (isHoriz ? 40 : 20) : 30;
 
     let datasets;
     if (A.brk) {
@@ -2330,9 +2546,10 @@ function vbRender() {
         const data = A.dimKeys.map(dk => A.measFn(A.cells[dk] ? A.cells[dk][bk] : null));
         const color = VB_COLORS[i % VB_COLORS.length];
         return {
-          label: String(bk),
+          label: _vbFormatLabel(bk, A.brk, 24),
+          _brkKey: bk,
           data,
-          backgroundColor: isLine ? color : color + (isArea ? '44' : 'cc'),
+          backgroundColor: (isLine && !isArea) ? color : color + (isArea ? '55' : 'cc'),
           borderColor: color,
           borderWidth: 1.5,
           borderRadius: isBar ? 4 : 0,
@@ -2342,84 +2559,81 @@ function vbRender() {
         };
       });
       if (percent100) {
-        // Normalise per dim to 100%
-        const sums = A.dimKeys.map((dk, i) => {
+        const sums = A.dimKeys.map(dk => {
           let s = 0;
           A.brkKeys.forEach(bk => { s += A.measFn(A.cells[dk] ? A.cells[dk][bk] : null); });
           return s || 1;
         });
-        datasets = datasets.map(ds => ({
-          ...ds,
-          data: ds.data.map((v, i) => v / sums[i] * 100),
-        }));
+        datasets = datasets.map(ds => ({ ...ds, data: ds.data.map((v, i) => v / sums[i] * 100) }));
       }
     } else {
-      const data = A.dimKeys.map(dk => A.measFn(A.cells[dk] ? A.cells[dk]['__single__'] : null));
-      const singleColor = isPie
+      let data = A.dimKeys.map((dk, i) => A.modeVals[i]);
+      const singleColor = isPie || isRadar
         ? A.dimKeys.map((_, i) => VB_COLORS[i % VB_COLORS.length])
         : 'rgba(99,102,241,.7)';
       datasets = [{
         label: VB_MEAS_LBL[A.meas],
         data,
         backgroundColor: singleColor,
-        borderColor: isPie ? '#1a1d27' : '#6366f1',
+        borderColor: isPie ? '#1a1d27' : (isRadar ? '#6366f1' : '#6366f1'),
         borderWidth: isPie ? 2 : 1.5,
         borderRadius: isBar ? 6 : 0,
-        fill: isArea,
+        fill: isArea || isRadar,
         tension: (isLine || isArea) ? 0.3 : 0,
-        pointRadius: (isLine || isArea) ? 4 : 0,
+        pointRadius: (isLine || isArea || isRadar) ? 4 : 0,
       }];
     }
 
-    // Chart type mapping
-    const chartType = (A.type === 'barH') ? 'bar'
-                    : (A.type === 'barStack' || A.type === 'bar100' || A.type === 'bar') ? 'bar'
+    const chartType = isBar ? 'bar'
                     : (A.type === 'donut') ? 'doughnut'
                     : (A.type === 'pie') ? 'pie'
-                    : (A.type === 'area') ? 'line'
+                    : isArea ? 'line'
+                    : isRadar ? 'radar'
                     : 'line';
+
+    const labels = A.dimKeys.map(k => _vbFormatLabel(k, A.dim, labelMax));
+    const fullLabels = A.dimKeys.map(k => String(k));
 
     const options = {
       responsive: true, maintainAspectRatio: false,
-      indexAxis: A.type === 'barH' ? 'y' : 'x',
+      indexAxis: isHoriz ? 'y' : 'x',
+      onClick: (evt, elems) => {
+        if (!elems.length) return;
+        const dkRaw = fullLabels[elems[0].index];
+        vbDrill(A.dim, dkRaw);
+      },
       plugins: {
-        legend: {
-          display: isPie || !!A.brk,
-          position: isPie ? 'right' : 'top',
-          labels: { color: TICK, font: FONT, boxWidth: 12 }
-        },
+        legend: { display: isPie || !!A.brk, position: isPie ? 'right' : 'top', labels: { color: TICK, font: FONT, boxWidth: 12 } },
         tooltip: {
           backgroundColor: TOOLTIP_BG,
           callbacks: {
+            title: (items) => items.length ? fullLabels[items[0].dataIndex] : '',
             label: (c) => {
-              const v = c.parsed.y ?? c.parsed.x ?? c.parsed;
+              const v = c.parsed.y ?? c.parsed.x ?? c.parsed.r ?? c.parsed;
               const lbl = A.brk ? c.dataset.label : VB_MEAS_LBL[A.meas];
               if (percent100) return `${lbl}: ${(+v).toFixed(1)}%`;
-              return `${lbl}: ${fmt(Math.round(v))}${unitSuffix}`;
+              return `${lbl}: ${fmt(Math.round(v))}${modeSuffix}`;
             }
           }
         },
-        datalabels: showLabels && !isPie ? {
-          color: TICK,
-          anchor: 'end',
-          align: 'end',
+        datalabels: showLabels ? {
+          color: isPie ? '#fff' : TICK,
+          anchor: isPie ? 'center' : 'end',
+          align:  isPie ? 'center' : 'end',
           font: { weight: 'bold', size: 10 },
-          formatter: (v) => percent100 ? (+v).toFixed(0) + '%' : fmt(Math.round(v))
+          formatter: (v) => percent100 ? (+v).toFixed(0) + '%' : (fmt(Math.round(v)) + (modeSuffix || ''))
         } : { display: false }
       },
-      scales: isPie ? {} : {
+      scales: isPie || isRadar ? (isRadar ? { r: { ticks: { color: TICK, backdropColor: 'transparent' }, grid: { color: GRID }, pointLabels: { color: TICK, font: FONT } } } : {}) : {
         x: {
-          stacked,
+          stacked: isStack,
           ticks: { color: TICK, font: FONT, maxRotation: 45, autoSkip: true },
           grid: { color: GRID }
         },
         y: {
-          stacked,
+          stacked: isStack,
           beginAtZero: true,
-          ticks: {
-            color: TICK, font: FONT,
-            callback: v => percent100 ? v + '%' : fmt(v)
-          },
+          ticks: { color: TICK, font: FONT, callback: v => percent100 ? v + '%' : fmt(v) },
           grid: { color: GRID },
           max: percent100 ? 100 : undefined
         }
@@ -2436,11 +2650,11 @@ function vbRender() {
 
   // Summary
   const sumEl = document.getElementById('vbSummary');
-  const noun = `${A.dimKeys.length} ${VB_DIM_LBL[A.dim].toLowerCase()}`;
   const totalStr = _vbCurrencyMeas.has(A.meas)
     ? `итого ${fmt(Math.round(A.filteredTotal))} ₸`
     : `сумма: ${fmt(Math.round(A.filteredTotal))}`;
-  sumEl.textContent = `${noun} · ${totalStr} · на основе ${A.totalLines} строк`;
+  const modeHint = A.mode !== 'abs' ? ` · режим: ${ {pct:'% от общего', cum:'нарастающий итог', rank:'ранг'}[A.mode] }` : '';
+  sumEl.textContent = `${A.dimKeys.length} ${VB_DIM_LBL[A.dim].toLowerCase()} · ${totalStr} · ${A.totalLines} строк${modeHint}`;
 
   // Detail table (below chart)
   const detailWrap = document.getElementById('vbDetailWrap');
@@ -2502,6 +2716,30 @@ function vbRender() {
   detail.innerHTML = detailHtml;
 }
 
+// Click-to-drill: when user clicks a bar/slice/table row, apply that value as a filter
+function vbDrill(dim, value) {
+  if (dim === 'sup') {
+    document.getElementById('vbFiltSup').value = value;
+  } else if (dim === 'cat') {
+    document.getElementById('vbFiltCat').value = value;
+  } else if (dim === 'city') {
+    // No dedicated city filter → put in search as a hint
+    document.getElementById('vbSearch').value = value;
+  } else if (dim === 'sku') {
+    document.getElementById('vbSearch').value = value;
+  } else if (dim === 'day') {
+    document.getElementById('vbFrom').value = value;
+    document.getElementById('vbTo').value   = value;
+  } else if (dim === 'month') {
+    document.getElementById('vbFrom').value = value + '-01';
+    // Last day of month
+    const [y, m] = value.split('-');
+    const last = new Date(parseInt(y,10), parseInt(m,10), 0).getDate();
+    document.getElementById('vbTo').value = `${value}-${String(last).padStart(2,'0')}`;
+  }
+  vbRender();
+}
+
 function vbExport() {
   const A = _vbAgg();
   const unitSuffix = _vbCurrencyMeas.has(A.meas) ? ' ₸' : '';
@@ -2547,6 +2785,18 @@ function vbExport() {
     document.getElementById('vbFrom').value = dts[0];
     document.getElementById('vbTo').value   = dts[dts.length - 1];
   }
+  // Seed a few example presets on first load (only if user has no saved presets)
+  const existing = _vbLoadPresetMap();
+  if (!Object.keys(existing).length) {
+    _vbSavePresetMap({
+      'Расходы по поставщикам (круговая)': { meas:'total', dim:'sup', brk:'', type:'pie', topN:'20', sort:'valDesc', mode:'abs', other:false, labels:true, table:false, search:'', fSup:'', fCat:'', fFrom:dts[0]||'', fTo:dts[dts.length-1]||'' },
+      'Динамика закупок по неделям':         { meas:'total', dim:'week', brk:'sup', type:'barStack', topN:'0', sort:'valDesc', mode:'abs', other:false, labels:false, table:false, search:'', fSup:'', fCat:'', fFrom:dts[0]||'', fTo:dts[dts.length-1]||'' },
+      'Топ-10 товаров по сумме':             { meas:'total', dim:'sku', brk:'', type:'barH', topN:'10', sort:'valDesc', mode:'abs', other:true, labels:true, table:false, search:'', fSup:'', fCat:'', fFrom:dts[0]||'', fTo:dts[dts.length-1]||'' },
+      'Сравнение цен поставщиков':           { meas:'avgPrice', dim:'sup', brk:'cat', type:'bar', topN:'20', sort:'valDesc', mode:'abs', other:false, labels:false, table:false, search:'', fSup:'', fCat:'', fFrom:dts[0]||'', fTo:dts[dts.length-1]||'' },
+      'Доля категорий 100%':                 { meas:'total', dim:'month', brk:'cat', type:'bar100', topN:'0', sort:'valDesc', mode:'abs', other:false, labels:false, table:false, search:'', fSup:'', fCat:'', fFrom:dts[0]||'', fTo:dts[dts.length-1]||'' },
+    });
+  }
+  _vbRefreshPresetList();
   vbRender();
 })();
 
