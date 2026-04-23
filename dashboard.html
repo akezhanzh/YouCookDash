@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YouCook — Procurement Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<script>if (window.ChartDataLabels) { Chart.register(ChartDataLabels); Chart.defaults.plugins.datalabels = { display: false }; }</script>
 <style>
   :root {
     --bg:      #0d1117;
@@ -189,14 +191,20 @@
   .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
   .filter-btn:hover { border-color:var(--accent); color:var(--text); }
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
-  /* Visual builder (mini Power BI) */
-  .vb-controls { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; padding:12px; background:rgba(99,102,241,.05); border:1px solid var(--border); border-radius:10px; }
-  .vb-ctrl { display:flex; flex-direction:column; gap:4px; min-width:110px; }
-  .vb-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
-  .vb-ctrl select, .vb-ctrl input[type=date] { background:var(--surf); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:12px; outline:none; min-width:110px; cursor:pointer; }
-  .vb-ctrl select:focus, .vb-ctrl input[type=date]:focus { border-color:var(--accent); }
-  .vb-btn { background:var(--surf); border:1px solid var(--border); border-radius:6px; padding:6px 12px; font-size:12px; color:var(--muted); cursor:pointer; height:30px; }
+  /* Power BI-like constructor */
+  .vb-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; padding:10px 12px; background:rgba(99,102,241,.04); border:1px solid var(--border); border-radius:8px; align-items:flex-end; }
+  .vb-ctrl { display:flex; flex-direction:column; gap:4px; min-width:120px; }
+  .vb-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:600; white-space:nowrap; }
+  .vb-ctrl select, .vb-ctrl input[type=date], .vb-ctrl input[type=text] { background:var(--surf); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:12px; outline:none; min-width:120px; cursor:pointer; font-family:inherit; }
+  .vb-ctrl input[type=text] { cursor:text; width:100%; }
+  .vb-ctrl select:focus, .vb-ctrl input:focus { border-color:var(--accent); }
+  .vb-btn { background:var(--surf); border:1px solid var(--border); border-radius:6px; padding:6px 12px; font-size:12px; color:var(--muted); cursor:pointer; height:30px; white-space:nowrap; }
   .vb-btn:hover { border-color:var(--accent); color:var(--text); }
+  .vb-pills { display:flex; gap:4px; }
+  .vb-pill { background:var(--surf); border:1px solid var(--border); border-radius:6px; padding:5px 10px; font-size:11px; color:var(--muted); cursor:pointer; font-weight:600; }
+  .vb-pill.active { background:rgba(99,102,241,.2); border-color:var(--accent); color:var(--accent); }
+  .vb-check { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text); cursor:pointer; padding:6px 0; }
+  .vb-check input { cursor:pointer; }
 
   /* Unified price analysis */
   /* Price monitor tabs */
@@ -490,59 +498,7 @@
     </div>
   </div>
 
-  <!-- UNIFIED PRICE ANALYSIS -->
-  <div class="card g-full">
-
-    <div class="ph-head">
-      <div>
-        <div style="font-size:15px;font-weight:700;color:var(--text)">🔍 История цен на товары</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">введите название товара — увидите всю историю закупок и как менялась цена</div>
-      </div>
-      <span id="phBadge" class="ph-badge" style="display:none"></span>
-    </div>
-
-    <!-- Search -->
-    <div class="ph-searchbox">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input id="phSearch" type="text" placeholder="Найдите товар — например «мука» или «яйцо»..." oninput="phRender()">
-      <button id="phClear" onclick="phResetSearch()" title="Очистить">✕</button>
-    </div>
-
-    <!-- Pill filters -->
-    <div class="ph-frow">
-      <div class="ph-fg" id="phSupPills"><span class="ph-flbl">Поставщик</span></div>
-      <div class="ph-fg" style="margin-left:auto">
-        <span class="ph-flbl">Период</span>
-        <button class="ph-p active" data-g="per" data-v="all" onclick="phPill(this)">Все</button>
-        <button class="ph-p" data-g="per" data-v="30" onclick="phPill(this)">30 дней</button>
-        <button class="ph-p" data-g="per" data-v="7" onclick="phPill(this)">7 дней</button>
-      </div>
-    </div>
-
-    <!-- Summary stats -->
-    <div id="phSummary" class="ph-summary" style="display:none"></div>
-
-    <!-- Chart (shows when search is active) -->
-    <div id="phChartBox" style="display:none;margin-bottom:16px">
-      <div id="phChartTitle" style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px"></div>
-      <div class="ch"><canvas id="phCanvas"></canvas></div>
-    </div>
-
-    <!-- Table -->
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr>
-          <th onclick="phSort('sku')"   style="cursor:pointer;user-select:none">Товар <span id="ph-s-sku">↕</span></th>
-          <th onclick="phSort('sup')"   style="cursor:pointer;user-select:none">Поставщик <span id="ph-s-sup">↕</span></th>
-          <th onclick="phSort('date')"  style="cursor:pointer;user-select:none">Дата <span id="ph-s-date">↓</span></th>
-          <th class="num" onclick="phSort('price')" style="cursor:pointer;user-select:none">Цена ₸ <span id="ph-s-price">↕</span></th>
-          <th class="num" onclick="phSort('qty')"   style="cursor:pointer;user-select:none">Кол-во <span id="ph-s-qty">↕</span></th>
-          <th class="num">Изм.</th>
-        </tr></thead>
-        <tbody id="phBody"></tbody>
-      </table>
-    </div>
-  </div>
+  <!-- UNIFIED BUILDER (replaces old 'История цен' section — same controls live in the main builder below) -->
 
   <!-- ANOMALIES TABLE -->
   <div class="card g-full">
@@ -560,21 +516,25 @@
     </div>
   </div>
 
-  <!-- VISUAL BUILDER (Power BI-like constructor) -->
-  <div class="grp"><span class="grp-title">🧩 Своя визуализация</span></div>
+  <!-- POWER BI-LIKE CONSTRUCTOR -->
+  <div class="grp"><span class="grp-title">🧩 Конструктор — своя визуализация + история цен</span></div>
   <div class="card g-full">
-    <div class="sec-desc" style="margin-bottom:14px">выбери показатель и разрез — график строится сам</div>
-    <div class="vb-controls">
-      <div class="vb-ctrl"><div class="vb-label">Показатель</div>
+    <div class="sec-desc" style="margin-bottom:14px">один инструмент на всё: выбери показатель, разрез и разбивку — получишь любой график</div>
+
+    <!-- Row 1: What to show -->
+    <div class="vb-row">
+      <div class="vb-ctrl"><div class="vb-label">Показатель (Y)</div>
         <select id="vbMeasure" onchange="vbRender()">
           <option value="total">Сумма ₸</option>
           <option value="qty">Количество</option>
           <option value="avgPrice">Средняя цена ₸</option>
+          <option value="minPrice">Мин цена ₸</option>
+          <option value="maxPrice">Макс цена ₸</option>
           <option value="count">Позиций</option>
           <option value="invoiceCount">Накладных</option>
         </select>
       </div>
-      <div class="vb-ctrl"><div class="vb-label">Разрез</div>
+      <div class="vb-ctrl"><div class="vb-label">Разрез (X)</div>
         <select id="vbDim" onchange="vbRender()">
           <option value="sup">Поставщик</option>
           <option value="city">Город</option>
@@ -585,13 +545,33 @@
           <option value="month">Месяц</option>
         </select>
       </div>
-      <div class="vb-ctrl"><div class="vb-label">Тип</div>
-        <select id="vbType" onchange="vbRender()">
-          <option value="bar">Столбцы</option>
-          <option value="line">Линия</option>
-          <option value="pie">Круговая</option>
-          <option value="table">Таблица</option>
+      <div class="vb-ctrl"><div class="vb-label">Разбивка (цвет)</div>
+        <select id="vbBreak" onchange="vbRender()">
+          <option value="">— нет —</option>
+          <option value="sup">Поставщик</option>
+          <option value="city">Город</option>
+          <option value="cat">Категория</option>
         </select>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">Тип графика</div>
+        <select id="vbType" onchange="vbRender()">
+          <option value="bar">📊 Столбцы</option>
+          <option value="barStack">📊 Столбцы (стек)</option>
+          <option value="bar100">📊 Столбцы 100%</option>
+          <option value="barH">📋 Горизонт. столбцы</option>
+          <option value="line">📈 Линия</option>
+          <option value="area">🌊 Area</option>
+          <option value="pie">🥧 Круговая</option>
+          <option value="donut">🍩 Донат</option>
+          <option value="table">📄 Таблица</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Row 2: Filters -->
+    <div class="vb-row">
+      <div class="vb-ctrl" style="flex:1;min-width:180px"><div class="vb-label">🔍 Поиск товара</div>
+        <input id="vbSearch" type="text" placeholder="например: мука, яйцо, масло..." oninput="vbRenderDebounced()">
       </div>
       <div class="vb-ctrl"><div class="vb-label">Поставщик</div>
         <select id="vbFiltSup" onchange="vbRender()"><option value="">Все</option></select>
@@ -599,19 +579,68 @@
       <div class="vb-ctrl"><div class="vb-label">Категория</div>
         <select id="vbFiltCat" onchange="vbRender()"><option value="">Все</option></select>
       </div>
+      <div class="vb-ctrl"><div class="vb-label">Период</div>
+        <div class="vb-pills">
+          <button class="vb-pill active" data-per="all" onclick="vbPeriod(this)">Все</button>
+          <button class="vb-pill" data-per="30" onclick="vbPeriod(this)">30 дн</button>
+          <button class="vb-pill" data-per="7"  onclick="vbPeriod(this)">7 дн</button>
+        </div>
+      </div>
       <div class="vb-ctrl"><div class="vb-label">С</div>
         <input id="vbFrom" type="date" onchange="vbRender()">
       </div>
       <div class="vb-ctrl"><div class="vb-label">По</div>
         <input id="vbTo" type="date" onchange="vbRender()">
       </div>
-      <div class="vb-ctrl"><div class="vb-label">&nbsp;</div>
-        <button onclick="vbReset()" class="vb-btn">Сбросить</button>
+    </div>
+
+    <!-- Row 3: Options -->
+    <div class="vb-row">
+      <div class="vb-ctrl"><div class="vb-label">Показать Топ</div>
+        <select id="vbTopN" onchange="vbRender()">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="50">50</option>
+          <option value="0">Все</option>
+        </select>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">Сортировка</div>
+        <select id="vbSort" onchange="vbRender()">
+          <option value="valDesc">По значению ↓</option>
+          <option value="valAsc">По значению ↑</option>
+          <option value="labelAsc">По названию A-Я</option>
+          <option value="labelDesc">По названию Я-A</option>
+        </select>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">Подписи</div>
+        <label class="vb-check"><input type="checkbox" id="vbLabels" onchange="vbRender()"> на графике</label>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">Детали</div>
+        <label class="vb-check"><input type="checkbox" id="vbShowTable" onchange="vbRender()"> таблица внизу</label>
+      </div>
+      <div class="vb-ctrl" style="margin-left:auto"><div class="vb-label">&nbsp;</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="vbExport()" class="vb-btn" title="Скачать текущие данные в CSV">⬇ CSV</button>
+          <button onclick="vbReset()" class="vb-btn" title="Сбросить все настройки">↻ Сброс</button>
+        </div>
       </div>
     </div>
-    <div id="vbCanvasWrap" class="ch" style="height:340px"><canvas id="vbCanvas"></canvas></div>
-    <div id="vbTable" style="display:none" class="tbl-wrap"></div>
+
+    <!-- Chart area -->
+    <div id="vbTitleBar" style="margin:14px 0 6px 0;text-align:center">
+      <div id="vbTitle" style="font-size:14px;font-weight:700;color:var(--text)"></div>
+      <div id="vbSubtitle" style="font-size:11px;color:var(--muted);margin-top:2px"></div>
+    </div>
+    <div id="vbCanvasWrap" class="ch" style="height:380px"><canvas id="vbCanvas"></canvas></div>
+    <div id="vbTableMain" style="display:none;margin-top:10px" class="tbl-wrap"></div>
     <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
+
+    <!-- Detail table (below chart, collapsible) -->
+    <div id="vbDetailWrap" style="display:none;margin-top:20px">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;border-top:1px solid var(--border);padding-top:16px">Детальная таблица</div>
+      <div id="vbDetail" class="tbl-wrap"></div>
+    </div>
   </div>
 
   <!-- ALL INVOICES -->
@@ -1623,9 +1652,8 @@ function resetFilter(){
   runFilter();
 }
 
-// ── PRICE ANALYSIS (chart + table unified) ───────────────────────────────────
+// ── PRICE DELTA PRECOMPUTE (used by constructor detail table) ────────────────
 (function() {
-  // 1. Precompute price deltas per sku+supplier
   const byKey = {};
   ALL_LINES.forEach(([sku, sup, , date, price]) => {
     const k = sku + '|' + sup;
@@ -1633,9 +1661,8 @@ function resetFilter(){
     byKey[k].push({ date, price: +price });
   });
   window._phDelta = {};
-  Object.entries(byKey).forEach(([k, entries]) => {
+  Object.entries(byKey).forEach(([, entries]) => {
     entries.sort((a, b) => a.date < b.date ? -1 : 1);
-    // Deduplicate same-date entries (keep last price for that date)
     const deduped = [];
     entries.forEach(e => {
       if (deduped.length && deduped[deduped.length-1].date === e.date) {
@@ -1644,206 +1671,11 @@ function resetFilter(){
         deduped.push({...e});
       }
     });
-    deduped.forEach((e, i) => {
-      const prev = i > 0 ? deduped[i-1].price : null;
-      window._phDelta[k + '|' + e.date] = (prev != null && prev > 0) ? (e.price - prev) / prev * 100 : null;
-    });
   });
-
-  // 2. Per-supplier stats: maxDate and row count
-  const supStats = {};
-  ALL_LINES.forEach(([, sup, , date]) => {
-    if (!supStats[sup]) supStats[sup] = { maxDate: '', count: 0 };
-    if (date > supStats[sup].maxDate) supStats[sup].maxDate = date;
-    supStats[sup].count++;
-  });
-  window._phSupStats = supStats;
-
-  // 3. Overall max date
   const allDates = ALL_LINES.map(l => l[3]).filter(Boolean);
   window._phMaxDate = allDates.length ? allDates.reduce((a, b) => a > b ? a : b) : '';
-
-  // 4. Build supplier pills dynamically (includes all suppliers)
-  const supPills = document.getElementById('phSupPills');
-  if (supPills) {
-    const supNames = Object.keys(supStats).sort();
-    let html = '<span class="ph-flbl">Поставщик</span>';
-    html += `<button class="ph-p active" data-g="sup" data-v="" onclick="phPill(this)">Все <span class="ph-cnt">${ALL_LINES.length}</span></button>`;
-    supNames.forEach(s => {
-      const lbl = s.length > 20 ? s.slice(0, 18) + '…' : s;
-      html += `<button class="ph-p" data-g="sup" data-v="${s.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onclick="phPill(this)">${lbl} <span class="ph-cnt">${supStats[s].count}</span></button>`;
-    });
-    supPills.innerHTML = html;
-  }
-
-  window._phSt  = { sup: '', per: 'all', col: 'date', dir: -1 };
-  window._phC2  = null;
-  phRender();
 })();
 
-function phPill(btn) {
-  const g = btn.dataset.g, v = btn.dataset.v;
-  document.querySelectorAll('.ph-p[data-g="' + g + '"]').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  if (g === 'sup') window._phSt.sup = v;
-  if (g === 'per') window._phSt.per = v;
-  phRender();
-}
-
-function phSort(col) {
-  const s = window._phSt;
-  s.dir = s.col === col ? s.dir * -1 : -1;
-  s.col = col;
-  phRender();
-}
-
-function phResetSearch() {
-  document.getElementById('phSearch').value = '';
-  phRender();
-}
-
-function phRender() {
-  const st  = window._phSt || { sup:'', per:'all', col:'date', dir:-1 };
-  const del = window._phDelta || {};
-  const q   = (document.getElementById('phSearch').value || '').trim().toLowerCase();
-
-  // Clear button visibility
-  const clrBtn = document.getElementById('phClear');
-  if (clrBtn) clrBtn.style.display = q ? 'block' : 'none';
-
-  // Period cutoff — relative to the SELECTED supplier's latest date, not global max
-  let cutoff = '';
-  if (st.per !== 'all') {
-    const stats = window._phSupStats || {};
-    const maxD = st.sup ? (stats[st.sup] || {}).maxDate || window._phMaxDate : window._phMaxDate;
-    if (maxD) {
-      const d = new Date(maxD);
-      d.setDate(d.getDate() - parseInt(st.per, 10) + 1);
-      cutoff = d.toISOString().slice(0, 10);
-    }
-  }
-
-  // Build rows (dedup by sku+sup+date, keep highest qty)
-  const seen = new Map();
-  ALL_LINES.forEach(([sku, s, , date, price, qty]) => {
-    if (st.sup  && s !== st.sup) return;
-    if (cutoff  && date < cutoff) return;
-    if (q && !sku.toLowerCase().includes(q) && !s.toLowerCase().includes(q)) return;
-    const k = sku + '|' + s + '|' + date;
-    if (!seen.has(k)) {
-      seen.set(k, { sku, sup:s, date, price:+price||0, qty:+qty||0, delta: del[k] !== undefined ? del[k] : null });
-    }
-  });
-  let rows = [...seen.values()];
-
-  // Sort
-  rows.sort((a, b) => {
-    let av = a[st.col], bv = b[st.col];
-    if (st.col === 'price' || st.col === 'qty') { av = +av||0; bv = +bv||0; }
-    if (av < bv) return st.dir; if (av > bv) return -st.dir; return 0;
-  });
-
-  // Sort arrows
-  ['sku','sup','date','price','qty'].forEach(c => {
-    const el = document.getElementById('ph-s-' + c);
-    if (el) el.textContent = c === st.col ? (st.dir === -1 ? '↓' : '↑') : '↕';
-  });
-
-  // Badge
-  const badge = document.getElementById('phBadge');
-  if (badge) { badge.textContent = rows.length + ' записей'; badge.style.display = rows.length ? '' : 'none'; }
-
-  // Summary stats bar
-  const summaryEl = document.getElementById('phSummary');
-  if (summaryEl && rows.length) {
-    const totalSpend = rows.reduce((s, r) => s + r.price * r.qty, 0);
-    const deltaRows  = rows.filter(r => r.delta !== null);
-    const risers     = deltaRows.filter(r => r.delta > 0).length;
-    const fallers    = deltaRows.filter(r => r.delta < 0).length;
-    let html = `<span class="ph-stat"><b>${rows.length}</b> закупок</span>`;
-    if (totalSpend > 0) html += `<span class="ph-stat">Сумма: <b>${fmt(Math.round(totalSpend))} ₸</b></span>`;
-    if (risers)  html += `<span class="ph-stat" style="color:var(--red)">▲ ${risers} подорожали</span>`;
-    if (fallers) html += `<span class="ph-stat" style="color:var(--milana)">▼ ${fallers} подешевели</span>`;
-    if (cutoff)  html += `<span class="ph-stat" style="opacity:.6">с ${cutoff.split('-').reverse().join('.')}</span>`;
-    summaryEl.innerHTML = html;
-    summaryEl.style.display = 'flex';
-  } else if (summaryEl) {
-    summaryEl.style.display = 'none';
-  }
-
-  // Chart — show when searching
-  const chartBox = document.getElementById('phChartBox');
-  if (q && rows.length) {
-    _phDrawChart(rows, q);
-    if (chartBox) chartBox.style.display = '';
-  } else {
-    if (chartBox) chartBox.style.display = 'none';
-    if (window._phC2) { window._phC2.destroy(); window._phC2 = null; }
-  }
-
-  // Table
-  const tbody = document.getElementById('phBody');
-  if (!tbody) return;
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Ничего не найдено<br><span style="font-size:11px;opacity:.6">Попробуйте другой запрос или смените фильтр периода</span></td></tr>';
-    return;
-  }
-  tbody.innerHTML = rows.slice(0, 300).map(r => {
-    const ds = r.date ? r.date.split('-').reverse().join('.') : '—';
-    const ps = r.price ? fmt(Math.round(r.price)) : '—';
-    const qs = r.qty   ? (+r.qty.toFixed(2)) + '' : '—';
-    let dh = '<span style="color:var(--muted);opacity:.4">—</span>';
-    let rowStyle = 'cursor:pointer';
-    if (r.delta !== null) {
-      const sign  = r.delta > 0 ? '▲' : r.delta < 0 ? '▼' : '=';
-      const clr   = r.delta > 0 ? 'var(--red)' : r.delta < 0 ? 'var(--milana)' : 'var(--muted)';
-      const bg    = r.delta > 0 ? '#ef444418' : r.delta < 0 ? '#22c55e18' : 'transparent';
-      dh = `<span style="color:${clr};font-weight:700;background:${bg};padding:2px 8px;border-radius:6px;font-size:11px;white-space:nowrap">${sign} ${Math.abs(r.delta).toFixed(1)}%</span>`;
-      if (Math.abs(r.delta) > 5) rowStyle += ';background:' + (r.delta > 0 ? 'rgba(239,68,68,.03)' : 'rgba(34,197,94,.03)');
-    }
-    const isM = r.sup.toUpperCase().includes('МИЛАН');
-    const st2 = isM ? `<span class="tag-m">${r.sup}</span>` : `<span class="tag-o">${r.sup}</span>`;
-    const se  = r.sku.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<tr style="${rowStyle}" onclick="openSkuModal('${se}')"><td>${r.sku}</td><td>${st2}</td><td>${ds}</td><td class="num">${ps}</td><td class="num">${qs}</td><td class="num">${dh}</td></tr>`;
-  }).join('');
-}
-
-function _phDrawChart(rows, q) {
-  const title = document.getElementById('phChartTitle');
-  if (title) title.textContent = 'График цен: ' + rows[0].sku;
-  const byDS = {};
-  rows.forEach(r => {
-    if (!r.date || !r.price) return;
-    if (!byDS[r.date]) byDS[r.date] = {};
-    if (!byDS[r.date][r.sup]) byDS[r.date][r.sup] = [];
-    byDS[r.date][r.sup].push(r.price);
-  });
-  const dates   = Object.keys(byDS).sort();
-  const sups    = [...new Set(rows.map(r => r.sup))];
-  const colors  = ['#6366f1','#22c55e','#f59e0b','#ef4444'];
-  const datasets = sups.map((s, i) => ({
-    label: s,
-    data: dates.map(d => { const p = byDS[d]?.[s]; return p ? p.reduce((a,b)=>a+b,0)/p.length : null; }),
-    borderColor: colors[i%4], backgroundColor: colors[i%4]+'22',
-    tension:.35, spanGaps:true, pointRadius:5, fill:false, borderWidth:2
-  }));
-  const canvas = document.getElementById('phCanvas');
-  if (!canvas) return;
-  if (window._phC2) { window._phC2.destroy(); window._phC2 = null; }
-  window._phC2 = new Chart(canvas, {
-    type:'line',
-    data:{ labels: dates.map(d => { const[,m,day]=d.split('-'); return day+'.'+m; }), datasets },
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{labels:{color:TICK,font:FONT}}, tooltip:{backgroundColor:TOOLTIP_BG, callbacks:{label:c=>`${c.dataset.label}: ${c.raw?Math.round(c.raw)+' ₸':'—'}`}} },
-      scales:{ x:{grid:{color:GRID},ticks:{color:TICK,font:FONT}}, y:{grid:{color:GRID},ticks:{color:TICK,font:FONT,callback:v=>fmt(v)+' ₸'}} }
-    }
-  });
-}
-
-function phClickRow(sku) {
-  const inp = document.getElementById('phSearch');
-  if (inp) { inp.value = sku; phRender(); inp.focus(); }
-}
 
 // ── PRICE MONITOR ─────────────────────────────────────────────────────────────
 (function buildPriceMonitor() {
@@ -2218,12 +2050,21 @@ window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e 
   if (!localStorage.getItem('theme')) _applyTheme(e.matches ? 'light' : 'dark');
 });
 
-// ── VISUAL BUILDER (mini Power BI) ────────────────────────────────────────────
-const VB_MEAS_LBL = { total:'Сумма ₸', qty:'Количество', avgPrice:'Ср. цена ₸', count:'Позиций', invoiceCount:'Накладных' };
+// ── CONSTRUCTOR (Power BI-like) ──────────────────────────────────────────────
+const VB_MEAS_LBL = {
+  total:'Сумма ₸', qty:'Количество', avgPrice:'Ср. цена ₸',
+  minPrice:'Мин цена ₸', maxPrice:'Макс цена ₸',
+  count:'Позиций', invoiceCount:'Накладных'
+};
 const VB_DIM_LBL  = { sup:'Поставщик', city:'Город', cat:'Категория', sku:'Товар', day:'День', week:'Неделя', month:'Месяц' };
-const VB_COLORS = ['#6366f1','#2dd4a0','#f4a942','#c084fc','#ef4444','#06b6d4','#eab308','#84cc16','#ec4899','#14b8a6','#f97316','#8b5cf6'];
+const VB_COLORS = ['#6366f1','#2dd4a0','#f4a942','#c084fc','#ef4444','#06b6d4','#eab308','#84cc16','#ec4899','#14b8a6','#f97316','#8b5cf6','#f43f5e','#a78bfa','#fbbf24'];
+
+const _vbCurrencyMeas = new Set(['total','avgPrice','minPrice','maxPrice']);
+let _vbDebounceT = null;
+function vbRenderDebounced() { clearTimeout(_vbDebounceT); _vbDebounceT = setTimeout(vbRender, 150); }
 
 function _vbIsoWeek(dateStr) {
+  if (!dateStr) return null;
   const d = new Date(dateStr);
   if (isNaN(d)) return null;
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -2234,12 +2075,72 @@ function _vbIsoWeek(dateStr) {
   return `${t.getUTCFullYear()}-W${String(wn).padStart(2,'0')}`;
 }
 
+function _vbDimValue(line, dim) {
+  switch (dim) {
+    case 'sup':   return line[1];
+    case 'city':  return line[2];
+    case 'cat':   return getCatJS(line[0]);
+    case 'sku':   return line[0];
+    case 'day':   return line[3];
+    case 'week':  return _vbIsoWeek(line[3]);
+    case 'month': return (line[3] || '').slice(0, 7);
+  }
+  return null;
+}
+
+function _vbFormatLabel(val, dim) {
+  if (dim === 'day' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    const [y, m, d] = val.split('-');
+    return `${d}.${m}`;
+  }
+  if (dim === 'month' && /^\d{4}-\d{2}$/.test(val)) {
+    const [y, m] = val.split('-');
+    const names = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+    return `${names[parseInt(m,10)-1]} ${y}`;
+  }
+  if (dim === 'week' && /^\d{4}-W\d{2}$/.test(val)) {
+    return val.replace('-W', ' нед. ');
+  }
+  return String(val);
+}
+
+function vbPeriod(btn) {
+  document.querySelectorAll('.vb-pill[data-per]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const per = btn.dataset.per;
+  const fromEl = document.getElementById('vbFrom');
+  const toEl   = document.getElementById('vbTo');
+  const dts = ALL_LINES.map(l => l[3]).filter(Boolean).sort();
+  if (!dts.length) { vbRender(); return; }
+  const maxD = dts[dts.length - 1];
+  if (per === 'all') {
+    fromEl.value = dts[0];
+    toEl.value   = maxD;
+  } else {
+    const n = parseInt(per, 10);
+    const d = new Date(maxD);
+    d.setDate(d.getDate() - n + 1);
+    fromEl.value = d.toISOString().slice(0, 10);
+    toEl.value   = maxD;
+  }
+  vbRender();
+}
+
 function vbReset() {
   document.getElementById('vbMeasure').value = 'total';
-  document.getElementById('vbDim').value = 'sup';
-  document.getElementById('vbType').value = 'bar';
+  document.getElementById('vbDim').value     = 'sup';
+  document.getElementById('vbBreak').value   = '';
+  document.getElementById('vbType').value    = 'bar';
+  document.getElementById('vbSearch').value  = '';
   document.getElementById('vbFiltSup').value = '';
   document.getElementById('vbFiltCat').value = '';
+  document.getElementById('vbTopN').value    = '20';
+  document.getElementById('vbSort').value    = 'valDesc';
+  document.getElementById('vbLabels').checked    = false;
+  document.getElementById('vbShowTable').checked = false;
+  document.querySelectorAll('.vb-pill[data-per]').forEach(b => b.classList.remove('active'));
+  const allPill = document.querySelector('.vb-pill[data-per="all"]');
+  if (allPill) allPill.classList.add('active');
   const dts = ALL_LINES.map(l => l[3]).filter(Boolean).sort();
   if (dts.length) {
     document.getElementById('vbFrom').value = dts[0];
@@ -2248,143 +2149,399 @@ function vbReset() {
   vbRender();
 }
 
-function vbRender() {
-  if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
-  const meas = document.getElementById('vbMeasure').value;
-  const dim  = document.getElementById('vbDim').value;
-  const type = document.getElementById('vbType').value;
-  const fSup = document.getElementById('vbFiltSup').value;
-  const fCat = document.getElementById('vbFiltCat').value;
+function _vbAgg() {
+  const meas  = document.getElementById('vbMeasure').value;
+  const dim   = document.getElementById('vbDim').value;
+  const brk   = document.getElementById('vbBreak').value;
+  const type  = document.getElementById('vbType').value;
+  const topN  = parseInt(document.getElementById('vbTopN').value, 10);
+  const sort  = document.getElementById('vbSort').value;
+  const search = (document.getElementById('vbSearch').value || '').trim().toLowerCase();
+  const fSup  = document.getElementById('vbFiltSup').value;
+  const fCat  = document.getElementById('vbFiltCat').value;
   const fFrom = document.getElementById('vbFrom').value;
   const fTo   = document.getElementById('vbTo').value;
 
+  // Filter
   const lines = ALL_LINES.filter(l => {
     if (fSup && l[1] !== fSup) return false;
     if (fCat && getCatJS(l[0]) !== fCat) return false;
     if (fFrom && l[3] && l[3] < fFrom) return false;
     if (fTo   && l[3] && l[3] > fTo)   return false;
+    if (search) {
+      const hay = (l[0] + ' ' + l[1] + ' ' + l[2]).toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
     return true;
   });
 
-  const keyOf = (line) => {
-    switch (dim) {
-      case 'sup':   return line[1];
-      case 'city':  return line[2];
-      case 'cat':   return getCatJS(line[0]);
-      case 'sku':   return line[0];
-      case 'day':   return line[3];
-      case 'week':  return _vbIsoWeek(line[3]);
-      case 'month': return (line[3] || '').slice(0, 7);
-    }
-  };
-
-  const groups = {};
+  // Aggregate by (dim, break)
+  const cells = {}; // cells[dimKey][brkKey] = { total, qty, ... }
+  const dimKeys = new Set();
+  const brkKeys = new Set();
   lines.forEach(l => {
-    const k = keyOf(l);
-    if (k == null || k === '') return;
-    if (!groups[k]) groups[k] = { total:0, qty:0, priceSum:0, priceCnt:0, invIds:new Set() };
-    groups[k].total    += +l[6] || 0;
-    groups[k].qty      += +l[5] || 0;
-    groups[k].priceSum += +l[4] || 0;
-    groups[k].priceCnt++;
-    groups[k].invIds.add(l[7]);
+    const dk = _vbDimValue(l, dim);
+    if (dk == null || dk === '') return;
+    dimKeys.add(dk);
+    const bk = brk ? _vbDimValue(l, brk) : '__single__';
+    if (bk == null) return;
+    brkKeys.add(bk);
+    if (!cells[dk]) cells[dk] = {};
+    if (!cells[dk][bk]) cells[dk][bk] = { total:0, qty:0, priceSum:0, priceCnt:0, minP:Infinity, maxP:-Infinity, invIds:new Set() };
+    const c = cells[dk][bk];
+    c.total    += +l[6] || 0;
+    c.qty      += +l[5] || 0;
+    c.priceSum += +l[4] || 0;
+    c.priceCnt++;
+    if (+l[4] < c.minP) c.minP = +l[4];
+    if (+l[4] > c.maxP) c.maxP = +l[4];
+    c.invIds.add(l[7]);
   });
 
-  const measure = (g) => {
+  const measFn = (c) => {
+    if (!c) return 0;
     switch (meas) {
-      case 'total':        return g.total;
-      case 'qty':          return g.qty;
-      case 'avgPrice':     return g.priceCnt ? g.priceSum / g.priceCnt : 0;
-      case 'count':        return g.priceCnt;
-      case 'invoiceCount': return g.invIds.size;
+      case 'total':        return c.total;
+      case 'qty':          return c.qty;
+      case 'avgPrice':     return c.priceCnt ? c.priceSum / c.priceCnt : 0;
+      case 'minPrice':     return c.minP === Infinity ? 0 : c.minP;
+      case 'maxPrice':     return c.maxP === -Infinity ? 0 : c.maxP;
+      case 'count':        return c.priceCnt;
+      case 'invoiceCount': return c.invIds.size;
     }
     return 0;
   };
 
+  // Row totals (for sorting / top N)
+  const rowTot = {};
+  dimKeys.forEach(dk => {
+    let t = 0;
+    brkKeys.forEach(bk => { t += measFn(cells[dk][bk]); });
+    rowTot[dk] = t;
+  });
+
+  // Sort & topN
   const isTimeDim = ['day','week','month'].includes(dim);
-  let entries = Object.entries(groups).map(([k, g]) => [k, measure(g)]);
+  let dkOrdered = [...dimKeys];
   if (isTimeDim) {
-    entries.sort((a, b) => a[0].localeCompare(b[0]));
+    dkOrdered.sort((a, b) => a.localeCompare(b));
   } else {
-    entries.sort((a, b) => b[1] - a[1]);
-    if (entries.length > 20) entries = entries.slice(0, 20);
+    if (sort === 'valDesc')   dkOrdered.sort((a, b) => rowTot[b] - rowTot[a]);
+    if (sort === 'valAsc')    dkOrdered.sort((a, b) => rowTot[a] - rowTot[b]);
+    if (sort === 'labelAsc')  dkOrdered.sort((a, b) => String(a).localeCompare(String(b), 'ru'));
+    if (sort === 'labelDesc') dkOrdered.sort((a, b) => String(b).localeCompare(String(a), 'ru'));
+    if (topN > 0 && dkOrdered.length > topN) dkOrdered = dkOrdered.slice(0, topN);
   }
 
-  const labels = entries.map(e => e[0]);
-  const values = entries.map(e => Math.round(e[1] * 100) / 100);
+  // Order breakdown keys by total desc
+  const brkTot = {};
+  brkKeys.forEach(bk => {
+    let t = 0;
+    dkOrdered.forEach(dk => { if (cells[dk] && cells[dk][bk]) t += measFn(cells[dk][bk]); });
+    brkTot[bk] = t;
+  });
+  const bkOrdered = [...brkKeys].sort((a, b) => brkTot[b] - brkTot[a]);
+
+  return {
+    dimKeys: dkOrdered, brkKeys: bkOrdered, cells, measFn,
+    meas, dim, brk, type, totalLines: lines.length,
+    filteredTotal: Object.values(rowTot).reduce((s, v) => s + v, 0),
+  };
+}
+
+function vbRender() {
+  if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
+  const A = _vbAgg();
+  const unitSuffix = _vbCurrencyMeas.has(A.meas) ? ' ₸' : '';
+  const showLabels = document.getElementById('vbLabels').checked;
+  const showDetail = document.getElementById('vbShowTable').checked;
+
+  // Title
+  const titleEl = document.getElementById('vbTitle');
+  const subEl = document.getElementById('vbSubtitle');
+  let title = `${VB_MEAS_LBL[A.meas]} по ${VB_DIM_LBL[A.dim]}`;
+  if (A.brk) title += `, с разбивкой по ${VB_DIM_LBL[A.brk]}`;
+  titleEl.textContent = title;
+  const fFrom = document.getElementById('vbFrom').value;
+  const fTo   = document.getElementById('vbTo').value;
+  const fSup  = document.getElementById('vbFiltSup').value;
+  const fCat  = document.getElementById('vbFiltCat').value;
+  const srch  = document.getElementById('vbSearch').value.trim();
+  const parts = [];
+  if (fFrom && fTo) parts.push(`${fFrom.split('-').reverse().join('.')} — ${fTo.split('-').reverse().join('.')}`);
+  if (fSup)  parts.push(`поставщик: ${fSup}`);
+  if (fCat)  parts.push(`категория: ${fCat}`);
+  if (srch)  parts.push(`поиск: «${srch}»`);
+  subEl.textContent = parts.join(' · ') || 'все данные';
+
+  // Prepare chart data
+  const labels = A.dimKeys.map(k => _vbFormatLabel(k, A.dim));
+  const canvasWrap = document.getElementById('vbCanvasWrap');
+  const tableMain  = document.getElementById('vbTableMain');
 
   if (window._vbChart) { window._vbChart.destroy(); window._vbChart = null; }
 
-  const canvasWrap = document.getElementById('vbCanvasWrap');
-  const tableWrap  = document.getElementById('vbTable');
-  const sumEl = document.getElementById('vbSummary');
-
-  const unitSuffix = meas === 'total' || meas === 'avgPrice' ? ' ₸' : '';
-
-  if (type === 'table') {
+  // TABLE view — full data table
+  if (A.type === 'table') {
     canvasWrap.style.display = 'none';
-    tableWrap.style.display  = 'block';
-    tableWrap.innerHTML = `<table>
-      <thead><tr><th>${VB_DIM_LBL[dim]}</th><th class="num">${VB_MEAS_LBL[meas]}</th></tr></thead>
-      <tbody>${entries.map(([k, v]) => `<tr><td>${k}</td><td class="num">${fmt(Math.round(v))}${unitSuffix}</td></tr>`).join('')}</tbody>
-    </table>`;
+    tableMain.style.display  = 'block';
+    let html = '<table><thead><tr>';
+    html += `<th>${VB_DIM_LBL[A.dim]}</th>`;
+    if (A.brk) {
+      A.brkKeys.forEach(bk => { html += `<th class="num">${bk}</th>`; });
+      html += `<th class="num"><b>Всего</b></th>`;
+    } else {
+      html += `<th class="num">${VB_MEAS_LBL[A.meas]}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+    A.dimKeys.forEach(dk => {
+      html += `<tr><td>${_vbFormatLabel(dk, A.dim)}</td>`;
+      if (A.brk) {
+        let rowTot = 0;
+        A.brkKeys.forEach(bk => {
+          const v = A.measFn(A.cells[dk] ? A.cells[dk][bk] : null);
+          rowTot += v;
+          html += `<td class="num">${v ? fmt(Math.round(v)) + unitSuffix : '—'}</td>`;
+        });
+        html += `<td class="num"><b>${fmt(Math.round(rowTot))}${unitSuffix}</b></td>`;
+      } else {
+        const v = A.measFn(A.cells[dk] ? A.cells[dk]['__single__'] : null);
+        html += `<td class="num">${fmt(Math.round(v))}${unitSuffix}</td>`;
+      }
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    tableMain.innerHTML = html;
   } else {
-    tableWrap.style.display  = 'none';
+    tableMain.style.display  = 'none';
     canvasWrap.style.display = 'block';
-    const chartType = type === 'pie' ? 'pie' : (type === 'line' ? 'line' : 'bar');
+
+    // Build datasets
+    const isPie = A.type === 'pie' || A.type === 'donut';
+    const isBar = A.type === 'bar' || A.type === 'barStack' || A.type === 'bar100' || A.type === 'barH';
+    const isArea = A.type === 'area';
+    const isLine = A.type === 'line';
+    const stacked = A.type === 'barStack' || A.type === 'bar100';
+    const percent100 = A.type === 'bar100';
+
+    let datasets;
+    if (A.brk) {
+      datasets = A.brkKeys.map((bk, i) => {
+        const data = A.dimKeys.map(dk => A.measFn(A.cells[dk] ? A.cells[dk][bk] : null));
+        const color = VB_COLORS[i % VB_COLORS.length];
+        return {
+          label: String(bk),
+          data,
+          backgroundColor: isLine ? color : color + (isArea ? '44' : 'cc'),
+          borderColor: color,
+          borderWidth: 1.5,
+          borderRadius: isBar ? 4 : 0,
+          fill: isArea,
+          tension: (isLine || isArea) ? 0.3 : 0,
+          pointRadius: (isLine || isArea) ? 3 : 0,
+        };
+      });
+      if (percent100) {
+        // Normalise per dim to 100%
+        const sums = A.dimKeys.map((dk, i) => {
+          let s = 0;
+          A.brkKeys.forEach(bk => { s += A.measFn(A.cells[dk] ? A.cells[dk][bk] : null); });
+          return s || 1;
+        });
+        datasets = datasets.map(ds => ({
+          ...ds,
+          data: ds.data.map((v, i) => v / sums[i] * 100),
+        }));
+      }
+    } else {
+      const data = A.dimKeys.map(dk => A.measFn(A.cells[dk] ? A.cells[dk]['__single__'] : null));
+      const singleColor = isPie
+        ? A.dimKeys.map((_, i) => VB_COLORS[i % VB_COLORS.length])
+        : 'rgba(99,102,241,.7)';
+      datasets = [{
+        label: VB_MEAS_LBL[A.meas],
+        data,
+        backgroundColor: singleColor,
+        borderColor: isPie ? '#1a1d27' : '#6366f1',
+        borderWidth: isPie ? 2 : 1.5,
+        borderRadius: isBar ? 6 : 0,
+        fill: isArea,
+        tension: (isLine || isArea) ? 0.3 : 0,
+        pointRadius: (isLine || isArea) ? 4 : 0,
+      }];
+    }
+
+    // Chart type mapping
+    const chartType = (A.type === 'barH') ? 'bar'
+                    : (A.type === 'barStack' || A.type === 'bar100' || A.type === 'bar') ? 'bar'
+                    : (A.type === 'donut') ? 'doughnut'
+                    : (A.type === 'pie') ? 'pie'
+                    : (A.type === 'area') ? 'line'
+                    : 'line';
+
+    const options = {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: A.type === 'barH' ? 'y' : 'x',
+      plugins: {
+        legend: {
+          display: isPie || !!A.brk,
+          position: isPie ? 'right' : 'top',
+          labels: { color: TICK, font: FONT, boxWidth: 12 }
+        },
+        tooltip: {
+          backgroundColor: TOOLTIP_BG,
+          callbacks: {
+            label: (c) => {
+              const v = c.parsed.y ?? c.parsed.x ?? c.parsed;
+              const lbl = A.brk ? c.dataset.label : VB_MEAS_LBL[A.meas];
+              if (percent100) return `${lbl}: ${(+v).toFixed(1)}%`;
+              return `${lbl}: ${fmt(Math.round(v))}${unitSuffix}`;
+            }
+          }
+        },
+        datalabels: showLabels && !isPie ? {
+          color: TICK,
+          anchor: 'end',
+          align: 'end',
+          font: { weight: 'bold', size: 10 },
+          formatter: (v) => percent100 ? (+v).toFixed(0) + '%' : fmt(Math.round(v))
+        } : { display: false }
+      },
+      scales: isPie ? {} : {
+        x: {
+          stacked,
+          ticks: { color: TICK, font: FONT, maxRotation: 45, autoSkip: true },
+          grid: { color: GRID }
+        },
+        y: {
+          stacked,
+          beginAtZero: true,
+          ticks: {
+            color: TICK, font: FONT,
+            callback: v => percent100 ? v + '%' : fmt(v)
+          },
+          grid: { color: GRID },
+          max: percent100 ? 100 : undefined
+        }
+      }
+    };
+
     const ctx = document.getElementById('vbCanvas').getContext('2d');
     window._vbChart = new Chart(ctx, {
       type: chartType,
-      data: {
-        labels,
-        datasets: [{
-          label: VB_MEAS_LBL[meas],
-          data: values,
-          backgroundColor: chartType === 'pie'
-            ? labels.map((_, i) => VB_COLORS[i % VB_COLORS.length])
-            : 'rgba(99,102,241,.65)',
-          borderColor: chartType === 'line' ? '#6366f1' : (chartType === 'pie' ? '#1a1d27' : 'rgba(99,102,241,1)'),
-          borderWidth: chartType === 'pie' ? 2 : 1,
-          borderRadius: chartType === 'bar' ? 6 : 0,
-          fill: chartType !== 'line',
-          tension: chartType === 'line' ? 0.3 : 0,
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: chartType === 'pie', labels: { color: TICK, font: FONT } },
-          tooltip: { callbacks: {
-            label: (c) => {
-              const v = c.parsed.y ?? c.parsed;
-              return `${VB_MEAS_LBL[meas]}: ${fmt(Math.round(v))}${unitSuffix}`;
-            }
-          }}
-        },
-        scales: chartType === 'pie' ? {} : {
-          x: { ticks: { color: TICK, font: FONT, maxRotation: 45, minRotation: 0, autoSkip: true }, grid: { color: GRID } },
-          y: { ticks: { color: TICK, font: FONT, callback: v => fmt(v) }, grid: { color: GRID }, beginAtZero: true }
-        }
-      }
+      data: { labels, datasets },
+      options,
     });
   }
 
-  const sumTotal = values.reduce((s, v) => s + v, 0);
-  const noun = entries.length === 1 ? VB_DIM_LBL[dim].toLowerCase() : VB_DIM_LBL[dim].toLowerCase().replace(/[а]$/,'ов').replace('категория','категорий').replace('неделя','недель').replace('месяц','месяцев');
-  sumEl.textContent = `${entries.length} ${VB_DIM_LBL[dim].toLowerCase()}(ов) · итого ${fmt(Math.round(sumTotal))}${unitSuffix}`;
+  // Summary
+  const sumEl = document.getElementById('vbSummary');
+  const noun = `${A.dimKeys.length} ${VB_DIM_LBL[A.dim].toLowerCase()}`;
+  const totalStr = _vbCurrencyMeas.has(A.meas)
+    ? `итого ${fmt(Math.round(A.filteredTotal))} ₸`
+    : `сумма: ${fmt(Math.round(A.filteredTotal))}`;
+  sumEl.textContent = `${noun} · ${totalStr} · на основе ${A.totalLines} строк`;
+
+  // Detail table (below chart)
+  const detailWrap = document.getElementById('vbDetailWrap');
+  const detail     = document.getElementById('vbDetail');
+  if (!showDetail) {
+    detailWrap.style.display = 'none';
+    return;
+  }
+  detailWrap.style.display = 'block';
+  // Show raw lines filtered
+  const fFrom2 = document.getElementById('vbFrom').value;
+  const fTo2   = document.getElementById('vbTo').value;
+  const fSup2  = document.getElementById('vbFiltSup').value;
+  const fCat2  = document.getElementById('vbFiltCat').value;
+  const srch2  = document.getElementById('vbSearch').value.trim().toLowerCase();
+  const del = window._phDelta || {};
+  let rows = ALL_LINES.filter(l => {
+    if (fSup2 && l[1] !== fSup2) return false;
+    if (fCat2 && getCatJS(l[0]) !== fCat2) return false;
+    if (fFrom2 && l[3] && l[3] < fFrom2) return false;
+    if (fTo2   && l[3] && l[3] > fTo2)   return false;
+    if (srch2) {
+      const hay = (l[0] + ' ' + l[1] + ' ' + l[2]).toLowerCase();
+      if (!hay.includes(srch2)) return false;
+    }
+    return true;
+  });
+  rows.sort((a, b) => (b[3] || '').localeCompare(a[3] || ''));
+  const MAX = 300;
+  let detailHtml = `<table><thead><tr>
+    <th>Товар</th><th>Поставщик</th><th>Дата</th>
+    <th class="num">Цена</th><th class="num">Кол-во</th><th class="num">Сумма</th><th class="num">Изм.</th>
+  </tr></thead><tbody>`;
+  rows.slice(0, MAX).forEach(l => {
+    const [sku, sup, city, date, price, qty, total, inv, unit] = l;
+    const deltaKey = sku + '|' + sup + '|' + date;
+    const delta = del[deltaKey];
+    const ds = date ? date.split('-').reverse().join('.') : '—';
+    const u = unit || 'кг';
+    let dh = '<span style="color:var(--muted);opacity:.4">—</span>';
+    if (delta !== null && delta !== undefined) {
+      const sign = delta > 0 ? '▲' : delta < 0 ? '▼' : '=';
+      const clr  = delta > 0 ? 'var(--red)' : delta < 0 ? 'var(--milana)' : 'var(--muted)';
+      dh = `<span style="color:${clr};font-weight:700;font-size:11px">${sign} ${Math.abs(delta).toFixed(1)}%</span>`;
+    }
+    const isM = sup.toUpperCase().includes('МИЛАН');
+    const tag = isM ? `<span class="tag-m">${sup}</span>` : `<span class="tag-o">${sup}</span>`;
+    const se = sku.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    detailHtml += `<tr style="cursor:pointer" onclick="openSkuModal('${se}')">
+      <td>${sku}</td><td>${tag}</td><td>${ds}</td>
+      <td class="num">${fmt(Math.round(price))} ₸<span style="color:var(--muted);font-size:10px">/${u}</span></td>
+      <td class="num">${(+qty).toFixed(Number.isInteger(+qty) ? 0 : 2)} ${u}</td>
+      <td class="num">${fmt(Math.round(total))} ₸</td>
+      <td class="num">${dh}</td>
+    </tr>`;
+  });
+  detailHtml += '</tbody></table>';
+  if (rows.length > MAX) detailHtml += `<div style="text-align:center;color:var(--muted);font-size:11px;padding:8px">показано ${MAX} из ${rows.length}</div>`;
+  detail.innerHTML = detailHtml;
 }
 
-(function initVisualBuilder() {
+function vbExport() {
+  const A = _vbAgg();
+  const unitSuffix = _vbCurrencyMeas.has(A.meas) ? ' ₸' : '';
+  const rows = [];
+  if (A.brk) {
+    const header = ['"' + VB_DIM_LBL[A.dim] + '"', ...A.brkKeys.map(bk => '"' + String(bk).replace(/"/g,'""') + '"'), '"Всего"'];
+    rows.push(header.join(','));
+    A.dimKeys.forEach(dk => {
+      let rowTot = 0;
+      const vals = A.brkKeys.map(bk => {
+        const v = A.measFn(A.cells[dk] ? A.cells[dk][bk] : null);
+        rowTot += v;
+        return Math.round(v * 100) / 100;
+      });
+      rows.push(['"' + String(dk).replace(/"/g,'""') + '"', ...vals, Math.round(rowTot * 100) / 100].join(','));
+    });
+  } else {
+    rows.push(['"' + VB_DIM_LBL[A.dim] + '"', '"' + VB_MEAS_LBL[A.meas] + '"'].join(','));
+    A.dimKeys.forEach(dk => {
+      const v = A.measFn(A.cells[dk] ? A.cells[dk]['__single__'] : null);
+      rows.push(['"' + String(dk).replace(/"/g,'""') + '"', Math.round(v * 100) / 100].join(','));
+    });
+  }
+  // BOM + UTF-8 for Excel
+  const blob = new Blob(['﻿' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const name = `youcook_${A.meas}_by_${A.dim}${A.brk ? '_x_' + A.brk : ''}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+(function initConstructor() {
   if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
-  // Populate supplier filter
   const sups = [...new Set(ALL_LINES.map(l => l[1]))].sort();
   const fSup = document.getElementById('vbFiltSup');
   sups.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; fSup.appendChild(o); });
-  // Populate category filter
   const cats = [...new Set(ALL_LINES.map(l => getCatJS(l[0])))].sort();
   const fCat = document.getElementById('vbFiltCat');
   cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; fCat.appendChild(o); });
-  // Default date range
   const dts = ALL_LINES.map(l => l[3]).filter(Boolean).sort();
   if (dts.length) {
     document.getElementById('vbFrom').value = dts[0];
