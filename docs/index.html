@@ -189,6 +189,15 @@
   .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
   .filter-btn:hover { border-color:var(--accent); color:var(--text); }
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
+  /* Visual builder (mini Power BI) */
+  .vb-controls { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; padding:12px; background:rgba(99,102,241,.05); border:1px solid var(--border); border-radius:10px; }
+  .vb-ctrl { display:flex; flex-direction:column; gap:4px; min-width:110px; }
+  .vb-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+  .vb-ctrl select, .vb-ctrl input[type=date] { background:var(--surf); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:12px; outline:none; min-width:110px; cursor:pointer; }
+  .vb-ctrl select:focus, .vb-ctrl input[type=date]:focus { border-color:var(--accent); }
+  .vb-btn { background:var(--surf); border:1px solid var(--border); border-radius:6px; padding:6px 12px; font-size:12px; color:var(--muted); cursor:pointer; height:30px; }
+  .vb-btn:hover { border-color:var(--accent); color:var(--text); }
+
   /* Unified price analysis */
   /* Price monitor tabs */
   .pm-tab { padding:5px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--surf); color:var(--muted); font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; }
@@ -549,6 +558,60 @@
         <tbody id="anomTbody"></tbody>
       </table>
     </div>
+  </div>
+
+  <!-- VISUAL BUILDER (Power BI-like constructor) -->
+  <div class="grp"><span class="grp-title">🧩 Своя визуализация</span></div>
+  <div class="card g-full">
+    <div class="sec-desc" style="margin-bottom:14px">выбери показатель и разрез — график строится сам</div>
+    <div class="vb-controls">
+      <div class="vb-ctrl"><div class="vb-label">Показатель</div>
+        <select id="vbMeasure" onchange="vbRender()">
+          <option value="total">Сумма ₸</option>
+          <option value="qty">Количество</option>
+          <option value="avgPrice">Средняя цена ₸</option>
+          <option value="count">Позиций</option>
+          <option value="invoiceCount">Накладных</option>
+        </select>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">Разрез</div>
+        <select id="vbDim" onchange="vbRender()">
+          <option value="sup">Поставщик</option>
+          <option value="city">Город</option>
+          <option value="cat">Категория</option>
+          <option value="sku">Товар</option>
+          <option value="day">День</option>
+          <option value="week">Неделя</option>
+          <option value="month">Месяц</option>
+        </select>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">Тип</div>
+        <select id="vbType" onchange="vbRender()">
+          <option value="bar">Столбцы</option>
+          <option value="line">Линия</option>
+          <option value="pie">Круговая</option>
+          <option value="table">Таблица</option>
+        </select>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">Поставщик</div>
+        <select id="vbFiltSup" onchange="vbRender()"><option value="">Все</option></select>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">Категория</div>
+        <select id="vbFiltCat" onchange="vbRender()"><option value="">Все</option></select>
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">С</div>
+        <input id="vbFrom" type="date" onchange="vbRender()">
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">По</div>
+        <input id="vbTo" type="date" onchange="vbRender()">
+      </div>
+      <div class="vb-ctrl"><div class="vb-label">&nbsp;</div>
+        <button onclick="vbReset()" class="vb-btn">Сбросить</button>
+      </div>
+    </div>
+    <div id="vbCanvasWrap" class="ch" style="height:340px"><canvas id="vbCanvas"></canvas></div>
+    <div id="vbTable" style="display:none" class="tbl-wrap"></div>
+    <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
   </div>
 
   <!-- ALL INVOICES -->
@@ -3146,6 +3209,181 @@ function toggleTheme() {
 window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
   if (!localStorage.getItem('theme')) _applyTheme(e.matches ? 'light' : 'dark');
 });
+
+// ── VISUAL BUILDER (mini Power BI) ────────────────────────────────────────────
+const VB_MEAS_LBL = { total:'Сумма ₸', qty:'Количество', avgPrice:'Ср. цена ₸', count:'Позиций', invoiceCount:'Накладных' };
+const VB_DIM_LBL  = { sup:'Поставщик', city:'Город', cat:'Категория', sku:'Товар', day:'День', week:'Неделя', month:'Месяц' };
+const VB_COLORS = ['#6366f1','#2dd4a0','#f4a942','#c084fc','#ef4444','#06b6d4','#eab308','#84cc16','#ec4899','#14b8a6','#f97316','#8b5cf6'];
+
+function _vbIsoWeek(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return null;
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = (t.getUTCDay() + 6) % 7;
+  t.setUTCDate(t.getUTCDate() - dayNum + 3);
+  const firstThu = new Date(Date.UTC(t.getUTCFullYear(), 0, 4));
+  const wn = 1 + Math.round(((t - firstThu) / 86400000 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
+  return `${t.getUTCFullYear()}-W${String(wn).padStart(2,'0')}`;
+}
+
+function vbReset() {
+  document.getElementById('vbMeasure').value = 'total';
+  document.getElementById('vbDim').value = 'sup';
+  document.getElementById('vbType').value = 'bar';
+  document.getElementById('vbFiltSup').value = '';
+  document.getElementById('vbFiltCat').value = '';
+  const dts = ALL_LINES.map(l => l[3]).filter(Boolean).sort();
+  if (dts.length) {
+    document.getElementById('vbFrom').value = dts[0];
+    document.getElementById('vbTo').value   = dts[dts.length - 1];
+  }
+  vbRender();
+}
+
+function vbRender() {
+  if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
+  const meas = document.getElementById('vbMeasure').value;
+  const dim  = document.getElementById('vbDim').value;
+  const type = document.getElementById('vbType').value;
+  const fSup = document.getElementById('vbFiltSup').value;
+  const fCat = document.getElementById('vbFiltCat').value;
+  const fFrom = document.getElementById('vbFrom').value;
+  const fTo   = document.getElementById('vbTo').value;
+
+  const lines = ALL_LINES.filter(l => {
+    if (fSup && l[1] !== fSup) return false;
+    if (fCat && getCatJS(l[0]) !== fCat) return false;
+    if (fFrom && l[3] && l[3] < fFrom) return false;
+    if (fTo   && l[3] && l[3] > fTo)   return false;
+    return true;
+  });
+
+  const keyOf = (line) => {
+    switch (dim) {
+      case 'sup':   return line[1];
+      case 'city':  return line[2];
+      case 'cat':   return getCatJS(line[0]);
+      case 'sku':   return line[0];
+      case 'day':   return line[3];
+      case 'week':  return _vbIsoWeek(line[3]);
+      case 'month': return (line[3] || '').slice(0, 7);
+    }
+  };
+
+  const groups = {};
+  lines.forEach(l => {
+    const k = keyOf(l);
+    if (k == null || k === '') return;
+    if (!groups[k]) groups[k] = { total:0, qty:0, priceSum:0, priceCnt:0, invIds:new Set() };
+    groups[k].total    += +l[6] || 0;
+    groups[k].qty      += +l[5] || 0;
+    groups[k].priceSum += +l[4] || 0;
+    groups[k].priceCnt++;
+    groups[k].invIds.add(l[7]);
+  });
+
+  const measure = (g) => {
+    switch (meas) {
+      case 'total':        return g.total;
+      case 'qty':          return g.qty;
+      case 'avgPrice':     return g.priceCnt ? g.priceSum / g.priceCnt : 0;
+      case 'count':        return g.priceCnt;
+      case 'invoiceCount': return g.invIds.size;
+    }
+    return 0;
+  };
+
+  const isTimeDim = ['day','week','month'].includes(dim);
+  let entries = Object.entries(groups).map(([k, g]) => [k, measure(g)]);
+  if (isTimeDim) {
+    entries.sort((a, b) => a[0].localeCompare(b[0]));
+  } else {
+    entries.sort((a, b) => b[1] - a[1]);
+    if (entries.length > 20) entries = entries.slice(0, 20);
+  }
+
+  const labels = entries.map(e => e[0]);
+  const values = entries.map(e => Math.round(e[1] * 100) / 100);
+
+  if (window._vbChart) { window._vbChart.destroy(); window._vbChart = null; }
+
+  const canvasWrap = document.getElementById('vbCanvasWrap');
+  const tableWrap  = document.getElementById('vbTable');
+  const sumEl = document.getElementById('vbSummary');
+
+  const unitSuffix = meas === 'total' || meas === 'avgPrice' ? ' ₸' : '';
+
+  if (type === 'table') {
+    canvasWrap.style.display = 'none';
+    tableWrap.style.display  = 'block';
+    tableWrap.innerHTML = `<table>
+      <thead><tr><th>${VB_DIM_LBL[dim]}</th><th class="num">${VB_MEAS_LBL[meas]}</th></tr></thead>
+      <tbody>${entries.map(([k, v]) => `<tr><td>${k}</td><td class="num">${fmt(Math.round(v))}${unitSuffix}</td></tr>`).join('')}</tbody>
+    </table>`;
+  } else {
+    tableWrap.style.display  = 'none';
+    canvasWrap.style.display = 'block';
+    const chartType = type === 'pie' ? 'pie' : (type === 'line' ? 'line' : 'bar');
+    const ctx = document.getElementById('vbCanvas').getContext('2d');
+    window._vbChart = new Chart(ctx, {
+      type: chartType,
+      data: {
+        labels,
+        datasets: [{
+          label: VB_MEAS_LBL[meas],
+          data: values,
+          backgroundColor: chartType === 'pie'
+            ? labels.map((_, i) => VB_COLORS[i % VB_COLORS.length])
+            : 'rgba(99,102,241,.65)',
+          borderColor: chartType === 'line' ? '#6366f1' : (chartType === 'pie' ? '#1a1d27' : 'rgba(99,102,241,1)'),
+          borderWidth: chartType === 'pie' ? 2 : 1,
+          borderRadius: chartType === 'bar' ? 6 : 0,
+          fill: chartType !== 'line',
+          tension: chartType === 'line' ? 0.3 : 0,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: chartType === 'pie', labels: { color: TICK, font: FONT } },
+          tooltip: { callbacks: {
+            label: (c) => {
+              const v = c.parsed.y ?? c.parsed;
+              return `${VB_MEAS_LBL[meas]}: ${fmt(Math.round(v))}${unitSuffix}`;
+            }
+          }}
+        },
+        scales: chartType === 'pie' ? {} : {
+          x: { ticks: { color: TICK, font: FONT, maxRotation: 45, minRotation: 0, autoSkip: true }, grid: { color: GRID } },
+          y: { ticks: { color: TICK, font: FONT, callback: v => fmt(v) }, grid: { color: GRID }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  const sumTotal = values.reduce((s, v) => s + v, 0);
+  const noun = entries.length === 1 ? VB_DIM_LBL[dim].toLowerCase() : VB_DIM_LBL[dim].toLowerCase().replace(/[а]$/,'ов').replace('категория','категорий').replace('неделя','недель').replace('месяц','месяцев');
+  sumEl.textContent = `${entries.length} ${VB_DIM_LBL[dim].toLowerCase()}(ов) · итого ${fmt(Math.round(sumTotal))}${unitSuffix}`;
+}
+
+(function initVisualBuilder() {
+  if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
+  // Populate supplier filter
+  const sups = [...new Set(ALL_LINES.map(l => l[1]))].sort();
+  const fSup = document.getElementById('vbFiltSup');
+  sups.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; fSup.appendChild(o); });
+  // Populate category filter
+  const cats = [...new Set(ALL_LINES.map(l => getCatJS(l[0])))].sort();
+  const fCat = document.getElementById('vbFiltCat');
+  cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; fCat.appendChild(o); });
+  // Default date range
+  const dts = ALL_LINES.map(l => l[3]).filter(Boolean).sort();
+  if (dts.length) {
+    document.getElementById('vbFrom').value = dts[0];
+    document.getElementById('vbTo').value   = dts[dts.length - 1];
+  }
+  vbRender();
+})();
 
 // ── INITIAL RENDER FROM ALL_LINES ─────────────────────────────────────────────
 if (typeof ALL_LINES !== 'undefined' && ALL_LINES.length) runFilter();
