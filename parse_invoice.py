@@ -535,24 +535,55 @@ def parse_xlsx(xlsx_path: Path) -> dict:
         if result["supplier_bin"]:
             break
 
-    # ── Supplier name (ИП / ТОО / АО ...) ────────────────────────────────────
+    # ── Supplier name (ИП / ТОО / АО ... или полные формы) ──────────────────
+    SUP_PREFIX = re.compile(
+        r"^(ТОО|ИП|АО|ООО|ЧП|КХ"
+        r"|Индивидуальный\s+Предприниматель"
+        r"|Товарищество\s+с\s+[Оо]граниченной\s+[Оо]тветственностью"
+        r"|Общество\s+с\s+[Оо]граниченной\s+[Оо]тветственностью"
+        r"|Акционерное\s+[Оо]бщество)\b",
+        re.IGNORECASE,
+    )
     for row in hdr:
         for cell in row:
-            if cell:
-                s = str(cell).strip()
-                if re.match(r"^(ТОО|ИП|АО|ООО|ЧП)\b", s, re.IGNORECASE) and 5 < len(s) < 150:
-                    result["supplier"] = s
-                    break
+            if not cell:
+                continue
+            s = str(cell).strip()
+            if SUP_PREFIX.match(s) and 5 < len(s) < 150:
+                result["supplier"] = clean_supplier_name(s)
+                break
         if result["supplier"]:
             break
 
     # ── Invoice number and date ───────────────────────────────────────────────
+    # Приоритет: строка «Номер документа / Дата составления» (З-2).
+    # В шапке бланка встречается template-reference «от 20 декабря 2012 года № 562»
+    # (приказ Минфина) — его нужно игнорировать, иначе invoice_id/date берутся оттуда.
+    for idx, row in enumerate(hdr):
+        flat = " ".join(str(c) for c in row if c)
+        if "Номер документа" in flat and "Дата составления" in flat and idx + 1 < len(hdr):
+            val_row = hdr[idx + 1]
+            val_flat = " ".join(str(c) for c in val_row if c is not None)
+            if not result["invoice_id"]:
+                m = re.search(r"(\d{5,})", val_flat)  # длинный номер вроде 00000000002
+                if m:
+                    result["invoice_id"] = str(int(m.group(1)))
+            if not result["date"]:
+                m = re.search(r"(\d{1,2})[./](\d{1,2})[./](\d{4})", val_flat)
+                if m:
+                    result["date"] = f"{m.group(3)}-{m.group(2).zfill(2)}-{m.group(1).zfill(2)}"
+            break
+
+    # Fallback для других форматов
     for row in hdr:
         flat = " ".join(str(c) for c in row if c)
+        # Skip template reference line из приказа Минфина
+        if "Приложение" in flat or "приказу Министра" in flat:
+            continue
         if not result["invoice_id"]:
             m = re.search(r"№\s*(\d+)", flat)
             if m:
-                result["invoice_id"] = str(int(m.group(1)))  # strip leading zeros
+                result["invoice_id"] = str(int(m.group(1)))
         if not result["date"]:
             m = re.search(r"от\s+(\d{1,2})[./](\d{1,2})[./](\d{4})", flat)
             if m:
