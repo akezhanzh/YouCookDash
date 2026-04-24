@@ -575,25 +575,23 @@ try {
     </div>
   </div>
 
-  <!-- POWER BI-LIKE CONSTRUCTOR -->
-  <div class="grp"><span class="grp-title">🧩 Конструктор — своя визуализация + история цен</span></div>
+  <!-- SIMPLE CONSTRUCTOR -->
+  <div class="grp"><span class="grp-title">🧩 Конструктор — сравни что угодно с чем угодно</span></div>
   <div class="card g-full">
-    <div class="sec-desc" style="margin-bottom:14px">один инструмент на всё: выбери показатель, разрез и разбивку — получишь любой график</div>
-
-    <!-- Row 1: What to show -->
+    <!-- Row 1: фраза-конструктор -->
     <div class="vb-row">
-      <div class="vb-ctrl"><div class="vb-label">Показатель (Y)</div>
+      <div class="vb-ctrl">
+        <div class="vb-label">Что показать</div>
         <select id="vbMeasure" onchange="vbSchedule()">
           <option value="total">Сумма ₸</option>
           <option value="qty">Количество</option>
           <option value="avgPrice">Средняя цена ₸</option>
-          <option value="minPrice">Мин цена ₸</option>
-          <option value="maxPrice">Макс цена ₸</option>
           <option value="count">Позиций</option>
           <option value="invoiceCount">Накладных</option>
         </select>
       </div>
-      <div class="vb-ctrl"><div class="vb-label">Разрез (X)</div>
+      <div class="vb-ctrl">
+        <div class="vb-label">По чему сгруппировать</div>
         <select id="vbDim" onchange="vbMark(this)">
           <option value="sup">Поставщик</option>
           <option value="city">Город</option>
@@ -604,128 +602,96 @@ try {
           <option value="month">Месяц</option>
         </select>
       </div>
-      <div class="vb-ctrl"><div class="vb-label">Разбивка (цвет)</div>
+      <div class="vb-ctrl">
+        <div class="vb-label">Разбить цветом на</div>
         <select id="vbBreak" onchange="vbSchedule()">
-          <option value="">— нет —</option>
+          <option value="">— одноцветно —</option>
           <option value="sup">Поставщик</option>
           <option value="city">Город</option>
           <option value="cat">Категория</option>
-          <option value="sku">Товар</option>
         </select>
       </div>
-      <div class="vb-ctrl"><div class="vb-label">Тип графика</div>
-        <select id="vbType" onchange="vbMark(this)">
-          <option value="bar">📊 Столбцы</option>
-          <option value="barStack">📊 Столбцы (стек)</option>
-          <option value="bar100">📊 Столбцы 100%</option>
-          <option value="barH">📋 Горизонт. столбцы</option>
-          <option value="barHStack">📋 Горизонт. стек</option>
-          <option value="line">📈 Линия</option>
-          <option value="area">🌊 Area</option>
-          <option value="areaStack">🌊 Area (стек)</option>
-          <option value="pie">🥧 Круговая</option>
-          <option value="donut">🍩 Донат</option>
-          <option value="radar">🎯 Radar</option>
-          <option value="scatter">🔵 Scatter (цена×кол-во)</option>
-          <option value="kpi">💠 KPI-карточки</option>
-          <option value="table">📄 Таблица</option>
-        </select>
+      <div class="vb-ctrl" style="margin-left:auto">
+        <div class="vb-label">Тип</div>
+        <div class="vb-pills">
+          <button class="vb-pill" data-t="bar"   onclick="vbType(this)" title="Столбцы">📊</button>
+          <button class="vb-pill" data-t="barH"  onclick="vbType(this)" title="Горизонтальные">📋</button>
+          <button class="vb-pill" data-t="line"  onclick="vbType(this)" title="Линия">📈</button>
+          <button class="vb-pill" data-t="pie"   onclick="vbType(this)" title="Круговая">🥧</button>
+          <button class="vb-pill" data-t="table" onclick="vbType(this)" title="Таблица">📄</button>
+        </div>
+        <input type="hidden" id="vbType" value="bar">
       </div>
     </div>
 
-    <!-- Row 2: Filters -->
+    <!-- Row 2: фильтры -->
     <div class="vb-row">
-      <div class="vb-ctrl" style="flex:1;min-width:180px"><div class="vb-label">🔍 Поиск товара</div>
-        <input id="vbSearch" type="text" placeholder="например: мука, яйцо, масло..." oninput="vbSchedule()">
+      <div class="vb-ctrl" style="flex:2;min-width:220px">
+        <div class="vb-label">🔍 Поиск товара</div>
+        <input id="vbSearch" type="text" placeholder="мука, яйцо, масло, ..." oninput="vbSchedule()">
       </div>
-      <div class="vb-ctrl"><div class="vb-label">Поставщик</div>
+      <div class="vb-ctrl">
+        <div class="vb-label">Поставщик</div>
         <select id="vbFiltSup" onchange="vbSchedule()"><option value="">Все</option></select>
       </div>
-      <div class="vb-ctrl"><div class="vb-label">Категория</div>
+      <div class="vb-ctrl">
+        <div class="vb-label">Категория</div>
         <select id="vbFiltCat" onchange="vbSchedule()"><option value="">Все</option></select>
       </div>
-      <div class="vb-ctrl"><div class="vb-label">Период</div>
+      <div class="vb-ctrl">
+        <div class="vb-label">Период</div>
         <div class="vb-pills">
-          <button class="vb-pill active" data-per="all" onclick="vbPeriod(this)">Все</button>
-          <button class="vb-pill" data-per="30" onclick="vbPeriod(this)">30 дн</button>
-          <button class="vb-pill" data-per="7"  onclick="vbPeriod(this)">7 дн</button>
+          <button class="vb-pill active" data-per="all" onclick="vbPeriod(this)">Всё</button>
+          <button class="vb-pill" data-per="30" onclick="vbPeriod(this)">Месяц</button>
+          <button class="vb-pill" data-per="7"  onclick="vbPeriod(this)">Неделя</button>
         </div>
       </div>
-      <div class="vb-ctrl"><div class="vb-label">С</div>
-        <input id="vbFrom" type="date" onchange="vbSchedule()">
-      </div>
-      <div class="vb-ctrl"><div class="vb-label">По</div>
-        <input id="vbTo" type="date" onchange="vbSchedule()">
-      </div>
-    </div>
-
-    <!-- Row 3: Options -->
-    <div class="vb-row">
-      <div class="vb-ctrl"><div class="vb-label">Показать Топ</div>
+      <div class="vb-ctrl">
+        <div class="vb-label">Топ</div>
         <select id="vbTopN" onchange="vbSchedule()">
-          <option value="5">5</option>
           <option value="10">10</option>
           <option value="20" selected>20</option>
           <option value="50">50</option>
           <option value="0">Все</option>
         </select>
       </div>
-      <div class="vb-ctrl"><div class="vb-label">Сортировка</div>
-        <select id="vbSort" onchange="vbSchedule()">
-          <option value="valDesc">По значению ↓</option>
-          <option value="valAsc">По значению ↑</option>
-          <option value="labelAsc">По названию A-Я</option>
-          <option value="labelDesc">По названию Я-A</option>
-        </select>
-      </div>
-      <div class="vb-ctrl"><div class="vb-label">Режим</div>
+      <div class="vb-ctrl">
+        <div class="vb-label">Показ</div>
         <select id="vbMode" onchange="vbSchedule()">
-          <option value="abs">Абсолют</option>
+          <option value="abs">Значения</option>
           <option value="pct">% от общего</option>
-          <option value="cum">Накопительно</option>
-          <option value="rank">Ранг</option>
         </select>
       </div>
-      <div class="vb-ctrl"><div class="vb-label">Другое</div>
-        <label class="vb-check"><input type="checkbox" id="vbOther" onchange="vbSchedule()"> бакет «Другое»</label>
-      </div>
-      <div class="vb-ctrl"><div class="vb-label">Подписи</div>
-        <label class="vb-check"><input type="checkbox" id="vbLabels" onchange="vbSchedule()"> на графике</label>
-      </div>
-      <div class="vb-ctrl"><div class="vb-label">Детали</div>
-        <label class="vb-check"><input type="checkbox" id="vbShowTable" onchange="vbSchedule()"> таблица внизу</label>
-      </div>
-      <div class="vb-ctrl" style="margin-left:auto"><div class="vb-label">Пресеты</div>
+      <div class="vb-ctrl" style="margin-left:auto">
+        <div class="vb-label">Действия</div>
         <div style="display:flex;gap:6px">
-          <select id="vbPresets" onchange="vbLoadPreset(this.value)" class="vb-btn" style="padding:6px 8px">
-            <option value="">— загрузить —</option>
-          </select>
-          <button onclick="vbSavePreset()" class="vb-btn" title="Сохранить текущий вид">💾</button>
-          <button onclick="vbDeletePreset()" class="vb-btn" title="Удалить выбранный">🗑</button>
-        </div>
-      </div>
-      <div class="vb-ctrl"><div class="vb-label">&nbsp;</div>
-        <div style="display:flex;gap:6px">
-          <button onclick="vbExport()" class="vb-btn" title="Скачать текущие данные в CSV">⬇ CSV</button>
-          <button onclick="vbExportPNG()" class="vb-btn" title="Скачать график как PNG">🖼 PNG</button>
-          <button onclick="vbFullscreen()" class="vb-btn" title="На весь экран">⛶</button>
-          <button onclick="vbReset()" class="vb-btn" title="Сбросить все настройки">↻ Сброс</button>
+          <button onclick="vbExport()"    class="vb-btn" title="Скачать CSV">⬇</button>
+          <button onclick="vbExportPNG()" class="vb-btn" title="Скачать PNG">🖼</button>
+          <button onclick="vbReset()"     class="vb-btn" title="Сбросить">↻</button>
         </div>
       </div>
     </div>
 
-    <!-- Chart area -->
+    <!-- Hidden pass-throughs -->
+    <input type="hidden" id="vbSort"   value="valDesc">
+    <input type="hidden" id="vbFrom"   value="">
+    <input type="hidden" id="vbTo"     value="">
+    <input type="hidden" id="vbOther"  data-checkbox="1">
+    <input type="hidden" id="vbLabels" data-checkbox="1">
+    <input type="hidden" id="vbShowTable" data-checkbox="1">
+
+    <!-- Chart -->
     <div id="vbTitleBar" style="margin:14px 0 6px 0;text-align:center">
-      <div id="vbTitle" style="font-size:14px;font-weight:700;color:var(--text)"></div>
-      <div id="vbSubtitle" style="font-size:11px;color:var(--muted);margin-top:2px"></div>
+      <div id="vbTitle" style="font-size:15px;font-weight:800;letter-spacing:-.3px"></div>
+      <div id="vbSubtitle" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
     </div>
     <div id="vbCanvasWrap" class="ch" style="height:380px"><canvas id="vbCanvas"></canvas><div class="vb-spinner"></div></div>
     <div id="vbTableMain" style="display:none;margin-top:10px" class="tbl-wrap"></div>
     <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
 
-    <!-- Detail table (below chart, collapsible) -->
+    <!-- Detail table — always on for SKU dim, else hidden -->
     <div id="vbDetailWrap" style="display:none;margin-top:20px">
-      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;border-top:1px solid var(--border);padding-top:16px">Детальная таблица</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;border-top:1px solid var(--border);padding-top:16px">Детали закупок</div>
       <div id="vbDetail" class="tbl-wrap"></div>
     </div>
   </div>
@@ -3384,8 +3350,32 @@ function vbRenderDebounced() {
 }
 // Alias: all controls use this (smooth, no stutter)
 function vbSchedule() { vbRenderDebounced(); }
-// Отмечаем что пользователь явно выбрал тип/разрез, чтобы авто-подсказка не ломала его выбор.
 function vbMark(el) { if (el && el.dataset) el.dataset.userPicked = '1'; vbSchedule(); }
+// Клик по пиллу типа графика → записываем в hidden input
+function vbType(btn) {
+  document.querySelectorAll('.vb-pill[data-t]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const ti = document.getElementById('vbType');
+  ti.value = btn.dataset.t;
+  ti.dataset.userPicked = '1';
+  vbSchedule();
+}
+
+// Унифицированный доступ к значению контрола (hidden input, select, text, checkbox)
+function _vbVal(id) {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  if (el.dataset && el.dataset.checkbox === '1') return el.value === '1';
+  if (el.type === 'checkbox') return el.checked;
+  return el.value || '';
+}
+function _vbSet(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.dataset && el.dataset.checkbox === '1') { el.value = val ? '1' : ''; return; }
+  if (el.type === 'checkbox') { el.checked = !!val; return; }
+  el.value = val == null ? '' : val;
+}
 
 // Precomputed lookups for fast filtering
 const _VB_CAT = new Map();
@@ -3462,26 +3452,31 @@ function vbPeriod(btn) {
 }
 
 function vbReset() {
-  document.getElementById('vbMeasure').value = 'total';
-  document.getElementById('vbDim').value     = 'sup';
-  document.getElementById('vbBreak').value   = '';
-  document.getElementById('vbType').value    = 'bar';
-  document.getElementById('vbSearch').value  = '';
-  document.getElementById('vbFiltSup').value = '';
-  document.getElementById('vbFiltCat').value = '';
-  document.getElementById('vbTopN').value    = '20';
-  document.getElementById('vbSort').value    = 'valDesc';
-  document.getElementById('vbMode').value    = 'abs';
-  document.getElementById('vbOther').checked     = false;
-  document.getElementById('vbLabels').checked    = false;
-  document.getElementById('vbShowTable').checked = false;
+  _vbSet('vbMeasure', 'total');
+  _vbSet('vbDim', 'sup');
+  _vbSet('vbBreak', '');
+  _vbSet('vbType', 'bar');
+  _vbSet('vbSearch', '');
+  _vbSet('vbFiltSup', '');
+  _vbSet('vbFiltCat', '');
+  _vbSet('vbTopN', '20');
+  _vbSet('vbSort', 'valDesc');
+  _vbSet('vbMode', 'abs');
+  _vbSet('vbOther', false);
+  _vbSet('vbLabels', false);
+  _vbSet('vbShowTable', false);
+  // Clear user-picked flags so auto-defaults work again
+  const dimSel = document.getElementById('vbDim');
+  const typeIn = document.getElementById('vbType');
+  if (dimSel && dimSel.dataset) delete dimSel.dataset.userPicked;
+  if (typeIn && typeIn.dataset) delete typeIn.dataset.userPicked;
   document.querySelectorAll('.vb-pill[data-per]').forEach(b => b.classList.remove('active'));
   const allPill = document.querySelector('.vb-pill[data-per="all"]');
   if (allPill) allPill.classList.add('active');
   const dts = ALL_LINES.map(l => l[3]).filter(Boolean).sort();
   if (dts.length) {
-    document.getElementById('vbFrom').value = dts[0];
-    document.getElementById('vbTo').value   = dts[dts.length - 1];
+    _vbSet('vbFrom', dts[0]);
+    _vbSet('vbTo', dts[dts.length - 1]);
   }
   vbRender();
 }
@@ -3565,19 +3560,19 @@ function vbFullscreen() {
 }
 
 function _vbAgg() {
-  const meas  = document.getElementById('vbMeasure').value;
-  const dim   = document.getElementById('vbDim').value;
-  const brk   = document.getElementById('vbBreak').value;
-  const type  = document.getElementById('vbType').value;
-  const topN  = parseInt(document.getElementById('vbTopN').value, 10);
-  const sort  = document.getElementById('vbSort').value;
-  const mode  = document.getElementById('vbMode').value || 'abs';
-  const useOther = document.getElementById('vbOther').checked;
-  const search = (document.getElementById('vbSearch').value || '').trim().toLowerCase();
-  const fSup  = document.getElementById('vbFiltSup').value;
-  const fCat  = document.getElementById('vbFiltCat').value;
-  const fFrom = document.getElementById('vbFrom').value;
-  const fTo   = document.getElementById('vbTo').value;
+  const meas  = _vbVal('vbMeasure') || 'total';
+  const dim   = _vbVal('vbDim')     || 'sup';
+  const brk   = _vbVal('vbBreak');
+  const type  = _vbVal('vbType')    || 'bar';
+  const topN  = parseInt(_vbVal('vbTopN') || '20', 10);
+  const sort  = _vbVal('vbSort')    || 'valDesc';
+  const mode  = _vbVal('vbMode')    || 'abs';
+  const useOther = !!_vbVal('vbOther');
+  const search = (_vbVal('vbSearch') || '').trim().toLowerCase();
+  const fSup  = _vbVal('vbFiltSup');
+  const fCat  = _vbVal('vbFiltCat');
+  const fFrom = _vbVal('vbFrom');
+  const fTo   = _vbVal('vbTo');
 
   // Filter
   const lines = ALL_LINES.filter(l => {
@@ -3703,29 +3698,29 @@ function _vbAgg() {
 function vbRender() {
   if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
 
-  // UX: когда пользователь ищет товар, автоматом переводим разрез в «Товар»
-  // (но только если он сам не выбрал явно другой — track через dataset.userPicked)
   const dimSel = document.getElementById('vbDim');
-  const typeSel = document.getElementById('vbType');
+  const typeIn = document.getElementById('vbType');
   const searchVal = (document.getElementById('vbSearch').value || '').trim();
-  if (searchVal && dimSel.value !== 'sku' && dimSel.value !== 'day' && dimSel.value !== 'week' && dimSel.value !== 'month' && !dimSel.dataset.userPicked) {
+
+  // Когда поиск товара активен — всегда разрез=Товар (иначе найденное невидимо).
+  if (searchVal && dimSel.value !== 'sku') {
     dimSel.value = 'sku';
   }
-
-  // Для SKU в разрезе — если тип 'bar'/'barStack' и пользователь не трогал тип,
-  // подскажем горизонтальный (длинные названия не помещаются вертикально).
-  // Не переопределяем если пользователь явно выбрал тип сам.
-  if (dimSel && typeSel && !typeSel.dataset.userPicked
-      && dimSel.value === 'sku'
-      && (typeSel.value === 'bar' || typeSel.value === 'barStack')) {
-    typeSel.value = typeSel.value === 'barStack' ? 'barHStack' : 'barH';
+  // Для разреза=Товар и тип=bar без явного выбора пользователя — горизонтально
+  // (длинные имена товаров не помещаются вертикально).
+  if (dimSel.value === 'sku' && typeIn.value === 'bar' && !typeIn.dataset.userPicked) {
+    typeIn.value = 'barH';
   }
+  // Синхронизация активной пилл-кнопки типа с hidden input (после авто-swap)
+  document.querySelectorAll('.vb-pill[data-t]').forEach(b =>
+    b.classList.toggle('active', b.dataset.t === typeIn.value));
 
   const A = _vbAgg();
   const baseSuffix = _vbCurrencyMeas.has(A.meas) ? ' ₸' : '';
   const modeSuffix = A.mode === 'pct' ? '%' : (A.mode === 'rank' ? '' : baseSuffix);
-  const showLabels = document.getElementById('vbLabels').checked;
-  const showDetail = document.getElementById('vbShowTable').checked;
+  const showLabels = !!_vbVal('vbLabels');
+  // Автоматически показываем детальную таблицу при поиске товара или выборе Товар в разрезе
+  const showDetail = !!_vbVal('vbShowTable') || dimSel.value === 'sku' || !!searchVal;
 
   // Title
   const titleEl = document.getElementById('vbTitle');
