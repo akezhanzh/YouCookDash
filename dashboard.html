@@ -6,7 +6,17 @@
 <title>YouCook — Procurement Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-<script>if (window.ChartDataLabels) { Chart.register(ChartDataLabels); Chart.defaults.plugins.datalabels = { display: false }; }</script>
+<script>
+if (window.ChartDataLabels) { Chart.register(ChartDataLabels); Chart.defaults.plugins.datalabels = { display: false }; }
+// Отключаем глобально долгую анимацию — всё перерисовывается моментально
+try {
+  Chart.defaults.animation = false;
+  Chart.defaults.animations = { colors: false, x: false, y: false };
+  if (Chart.defaults.transitions && Chart.defaults.transitions.active && Chart.defaults.transitions.active.animation) {
+    Chart.defaults.transitions.active.animation.duration = 0;
+  }
+} catch (e) { console.warn('chart animation disable failed:', e); }
+</script>
 <style>
   :root {
     --bg:      #0d1117;
@@ -2463,15 +2473,22 @@ function _vbAgg() {
 
 function vbRender() {
   if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
-  // Auto-switch to horizontal bars when dimension has long/many labels (e.g., SKU)
-  // Only auto-switch on demand — don't override user's explicit choice if they picked horizontal already
+
+  // UX: когда пользователь ищет товар, автоматом переводим разрез в «Товар»
   const dimSel = document.getElementById('vbDim');
   const typeSel = document.getElementById('vbType');
-  if (dimSel && typeSel && !typeSel.dataset.userPicked) {
+  const searchVal = (document.getElementById('vbSearch').value || '').trim();
+  if (searchVal && dimSel.value !== 'sku' && dimSel.value !== 'day' && dimSel.value !== 'week' && dimSel.value !== 'month') {
+    dimSel.value = 'sku';
+  }
+
+  // Auto-switch to horizontal bars for SKU (long/many labels)
+  if (dimSel && typeSel) {
     if (dimSel.value === 'sku' && (typeSel.value === 'bar' || typeSel.value === 'barStack')) {
-      typeSel.value = dimSel.value === 'sku' ? (typeSel.value === 'barStack' ? 'barHStack' : 'barH') : typeSel.value;
+      typeSel.value = typeSel.value === 'barStack' ? 'barHStack' : 'barH';
     }
   }
+
   const A = _vbAgg();
   const baseSuffix = _vbCurrencyMeas.has(A.meas) ? ' ₸' : '';
   const modeSuffix = A.mode === 'pct' ? '%' : (A.mode === 'rank' ? '' : baseSuffix);
