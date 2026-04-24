@@ -955,30 +955,6 @@ try {
     </div>
   </div>
 
-  <!-- ALL INVOICES -->
-  <div class="card g-full">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-      <div class="sec" style="margin:0;flex:1">Все накладные <span class="sec-sub">/ полный список закупок</span></div>
-      <div class="inv-filter-bar">
-        <input id="invSearch" type="text" placeholder="Поиск..." oninput="renderInvTable()"
-          style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;outline:none;width:140px;">
-        <span style="font-size:10px;color:var(--muted)">Период:</span>
-        <button class="filter-btn active" data-m="all"  onclick="setFilter(this)">Все</button>
-        <button class="filter-btn"        data-m="03"   onclick="setFilter(this)">Март</button>
-        <button class="filter-btn"        data-m="04"   onclick="setFilter(this)">Апрель</button>
-      </div>
-    </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr>
-          <th>Поставщик</th><th>Город</th><th>Дата</th>
-          <th class="num">Сумма ₸</th><th class="num">Позиций</th><th>Доля</th>
-        </tr></thead>
-        <tbody id="invTbody"></tbody>
-      </table>
-    </div>
-  </div>
-
 
 </div>
 
