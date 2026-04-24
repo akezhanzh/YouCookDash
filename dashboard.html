@@ -211,6 +211,56 @@ try {
   .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
   .filter-btn:hover { border-color:var(--accent); color:var(--text); }
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
+  /* Pivot constructor v4 — PowerBI-like field picker */
+  .pv-buckets { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:12px; }
+  @media (max-width: 900px) { .pv-buckets { grid-template-columns: 1fr; } }
+  .pv-bucket {
+    background: linear-gradient(135deg, rgba(124,133,245,.08), rgba(124,133,245,.02));
+    border:1px solid var(--border); border-radius:10px; padding:12px 14px;
+  }
+  .pv-bucket-hdr { font-size:12px; font-weight:700; color:var(--accent); margin-bottom:8px; }
+  .pv-bucket-hint { color:var(--muted); font-weight:400; font-size:10px; margin-left:4px; }
+  .pv-chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .pv-chips label {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:6px 12px; border-radius:18px;
+    background: var(--surf); border:1px solid var(--border);
+    font-size:12px; font-weight:500; color:var(--text);
+    cursor:pointer; transition: all .15s; user-select:none;
+  }
+  .pv-chips label:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+  .pv-chips label:has(input:checked) {
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #fff));
+    color:#fff; border-color: var(--accent);
+    box-shadow: 0 3px 10px rgba(124,133,245,.28);
+  }
+  .pv-chips input[type=checkbox] {
+    width:14px; height:14px; cursor:pointer; accent-color: var(--accent);
+  }
+
+  /* Pivot table */
+  .pv-tbl table { width:auto; min-width:100%; border-collapse:separate; border-spacing:0; }
+  .pv-tbl th, .pv-tbl td {
+    padding:6px 10px; font-size:12px;
+    border-bottom:1px solid var(--border);
+    border-right:1px solid rgba(255,255,255,.04);
+    white-space:nowrap;
+  }
+  .pv-tbl thead th {
+    position:sticky; top:0; background: var(--surf);
+    color: var(--muted); font-size:10px; text-transform:uppercase;
+    font-weight:700; letter-spacing:.5px;
+    border-bottom:2px solid var(--accent);
+  }
+  .pv-tbl td { vertical-align: middle; }
+  .pv-tbl .pv-row-hdr { font-weight:600; color:var(--text); background: rgba(124,133,245,.04); position:sticky; left:0; }
+  .pv-tbl .pv-row-sub { color: var(--muted); padding-left:22px; }
+  .pv-tbl .pv-row-sub2 { color: var(--muted); padding-left:38px; font-size:11px; }
+  .pv-tbl .pv-total-row { font-weight:800; background: rgba(124,133,245,.12); border-top:2px solid var(--accent); }
+  .pv-tbl .pv-total-col { font-weight:800; background: rgba(124,133,245,.08); }
+  .pv-tbl tbody tr:hover td { background: rgba(124,133,245,.06); }
+  .pv-tbl .num { font-family: monospace; font-variant-numeric: tabular-nums; text-align:right; }
+
   /* Constructor v3 — крупная фраза-конструктор + компактная строка фильтров */
   .cb-sentence {
     display:flex; flex-wrap:wrap; align-items:center; gap:10px;
@@ -631,50 +681,62 @@ try {
     </div>
   </div>
 
-  <!-- SIMPLE CONSTRUCTOR — v3 (Metabase-like sentence) -->
-  <div class="grp"><span class="grp-title">🧩 Конструктор</span></div>
+  <!-- PIVOT CONSTRUCTOR — v4 (PowerBI-like field picker) -->
+  <div class="grp"><span class="grp-title">🧩 Конструктор — сравни что угодно с чем угодно</span></div>
   <div class="card g-full">
-    <!-- Live sentence: "Покажи X по Y цветом Z" -->
-    <div class="cb-sentence">
-      <span class="cb-word">Покажи</span>
-      <select id="vbMeasure" class="cb-pick" onchange="vbSchedule()">
-        <option value="total">сумму ₸</option>
-        <option value="qty">количество</option>
-        <option value="avgPrice">цену ₸ за ед.</option>
-        <option value="minPrice">мин. цену ₸</option>
-        <option value="maxPrice">макс. цену ₸</option>
-        <option value="count">число позиций</option>
-        <option value="invoiceCount">число накладных</option>
-      </select>
-      <span class="cb-word">по</span>
-      <select id="vbDim" class="cb-pick" onchange="vbSchedule()">
-        <option value="sup">поставщику</option>
-        <option value="city">городу</option>
-        <option value="cat">категории</option>
-        <option value="sku">товару</option>
-        <option value="day">дням</option>
-        <option value="week">неделям</option>
-        <option value="month">месяцам</option>
-      </select>
-      <span class="cb-word cb-opt">цветом по</span>
-      <select id="vbBreak" class="cb-pick" onchange="vbSchedule()">
-        <option value="">— —</option>
-        <option value="sup">поставщику</option>
-        <option value="city">городу</option>
-        <option value="cat">категории</option>
-      </select>
+
+    <!-- Three field-pickers: Rows / Columns / Values (multi-select) -->
+    <div class="pv-buckets">
+      <div class="pv-bucket">
+        <div class="pv-bucket-hdr">📋 Строки <span class="pv-bucket-hint">(группировка по вертикали)</span></div>
+        <div class="pv-chips" data-bucket="rows">
+          <label><input type="checkbox" value="sup"   onchange="vbSchedule()"> Поставщик</label>
+          <label><input type="checkbox" value="city"  onchange="vbSchedule()"> Город</label>
+          <label><input type="checkbox" value="cat"   onchange="vbSchedule()"> Категория</label>
+          <label><input type="checkbox" value="sku"   onchange="vbSchedule()"> Товар</label>
+          <label><input type="checkbox" value="day"   onchange="vbSchedule()"> День</label>
+          <label><input type="checkbox" value="week"  onchange="vbSchedule()"> Неделя</label>
+          <label><input type="checkbox" value="month" onchange="vbSchedule()"> Месяц</label>
+        </div>
+      </div>
+
+      <div class="pv-bucket">
+        <div class="pv-bucket-hdr">📊 Колонки <span class="pv-bucket-hint">(группировка по горизонтали)</span></div>
+        <div class="pv-chips" data-bucket="cols">
+          <label><input type="checkbox" value="sup"   onchange="vbSchedule()"> Поставщик</label>
+          <label><input type="checkbox" value="city"  onchange="vbSchedule()"> Город</label>
+          <label><input type="checkbox" value="cat"   onchange="vbSchedule()"> Категория</label>
+          <label><input type="checkbox" value="sku"   onchange="vbSchedule()"> Товар</label>
+          <label><input type="checkbox" value="day"   onchange="vbSchedule()"> День</label>
+          <label><input type="checkbox" value="week"  onchange="vbSchedule()"> Неделя</label>
+          <label><input type="checkbox" value="month" onchange="vbSchedule()"> Месяц</label>
+        </div>
+      </div>
+
+      <div class="pv-bucket">
+        <div class="pv-bucket-hdr">💎 Значения <span class="pv-bucket-hint">(что считать)</span></div>
+        <div class="pv-chips" data-bucket="vals">
+          <label><input type="checkbox" value="total"        onchange="vbSchedule()" checked> Сумма ₸</label>
+          <label><input type="checkbox" value="qty"          onchange="vbSchedule()"> Количество</label>
+          <label><input type="checkbox" value="avgPrice"     onchange="vbSchedule()"> Цена ₸/ед</label>
+          <label><input type="checkbox" value="minPrice"     onchange="vbSchedule()"> Мин ₸/ед</label>
+          <label><input type="checkbox" value="maxPrice"     onchange="vbSchedule()"> Макс ₸/ед</label>
+          <label><input type="checkbox" value="count"        onchange="vbSchedule()"> Позиций</label>
+          <label><input type="checkbox" value="invoiceCount" onchange="vbSchedule()"> Накладных</label>
+        </div>
+      </div>
     </div>
 
-    <!-- Chart type + quick filters -->
+    <!-- Filters + view toggle -->
     <div class="cb-row">
       <div class="cb-group">
-        <button class="cb-t" data-t="bar"   onclick="vbType(this)" title="Столбцы">📊 <span>Столбцы</span></button>
-        <button class="cb-t" data-t="barH"  onclick="vbType(this)" title="Горизонтальные">📋 <span>Горизонт.</span></button>
-        <button class="cb-t" data-t="line"  onclick="vbType(this)" title="Линия">📈 <span>Линия</span></button>
-        <button class="cb-t" data-t="pie"   onclick="vbType(this)" title="Круговая">🥧 <span>Круг</span></button>
-        <button class="cb-t" data-t="table" onclick="vbType(this)" title="Таблица">📄 <span>Таблица</span></button>
+        <button class="cb-t active" data-t="table" onclick="vbType(this)" title="Сводная таблица">📄 <span>Таблица</span></button>
+        <button class="cb-t"        data-t="bar"   onclick="vbType(this)" title="Столбцы">📊 <span>Столбцы</span></button>
+        <button class="cb-t"        data-t="barH"  onclick="vbType(this)" title="Горизонтальные">📋 <span>Горизонт.</span></button>
+        <button class="cb-t"        data-t="line"  onclick="vbType(this)" title="Линия">📈 <span>Линия</span></button>
+        <button class="cb-t"        data-t="pie"   onclick="vbType(this)" title="Круговая">🥧 <span>Круг</span></button>
       </div>
-      <input type="hidden" id="vbType" value="bar">
+      <input type="hidden" id="vbType" value="table">
 
       <input id="vbSearch" type="text" class="cb-search" placeholder="🔍 поиск товара: мука, яйцо…" oninput="vbSchedule()">
 
@@ -691,34 +753,22 @@ try {
       <button onclick="vbExport()" class="vb-btn" title="Скачать CSV">⬇ CSV</button>
     </div>
 
-    <!-- Hidden pass-throughs (internal state) -->
-    <input type="hidden" id="vbSort"      value="valDesc">
-    <input type="hidden" id="vbFrom"      value="">
-    <input type="hidden" id="vbTo"        value="">
-    <input type="hidden" id="vbTopN"      value="20">
-    <input type="hidden" id="vbMode"      value="abs">
-    <input type="hidden" id="vbOther"     data-checkbox="1">
-    <input type="hidden" id="vbLabels"    data-checkbox="1">
-    <input type="hidden" id="vbShowTable" data-checkbox="1">
+    <!-- Hidden state -->
+    <input type="hidden" id="vbFrom" value="">
+    <input type="hidden" id="vbTo"   value="">
 
     <div id="vbTitleBar" style="margin:14px 0 4px 0;text-align:center">
       <div id="vbTitle" style="font-size:15px;font-weight:800;letter-spacing:-.3px"></div>
       <div id="vbSubtitle" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
     </div>
-    <div id="vbCanvasWrap" class="ch" style="height:380px"><canvas id="vbCanvas"></canvas><div class="vb-spinner"></div></div>
-    <div id="vbTableMain" style="display:none;margin-top:10px" class="tbl-wrap"></div>
+    <div id="vbCanvasWrap" class="ch" style="height:380px;display:none"><canvas id="vbCanvas"></canvas><div class="vb-spinner"></div></div>
+    <div id="vbTableMain" style="margin-top:10px;max-height:600px;overflow:auto" class="tbl-wrap pv-tbl"></div>
     <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
 
     <!-- Price history (auto-shown when ≤5 SKUs) -->
     <div id="vbHistWrap" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
       <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">📈 История цен (₸ за единицу)</div>
       <div class="ch" style="height:260px"><canvas id="vbHistCanvas"></canvas></div>
-    </div>
-
-    <!-- Detail table (auto for dim=Товар or search) -->
-    <div id="vbDetailWrap" style="display:none;margin-top:20px">
-      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;border-top:1px solid var(--border);padding-top:16px">Детали закупок</div>
-      <div id="vbDetail" class="tbl-wrap"></div>
     </div>
   </div>
 
@@ -2251,23 +2301,18 @@ function vbPeriod(btn) {
 }
 
 function vbReset() {
-  _vbSet('vbMeasure', 'total');
-  _vbSet('vbDim', 'sup');
-  _vbSet('vbBreak', '');
-  _vbSet('vbType', 'bar');
+  // Снимаем все чекбоксы в Строки / Колонки / Значения
+  document.querySelectorAll('.pv-chips input[type=checkbox]').forEach(i => { i.checked = false; });
+  // Дефолт: строка = Поставщик, значение = Сумма ₸
+  const defRow = document.querySelector('.pv-chips[data-bucket="rows"] input[value="sup"]');
+  const defVal = document.querySelector('.pv-chips[data-bucket="vals"] input[value="total"]');
+  if (defRow) defRow.checked = true;
+  if (defVal) defVal.checked = true;
+  _vbSet('vbType', 'table');
   _vbSet('vbSearch', '');
   _vbSet('vbFiltSup', '');
   _vbSet('vbFiltCat', '');
-  _vbSet('vbTopN', '20');
-  _vbSet('vbSort', 'valDesc');
-  _vbSet('vbMode', 'abs');
-  _vbSet('vbOther', false);
-  _vbSet('vbLabels', false);
-  _vbSet('vbShowTable', false);
-  // Clear user-picked flags so auto-defaults work again
-  const dimSel = document.getElementById('vbDim');
   const typeIn = document.getElementById('vbType');
-  if (dimSel && dimSel.dataset) delete dimSel.dataset.userPicked;
   if (typeIn && typeIn.dataset) delete typeIn.dataset.userPicked;
   document.querySelectorAll('.vb-pill[data-per]').forEach(b => b.classList.remove('active'));
   const allPill = document.querySelector('.vb-pill[data-per="all"]');
@@ -2358,23 +2403,22 @@ function vbFullscreen() {
   else document.exitFullscreen?.();
 }
 
-function _vbAgg() {
-  const meas  = _vbVal('vbMeasure') || 'total';
-  const dim   = _vbVal('vbDim')     || 'sup';
-  const brk   = _vbVal('vbBreak');
-  const type  = _vbVal('vbType')    || 'bar';
-  const topN  = parseInt(_vbVal('vbTopN') || '20', 10);
-  const sort  = _vbVal('vbSort')    || 'valDesc';
-  const mode  = _vbVal('vbMode')    || 'abs';
-  const useOther = !!_vbVal('vbOther');
+// ── Pivot aggregation (multi-dim rows × multi-dim cols × multi measures) ────
+function _vbGetChecked(bucket) {
+  return [...document.querySelectorAll(`.pv-chips[data-bucket="${bucket}"] input:checked`)].map(i => i.value);
+}
+function _vbKey(line, dims) {
+  return dims.map(d => _vbDimValue(line, d) ?? '—').join('|||');
+}
+function _vbSplitKey(k) { return k.split('|||'); }
+
+function _vbFilteredLines() {
   const search = (_vbVal('vbSearch') || '').trim().toLowerCase();
   const fSup  = _vbVal('vbFiltSup');
   const fCat  = _vbVal('vbFiltCat');
   const fFrom = _vbVal('vbFrom');
   const fTo   = _vbVal('vbTo');
-
-  // Filter
-  const lines = ALL_LINES.filter(l => {
+  return ALL_LINES.filter(l => {
     if (fSup && l[1] !== fSup) return false;
     if (fCat && getCatCached(l[0]) !== fCat) return false;
     if (fFrom && l[3] && l[3] < fFrom) return false;
@@ -2385,21 +2429,34 @@ function _vbAgg() {
     }
     return true;
   });
+}
 
-  // Aggregate
-  const cells = {};
-  const dimKeys = new Set();
-  const brkKeys = new Set();
+function _vbAgg() {
+  const rows = _vbGetChecked('rows');
+  const cols = _vbGetChecked('cols');
+  let   vals = _vbGetChecked('vals');
+  if (!vals.length) vals = ['total'];  // всегда что-то показываем
+
+  const lines = _vbFilteredLines();
+
+  // Bucket[rowKey][colKey] = агрегатор
+  const buckets = new Map();
+  const rowKeys = new Set();
+  const colKeys = new Set();
+
   lines.forEach(l => {
-    const dk = _vbDimValue(l, dim);
-    if (dk == null || dk === '') return;
-    dimKeys.add(dk);
-    const bk = brk ? _vbDimValue(l, brk) : '__single__';
-    if (bk == null) return;
-    brkKeys.add(bk);
-    if (!cells[dk]) cells[dk] = {};
-    if (!cells[dk][bk]) cells[dk][bk] = { total:0, qty:0, priceSum:0, priceCnt:0, minP:Infinity, maxP:-Infinity, invIds:new Set(), lines:[] };
-    const c = cells[dk][bk];
+    const rk = rows.length ? _vbKey(l, rows) : '__all__';
+    const ck = cols.length ? _vbKey(l, cols) : '__all__';
+    rowKeys.add(rk); colKeys.add(ck);
+    if (!buckets.has(rk)) buckets.set(rk, new Map());
+    const rMap = buckets.get(rk);
+    if (!rMap.has(ck)) {
+      rMap.set(ck, {
+        total:0, qty:0, priceSum:0, priceCnt:0,
+        minP:Infinity, maxP:-Infinity, invIds:new Set(),
+      });
+    }
+    const c = rMap.get(ck);
     c.total    += +l[6] || 0;
     c.qty      += +l[5] || 0;
     c.priceSum += +l[4] || 0;
@@ -2407,12 +2464,11 @@ function _vbAgg() {
     if (+l[4] < c.minP) c.minP = +l[4];
     if (+l[4] > c.maxP) c.maxP = +l[4];
     c.invIds.add(l[7]);
-    c.lines.push(l);
   });
 
-  const measFn = (c) => {
+  const measFn = (c, m) => {
     if (!c) return 0;
-    switch (meas) {
+    switch (m) {
       case 'total':        return c.total;
       case 'qty':          return c.qty;
       case 'avgPrice':     return c.priceCnt ? c.priceSum / c.priceCnt : 0;
@@ -2424,440 +2480,401 @@ function _vbAgg() {
     return 0;
   };
 
-  // Row totals for sort / Top-N
-  const rowTot = {};
-  dimKeys.forEach(dk => {
-    let t = 0;
-    brkKeys.forEach(bk => { t += measFn(cells[dk][bk]); });
-    rowTot[dk] = t;
-  });
-
-  // Sort + topN + Другое
-  const isTimeDim = ['day','week','month'].includes(dim);
-  let dkOrdered = [...dimKeys];
-  if (isTimeDim) {
-    dkOrdered.sort((a, b) => a.localeCompare(b));
-  } else {
-    if (sort === 'valDesc')   dkOrdered.sort((a, b) => rowTot[b] - rowTot[a]);
-    if (sort === 'valAsc')    dkOrdered.sort((a, b) => rowTot[a] - rowTot[b]);
-    if (sort === 'labelAsc')  dkOrdered.sort((a, b) => String(a).localeCompare(String(b), 'ru'));
-    if (sort === 'labelDesc') dkOrdered.sort((a, b) => String(b).localeCompare(String(a), 'ru'));
-    if (topN > 0 && dkOrdered.length > topN) {
-      const top = dkOrdered.slice(0, topN);
-      const rest = dkOrdered.slice(topN);
-      if (useOther && rest.length) {
-        // Build a synthetic "Другое" cell
-        cells['Другое'] = {};
-        brkKeys.forEach(bk => {
-          const agg = { total:0, qty:0, priceSum:0, priceCnt:0, minP:Infinity, maxP:-Infinity, invIds:new Set(), lines:[] };
-          rest.forEach(dk => {
-            const c = cells[dk] && cells[dk][bk];
-            if (!c) return;
-            agg.total += c.total; agg.qty += c.qty; agg.priceSum += c.priceSum; agg.priceCnt += c.priceCnt;
-            if (c.minP < agg.minP) agg.minP = c.minP;
-            if (c.maxP > agg.maxP) agg.maxP = c.maxP;
-            c.invIds.forEach(id => agg.invIds.add(id));
-            agg.lines.push(...c.lines);
-          });
-          cells['Другое'][bk] = agg;
-        });
-        let otherTot = 0;
-        brkKeys.forEach(bk => { otherTot += measFn(cells['Другое'][bk]); });
-        rowTot['Другое'] = otherTot;
-        dkOrdered = [...top, 'Другое'];
-      } else {
-        dkOrdered = top;
+  // Hierarchical sort of row keys: по первому уровню по сумме (Σ total), внутри уровня — тоже
+  function sortKeys(keys, dims, isRow) {
+    const arr = [...keys];
+    if (dims.length === 0) return arr;
+    const isTimeFirst = ['day','week','month'].includes(dims[0]);
+    arr.sort((a, b) => {
+      const pa = _vbSplitKey(a), pb = _vbSplitKey(b);
+      for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const da = dims[i] || dims[dims.length - 1];
+        const isTime = ['day','week','month'].includes(da);
+        if (pa[i] !== pb[i]) {
+          if (isTime) return (pa[i] || '').localeCompare(pb[i] || '');
+          // сумма total по этому префиксу
+          const sumPrefix = (prefix) => {
+            let s = 0;
+            for (const [rk, rMap] of (isRow ? buckets.entries() : _colBuckets.entries())) {
+              if (isRow) {
+                if (_vbKey2(rk, i + 1) !== prefix) continue;
+                for (const c of rMap.values()) s += c.total;
+              } else {
+                if (_vbKey2(rk, i + 1) !== prefix) continue;
+                s += rMap.total || 0;
+              }
+            }
+            return s;
+          };
+          const prefA = pa.slice(0, i + 1).join('|||');
+          const prefB = pb.slice(0, i + 1).join('|||');
+          const sa = sumPrefix(prefA), sb = sumPrefix(prefB);
+          if (sa !== sb) return sb - sa;
+          return (pa[i] || '').localeCompare(pb[i] || '');
+        }
       }
+      return 0;
+    });
+    return arr;
+  }
+  // Simple key prefix getter
+  function _vbKey2(k, n) { return _vbSplitKey(k).slice(0, n).join('|||'); }
+
+  // Собираем col bucket для сортировки (sum by colKey)
+  const _colBuckets = new Map();
+  for (const rMap of buckets.values()) {
+    for (const [ck, c] of rMap) {
+      if (!_colBuckets.has(ck)) _colBuckets.set(ck, { total: 0 });
+      _colBuckets.get(ck).total += c.total;
     }
   }
 
-  // Breakdown order by total
-  const brkTot = {};
-  brkKeys.forEach(bk => {
-    let t = 0;
-    dkOrdered.forEach(dk => { if (cells[dk] && cells[dk][bk]) t += measFn(cells[dk][bk]); });
-    brkTot[bk] = t;
-  });
-  const bkOrdered = [...brkKeys].sort((a, b) => brkTot[b] - brkTot[a]);
+  const sortedRows = sortKeys(rowKeys, rows, true);
+  const sortedCols = sortKeys(colKeys, cols, false);
 
-  // Apply mode transform to rowTot
-  let vals = dkOrdered.map(dk => rowTot[dk] || 0);
-  const total = vals.reduce((s, v) => s + v, 0);
-  if (mode === 'pct' && total) vals = vals.map(v => v / total * 100);
-  if (mode === 'cum') { let acc = 0; vals = vals.map(v => (acc += v)); }
-  if (mode === 'rank') { const ranked = [...vals].map((v, i) => [v, i]).sort((a,b) => b[0] - a[0]); vals = vals.map((_, i) => ranked.findIndex(r => r[1] === i) + 1); }
+  // Row totals (aggregate across all cols) for row sums
+  const rowTotal = {};
+  for (const rk of sortedRows) {
+    const agg = { total:0, qty:0, priceSum:0, priceCnt:0, minP:Infinity, maxP:-Infinity, invIds:new Set() };
+    const rMap = buckets.get(rk) || new Map();
+    for (const c of rMap.values()) {
+      agg.total += c.total; agg.qty += c.qty;
+      agg.priceSum += c.priceSum; agg.priceCnt += c.priceCnt;
+      if (c.minP < agg.minP) agg.minP = c.minP;
+      if (c.maxP > agg.maxP) agg.maxP = c.maxP;
+      c.invIds.forEach(id => agg.invIds.add(id));
+    }
+    rowTotal[rk] = agg;
+  }
+  // Col totals
+  const colTotal = {};
+  for (const ck of sortedCols) {
+    const agg = { total:0, qty:0, priceSum:0, priceCnt:0, minP:Infinity, maxP:-Infinity, invIds:new Set() };
+    for (const rMap of buckets.values()) {
+      const c = rMap.get(ck);
+      if (!c) continue;
+      agg.total += c.total; agg.qty += c.qty;
+      agg.priceSum += c.priceSum; agg.priceCnt += c.priceCnt;
+      if (c.minP < agg.minP) agg.minP = c.minP;
+      if (c.maxP > agg.maxP) agg.maxP = c.maxP;
+      c.invIds.forEach(id => agg.invIds.add(id));
+    }
+    colTotal[ck] = agg;
+  }
+  // Grand total
+  const grand = { total:0, qty:0, priceSum:0, priceCnt:0, minP:Infinity, maxP:-Infinity, invIds:new Set() };
+  for (const agg of Object.values(rowTotal)) {
+    grand.total += agg.total; grand.qty += agg.qty;
+    grand.priceSum += agg.priceSum; grand.priceCnt += agg.priceCnt;
+    if (agg.minP < grand.minP) grand.minP = agg.minP;
+    if (agg.maxP > grand.maxP) grand.maxP = agg.maxP;
+    agg.invIds.forEach(id => grand.invIds.add(id));
+  }
 
   return {
-    dimKeys: dkOrdered, brkKeys: bkOrdered, cells, measFn, rowTot,
-    meas, dim, brk, type, mode, useOther, totalLines: lines.length,
-    filteredTotal: total, modeVals: vals,
+    rows, cols, vals,
+    rowKeys: sortedRows, colKeys: sortedCols,
+    buckets, rowTotal, colTotal, grand, measFn,
+    totalLines: lines.length,
   };
 }
+
+const VB_DIM_SHORT = { sup:'Поставщик', city:'Город', cat:'Категория', sku:'Товар', day:'День', week:'Неделя', month:'Месяц' };
 
 function vbRender() {
   if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
 
-  const dimSel = document.getElementById('vbDim');
   const typeIn = document.getElementById('vbType');
-  const searchVal = (document.getElementById('vbSearch').value || '').trim();
-
-  // Когда поиск товара активен — всегда разрез=Товар (иначе найденное невидимо).
-  if (searchVal && dimSel.value !== 'sku') {
-    dimSel.value = 'sku';
-  }
-  // Для разреза=Товар и тип=bar без явного выбора пользователя — горизонтально
-  // (длинные имена товаров не помещаются вертикально).
-  if (dimSel.value === 'sku' && typeIn.value === 'bar' && !typeIn.dataset.userPicked) {
-    typeIn.value = 'barH';
-  }
-  // Синхронизация активной кнопки типа с hidden input (.cb-t + legacy .vb-pill)
+  const view   = typeIn.value || 'table';
+  // Синхронизация пилл-кнопки типа
   document.querySelectorAll('.cb-t, .vb-pill[data-t]').forEach(b =>
-    b.classList.toggle('active', b.dataset.t === typeIn.value));
+    b.classList.toggle('active', b.dataset.t === view));
+
+  // Автоматом ставим «Товар» в Строки при поиске если ни одного в Строках не выбрано
+  const searchVal = (_vbVal('vbSearch') || '').trim();
+  if (searchVal) {
+    const rowsPicked = _vbGetChecked('rows');
+    if (!rowsPicked.length) {
+      const skuChk = document.querySelector('.pv-chips[data-bucket="rows"] input[value="sku"]');
+      if (skuChk) skuChk.checked = true;
+    }
+  }
 
   const A = _vbAgg();
-  const baseSuffix = _vbCurrencyMeas.has(A.meas) ? ' ₸' : '';
-  const modeSuffix = A.mode === 'pct' ? '%' : (A.mode === 'rank' ? '' : baseSuffix);
-  const showLabels = !!_vbVal('vbLabels');
-  // Автоматически показываем детальную таблицу при поиске товара или выборе Товар в разрезе
-  const showDetail = !!_vbVal('vbShowTable') || dimSel.value === 'sku' || !!searchVal;
-
-  // Title
-  const titleEl = document.getElementById('vbTitle');
-  const subEl = document.getElementById('vbSubtitle');
-  let title = `${VB_MEAS_LBL[A.meas]} по ${VB_DIM_LBL[A.dim]}`;
-  if (A.brk) title += `, с разбивкой по ${VB_DIM_LBL[A.brk]}`;
-  if (A.mode === 'pct') title += ' (% от общего)';
-  if (A.mode === 'cum') title += ' (нарастающий итог)';
-  if (A.mode === 'rank') title += ' (ранг)';
-  titleEl.textContent = title;
-
-  const fFrom = document.getElementById('vbFrom').value;
-  const fTo   = document.getElementById('vbTo').value;
-  const fSup  = document.getElementById('vbFiltSup').value;
-  const fCat  = document.getElementById('vbFiltCat').value;
-  const srch  = document.getElementById('vbSearch').value.trim();
-  const parts = [];
-  if (fFrom && fTo) parts.push(`${fFrom.split('-').reverse().join('.')} — ${fTo.split('-').reverse().join('.')}`);
-  if (fSup)  parts.push(`поставщик: ${fSup}`);
-  if (fCat)  parts.push(`категория: ${fCat}`);
-  if (srch)  parts.push(`поиск: «${srch}»`);
-  subEl.textContent = parts.join(' · ') || 'все данные';
-
   const canvasWrap = document.getElementById('vbCanvasWrap');
-  const tableMain  = document.getElementById('vbTableMain');
+  const tableWrap  = document.getElementById('vbTableMain');
 
+  // Заголовок
+  const titleEl = document.getElementById('vbTitle');
+  const subEl   = document.getElementById('vbSubtitle');
+  const partsT = [];
+  if (A.vals.length) partsT.push(A.vals.map(v => VB_MEAS_LBL[v]).join(' + '));
+  if (A.rows.length) partsT.push('по ' + A.rows.map(d => VB_DIM_SHORT[d]).join(' × '));
+  if (A.cols.length) partsT.push('с разбивкой по ' + A.cols.map(d => VB_DIM_SHORT[d]).join(' × '));
+  titleEl.textContent = partsT.join(' ') || 'Выбери что показать';
+
+  const fFrom = _vbVal('vbFrom'), fTo = _vbVal('vbTo');
+  const fSup = _vbVal('vbFiltSup'), fCat = _vbVal('vbFiltCat');
+  const subParts = [];
+  if (fFrom && fTo) subParts.push(`${fFrom.split('-').reverse().join('.')} — ${fTo.split('-').reverse().join('.')}`);
+  if (fSup) subParts.push(`поставщик: ${fSup}`);
+  if (fCat) subParts.push(`категория: ${fCat}`);
+  if (searchVal) subParts.push(`поиск: «${searchVal}»`);
+  subEl.textContent = subParts.join(' · ') || 'все данные';
+
+  // Уничтожим старый график если есть
   if (window._vbChart) { window._vbChart.destroy(); window._vbChart = null; }
 
-  // KPI cards view — show each dim as a big number
-  if (A.type === 'kpi') {
+  if (view === 'table') {
     canvasWrap.style.display = 'none';
-    tableMain.style.display  = 'block';
-    const COL_COUNT = Math.min(6, Math.max(2, A.dimKeys.length));
-    let html = `<div style="display:grid;grid-template-columns:repeat(${COL_COUNT},1fr);gap:10px">`;
-    A.dimKeys.forEach((dk, i) => {
-      const v = A.modeVals[i];
-      const color = VB_COLORS[i % VB_COLORS.length];
-      const seDk = String(dk).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      html += `<div style="background:var(--surf);border:1px solid var(--border);border-left:3px solid ${color};border-radius:10px;padding:14px;cursor:pointer" onclick="vbDrill('${A.dim}', '${seDk}')">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">${_vbFormatLabel(dk, A.dim, 30)}</div>
-        <div style="font-size:22px;font-weight:700;color:${color};margin-top:4px">${fmt(Math.round(v))}${modeSuffix}</div>
-      </div>`;
-    });
-    html += '</div>';
-    tableMain.innerHTML = html;
-  }
-  // TABLE view — full matrix
-  else if (A.type === 'table') {
-    canvasWrap.style.display = 'none';
-    tableMain.style.display  = 'block';
-    let html = '<table><thead><tr>';
-    html += `<th style="min-width:30px">#</th><th>${VB_DIM_LBL[A.dim]}</th>`;
-    if (A.brk) {
-      A.brkKeys.forEach(bk => { html += `<th class="num" title="${String(bk).replace(/"/g,'&quot;')}">${_vbFormatLabel(bk, A.brk, 20)}</th>`; });
-      html += `<th class="num"><b>Всего</b></th>`;
-    } else {
-      html += `<th class="num">${VB_MEAS_LBL[A.meas]}</th>`;
-      if (A.mode === 'abs') html += `<th class="num">%</th>`;
-    }
-    html += '</tr></thead><tbody>';
-    const total = A.filteredTotal || 1;
-    A.dimKeys.forEach((dk, idx) => {
-      const se = String(dk).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      html += `<tr style="cursor:pointer" onclick="vbDrill('${A.dim}', '${se}')"><td class="num" style="color:var(--muted)">${idx+1}</td><td>${_vbFormatLabel(dk, A.dim)}</td>`;
-      if (A.brk) {
-        let rowTot = 0;
-        A.brkKeys.forEach(bk => {
-          const v = A.measFn(A.cells[dk] ? A.cells[dk][bk] : null);
-          rowTot += v;
-          html += `<td class="num">${v ? fmt(Math.round(v)) + baseSuffix : '—'}</td>`;
-        });
-        html += `<td class="num"><b>${fmt(Math.round(rowTot))}${baseSuffix}</b></td>`;
-      } else {
-        const v = A.modeVals[idx];
-        html += `<td class="num">${fmt(Math.round(v))}${modeSuffix}</td>`;
-        if (A.mode === 'abs') html += `<td class="num" style="color:var(--muted)">${(v / total * 100).toFixed(1)}%</td>`;
-      }
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-    tableMain.innerHTML = html;
-  }
-  // SCATTER — price × qty per line within the filtered selection
-  else if (A.type === 'scatter') {
-    tableMain.style.display  = 'none';
+    tableWrap.style.display  = 'block';
+    tableWrap.innerHTML = _vbPivotTableHtml(A);
+  } else {
+    tableWrap.style.display  = 'none';
     canvasWrap.style.display = 'block';
-    // Gather all underlying lines, grouped by breakdown
-    const lines = [];
-    A.dimKeys.forEach(dk => {
-      A.brkKeys.forEach(bk => {
-        const c = A.cells[dk] && A.cells[dk][bk];
-        if (!c) return;
-        c.lines.forEach(l => lines.push([l, bk]));
-      });
-    });
-    const datasets = A.brk
-      ? A.brkKeys.map((bk, i) => ({
-          label: String(bk),
-          data: lines.filter(([, b]) => b === bk).map(([l]) => ({ x: +l[4], y: +l[5], sku: l[0] })),
-          backgroundColor: VB_COLORS[i % VB_COLORS.length] + 'cc',
-          borderColor: VB_COLORS[i % VB_COLORS.length],
-        }))
-      : [{
-          label: 'Закупки',
-          data: lines.map(([l]) => ({ x: +l[4], y: +l[5], sku: l[0] })),
-          backgroundColor: 'rgba(99,102,241,.55)',
-          borderColor: '#6366f1',
-        }];
-    const ctx = document.getElementById('vbCanvas').getContext('2d');
-    window._vbChart = new Chart(ctx, {
-      type: 'scatter',
-      data: { datasets },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: !!A.brk, labels: { color: TICK, font: FONT } },
-          tooltip: { callbacks: { label: (c) => `${c.raw.sku || ''}: ${fmt(Math.round(c.raw.x))} ₸ × ${(+c.raw.y).toFixed(2)}` } },
-          datalabels: { display: false }
-        },
-        scales: {
-          x: { title: { display: true, text: 'Цена ₸', color: TICK }, ticks: { color: TICK, font: FONT, callback: v => fmt(v) }, grid: { color: GRID } },
-          y: { title: { display: true, text: 'Количество', color: TICK }, ticks: { color: TICK, font: FONT }, grid: { color: GRID } }
-        }
-      }
-    });
-  }
-  else {
-    tableMain.style.display  = 'none';
-    canvasWrap.style.display = 'block';
-
-    const isPie     = A.type === 'pie' || A.type === 'donut';
-    const isRadar   = A.type === 'radar';
-    const isStack   = A.type === 'barStack' || A.type === 'bar100' || A.type === 'barHStack' || A.type === 'areaStack';
-    const isHoriz   = A.type === 'barH' || A.type === 'barHStack';
-    const isBar     = A.type.startsWith('bar');
-    const isArea    = A.type === 'area' || A.type === 'areaStack';
-    const isLine    = A.type === 'line';
-    const percent100 = A.type === 'bar100';
-    const labelMax  = (A.dim === 'sku') ? (isHoriz ? 40 : 20) : 30;
-
-    let datasets;
-    if (A.brk) {
-      datasets = A.brkKeys.map((bk, i) => {
-        const data = A.dimKeys.map(dk => A.measFn(A.cells[dk] ? A.cells[dk][bk] : null));
-        const color = VB_COLORS[i % VB_COLORS.length];
-        return {
-          label: _vbFormatLabel(bk, A.brk, 24),
-          _brkKey: bk,
-          data,
-          backgroundColor: (isLine && !isArea) ? color : color + (isArea ? '55' : 'cc'),
-          borderColor: color,
-          borderWidth: 1.5,
-          borderRadius: isBar ? 4 : 0,
-          fill: isArea,
-          tension: (isLine || isArea) ? 0.3 : 0,
-          pointRadius: (isLine || isArea) ? 3 : 0,
-        };
-      });
-      if (percent100) {
-        const sums = A.dimKeys.map(dk => {
-          let s = 0;
-          A.brkKeys.forEach(bk => { s += A.measFn(A.cells[dk] ? A.cells[dk][bk] : null); });
-          return s || 1;
-        });
-        datasets = datasets.map(ds => ({ ...ds, data: ds.data.map((v, i) => v / sums[i] * 100) }));
-      }
-    } else {
-      let data = A.dimKeys.map((dk, i) => A.modeVals[i]);
-      const singleColor = isPie || isRadar
-        ? A.dimKeys.map((_, i) => VB_COLORS[i % VB_COLORS.length])
-        : 'rgba(99,102,241,.7)';
-      datasets = [{
-        label: VB_MEAS_LBL[A.meas],
-        data,
-        backgroundColor: singleColor,
-        borderColor: isPie ? '#1a1d27' : (isRadar ? '#6366f1' : '#6366f1'),
-        borderWidth: isPie ? 2 : 1.5,
-        borderRadius: isBar ? 6 : 0,
-        fill: isArea || isRadar,
-        tension: (isLine || isArea) ? 0.3 : 0,
-        pointRadius: (isLine || isArea || isRadar) ? 4 : 0,
-      }];
-    }
-
-    const chartType = isBar ? 'bar'
-                    : (A.type === 'donut') ? 'doughnut'
-                    : (A.type === 'pie') ? 'pie'
-                    : isArea ? 'line'
-                    : isRadar ? 'radar'
-                    : 'line';
-
-    const labels = A.dimKeys.map(k => _vbFormatLabel(k, A.dim, labelMax));
-    const fullLabels = A.dimKeys.map(k => String(k));
-
-    const options = {
-      responsive: true, maintainAspectRatio: false,
-      indexAxis: isHoriz ? 'y' : 'x',
-      onClick: (evt, elems) => {
-        if (!elems.length) return;
-        const dkRaw = fullLabels[elems[0].index];
-        vbDrill(A.dim, dkRaw);
-      },
-      plugins: {
-        legend: { display: isPie || !!A.brk, position: isPie ? 'right' : 'top', labels: { color: TICK, font: FONT, boxWidth: 12 } },
-        tooltip: {
-          backgroundColor: TOOLTIP_BG,
-          callbacks: {
-            title: (items) => items.length ? fullLabels[items[0].dataIndex] : '',
-            label: (c) => {
-              // Для горизонтальных баров значение в c.parsed.x, для вертикальных — в y.
-              const v = isHoriz ? (c.parsed.x ?? c.parsed) : (c.parsed.y ?? c.parsed.r ?? c.parsed);
-              const lbl = A.brk ? c.dataset.label : VB_MEAS_LBL[A.meas];
-              if (percent100) return `${lbl}: ${(+v).toFixed(1)}%`;
-              return `${lbl}: ${fmt(Math.round(v))}${modeSuffix}`;
-            }
-          }
-        },
-        datalabels: showLabels ? {
-          color: isPie ? '#fff' : TICK,
-          anchor: isPie ? 'center' : 'end',
-          align:  isPie ? 'center' : 'end',
-          font: { weight: 'bold', size: 10 },
-          formatter: (v) => percent100 ? (+v).toFixed(0) + '%' : (fmt(Math.round(v)) + (modeSuffix || ''))
-        } : { display: false }
-      },
-      scales: isPie || isRadar ? (isRadar ? { r: { ticks: { color: TICK, backdropColor: 'transparent' }, grid: { color: GRID }, pointLabels: { color: TICK, font: FONT } } } : {}) : (() => {
-        // Разделяем оси на value-ось (числовая) и category-ось (имена).
-        // Для горизонтальных баров: X = value, Y = category.
-        // Для вертикальных: X = category, Y = value.
-        const valueAxis = {
-          type: 'linear',
-          stacked: isStack,
-          beginAtZero: true,
-          ticks: { color: TICK, font: FONT, callback: v => percent100 ? v + '%' : fmt(v) },
-          grid: { color: GRID },
-          max: percent100 ? 100 : undefined,
-        };
-        const catAxis = {
-          type: 'category',
-          stacked: isStack,
-          ticks: { color: TICK, font: FONT, autoSkip: false, maxRotation: isHoriz ? 0 : 45 },
-          grid: { color: GRID },
-        };
-        return isHoriz
-          ? { x: valueAxis, y: catAxis }
-          : { x: catAxis, y: valueAxis };
-      })()
-    };
-
-    // Для горизонтальных столбцов увеличиваем высоту канваса при большом числе позиций
-    const canvasWrapEl = document.getElementById('vbCanvasWrap');
-    if (isHoriz && A.dimKeys.length > 12) {
-      canvasWrapEl.style.height = Math.min(900, 180 + A.dimKeys.length * 22) + 'px';
-    } else {
-      canvasWrapEl.style.height = '380px';
-    }
-
-    const ctx = document.getElementById('vbCanvas').getContext('2d');
-    window._vbChart = new Chart(ctx, {
-      type: chartType,
-      data: { labels, datasets },
-      options,
-    });
+    _vbPivotChart(A, view);
   }
 
   // Summary
   const sumEl = document.getElementById('vbSummary');
-  const totalStr = _vbCurrencyMeas.has(A.meas)
-    ? `итого ${fmt(Math.round(A.filteredTotal))} ₸`
-    : `сумма: ${fmt(Math.round(A.filteredTotal))}`;
-  const modeHint = A.mode !== 'abs' ? ` · режим: ${ {pct:'% от общего', cum:'нарастающий итог', rank:'ранг'}[A.mode] }` : '';
-  sumEl.textContent = `${A.dimKeys.length} ${VB_DIM_LBL[A.dim].toLowerCase()} · ${totalStr} · ${A.totalLines} строк${modeHint}`;
+  const totN  = fmt(Math.round(A.grand.total));
+  sumEl.textContent = `${A.rowKeys.length} строк × ${A.colKeys.length} колонок · итого ${totN} ₸ · на основе ${A.totalLines} записей`;
 
-  // Detail table (below chart)
-  const detailWrap = document.getElementById('vbDetailWrap');
-  const detail     = document.getElementById('vbDetail');
-  if (!showDetail) {
-    detailWrap.style.display = 'none';
-    return;
-  }
-  detailWrap.style.display = 'block';
-  // Show raw lines filtered
-  const fFrom2 = document.getElementById('vbFrom').value;
-  const fTo2   = document.getElementById('vbTo').value;
-  const fSup2  = document.getElementById('vbFiltSup').value;
-  const fCat2  = document.getElementById('vbFiltCat').value;
-  const srch2  = document.getElementById('vbSearch').value.trim().toLowerCase();
-  const del = window._phDelta || {};
-  let rows = ALL_LINES.filter(l => {
-    if (fSup2 && l[1] !== fSup2) return false;
-    if (fCat2 && getCatJS(l[0]) !== fCat2) return false;
-    if (fFrom2 && l[3] && l[3] < fFrom2) return false;
-    if (fTo2   && l[3] && l[3] > fTo2)   return false;
-    if (srch2) {
-      const hay = (l[0] + ' ' + l[1] + ' ' + l[2]).toLowerCase();
-      if (!hay.includes(srch2)) return false;
-    }
-    return true;
-  });
-  rows.sort((a, b) => (b[3] || '').localeCompare(a[3] || ''));
-  const MAX = 300;
-  let detailHtml = `<table><thead><tr>
-    <th>Товар</th><th>Поставщик</th><th>Дата</th>
-    <th class="num">Цена</th><th class="num">Кол-во</th><th class="num">Сумма</th><th class="num">Изм.</th>
-  </tr></thead><tbody>`;
-  rows.slice(0, MAX).forEach(l => {
-    const [sku, sup, city, date, price, qty, total, inv, unit] = l;
-    const deltaKey = sku + '|' + sup + '|' + date;
-    const delta = del[deltaKey];
-    const ds = date ? date.split('-').reverse().join('.') : '—';
-    const u = unit || 'кг';
-    let dh = '<span style="color:var(--muted);opacity:.4">—</span>';
-    if (delta !== null && delta !== undefined) {
-      const sign = delta > 0 ? '▲' : delta < 0 ? '▼' : '=';
-      const clr  = delta > 0 ? 'var(--red)' : delta < 0 ? 'var(--milana)' : 'var(--muted)';
-      dh = `<span style="color:${clr};font-weight:700;font-size:11px">${sign} ${Math.abs(delta).toFixed(1)}%</span>`;
-    }
-    const isM = sup.toUpperCase().includes('МИЛАН');
-    const tag = isM ? `<span class="tag-m">${sup}</span>` : `<span class="tag-o">${sup}</span>`;
-    const se = sku.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    detailHtml += `<tr style="cursor:pointer" onclick="openSkuModal('${se}')">
-      <td>${sku}</td><td>${tag}</td><td>${ds}</td>
-      <td class="num">${fmt(Math.round(price))} ₸<span style="color:var(--muted);font-size:10px">/${u}</span></td>
-      <td class="num">${(+qty).toFixed(Number.isInteger(+qty) ? 0 : 2)} ${u}</td>
-      <td class="num">${fmt(Math.round(total))} ₸</td>
-      <td class="num">${dh}</td>
-    </tr>`;
-  });
-  detailHtml += '</tbody></table>';
-  if (rows.length > MAX) detailHtml += `<div style="text-align:center;color:var(--muted);font-size:11px;padding:8px">показано ${MAX} из ${rows.length}</div>`;
-  detail.innerHTML = detailHtml;
-
-  // ── Price history mini-chart: если после фильтров осталось 1-5 уникальных SKU ──
+  // Price history + detail
   _vbRenderPriceHistory();
 
-  // Remove loading overlay
   const lwrap = document.getElementById('vbCanvasWrap');
   if (lwrap) lwrap.classList.remove('vb-loading');
+}
+
+// Рендерит pivot-таблицу с иерархическими строками и колонками и несколькими мерами
+function _vbPivotTableHtml(A) {
+  const M = A.vals.length;
+  const R = A.rows.length;
+  const C = A.cols.length;
+  const curSuffix = (m) => _vbCurrencyMeas.has(m) ? ' ₸' : '';
+
+  // ── Заголовок ──────────────────────────────────────────────
+  let head = '';
+  // Если есть col-dims: верхняя часть — многоуровневые колонки
+  if (C > 0) {
+    // Для каждого уровня col-dim — строка шапки
+    for (let lvl = 0; lvl < C; lvl++) {
+      head += '<tr>';
+      // Placeholder ячейка слева (перекрывает row-dim-колонки)
+      head += `<th colspan="${R || 1}" style="background:var(--surf)"></th>`;
+      // Группируем col-ключи по префиксу до уровня lvl+1
+      const spans = [];
+      let prev = null, span = 0;
+      for (const ck of A.colKeys) {
+        const cur = _vbSplitKey(ck).slice(0, lvl + 1).join('|||');
+        if (cur === prev) { span++; } else {
+          if (prev !== null) spans.push({ label: _vbSplitKey(prev).slice(-1)[0], span, dim: A.cols[lvl] });
+          prev = cur; span = 1;
+        }
+      }
+      if (prev !== null) spans.push({ label: _vbSplitKey(prev).slice(-1)[0], span, dim: A.cols[lvl] });
+      for (const sp of spans) {
+        const lbl = _vbFormatLabel(sp.label, sp.dim, 20);
+        head += `<th colspan="${sp.span * M}" title="${String(sp.label).replace(/"/g,'&quot;')}">${lbl}</th>`;
+      }
+      // Total col
+      if (lvl === 0) head += `<th rowspan="${C + (M > 1 ? 1 : 0)}" class="pv-total-col">Итого</th>`;
+      head += '</tr>';
+    }
+    // Строка имён мер (если несколько)
+    if (M > 1) {
+      head += '<tr>';
+      head += `<th colspan="${R || 1}" style="background:var(--surf)"></th>`;
+      for (const ck of A.colKeys) for (const m of A.vals) {
+        head += `<th class="num">${VB_MEAS_LBL[m]}</th>`;
+      }
+      head += '</tr>';
+    }
+  } else {
+    // Нет col-dims: простая шапка с именами мер
+    head += '<tr>';
+    for (const d of A.rows) head += `<th>${VB_DIM_SHORT[d]}</th>`;
+    if (!A.rows.length) head += '<th></th>';
+    for (const m of A.vals) head += `<th class="num">${VB_MEAS_LBL[m]}</th>`;
+    head += '</tr>';
+  }
+
+  // ── Тело ──────────────────────────────────────────────────
+  let body = '';
+  let prevParts = [];
+  for (const rk of A.rowKeys) {
+    const parts = R ? _vbSplitKey(rk) : [''];
+    body += '<tr>';
+    // Row-dim ячейки с учётом иерархии: если префикс совпадает с предыдущим → пусто
+    if (R) {
+      for (let i = 0; i < R; i++) {
+        const samePrefix = i < prevParts.length && parts.slice(0, i + 1).join('|||') === prevParts.slice(0, i + 1).join('|||');
+        const cls = i === 0 ? 'pv-row-hdr' : (i === 1 ? 'pv-row-sub' : 'pv-row-sub2');
+        if (samePrefix) {
+          body += `<td class="${cls}"></td>`;
+        } else {
+          body += `<td class="${cls}">${_vbFormatLabel(parts[i], A.rows[i], 30)}</td>`;
+        }
+      }
+    } else {
+      body += '<td>Все</td>';
+    }
+
+    // Значения
+    const rMap = A.buckets.get(rk) || new Map();
+    if (C === 0) {
+      for (const m of A.vals) {
+        const v = A.measFn(rMap.get('__all__'), m);
+        body += `<td class="num">${v ? fmt(Math.round(v)) + curSuffix(m) : '—'}</td>`;
+      }
+    } else {
+      for (const ck of A.colKeys) {
+        for (const m of A.vals) {
+          const v = A.measFn(rMap.get(ck), m);
+          body += `<td class="num">${v ? fmt(Math.round(v)) + curSuffix(m) : '—'}</td>`;
+        }
+      }
+      // Total col (по строке) — только для первой меры если одна, иначе по каждой
+      const rt = A.rowTotal[rk];
+      if (M === 1) {
+        const v = A.measFn(rt, A.vals[0]);
+        body += `<td class="num pv-total-col">${v ? fmt(Math.round(v)) + curSuffix(A.vals[0]) : '—'}</td>`;
+      } else {
+        // если мер несколько — итог: Σ по sum-меры (total), иначе — общий total
+        const v = rt.total;
+        body += `<td class="num pv-total-col">${v ? fmt(Math.round(v)) + ' ₸' : '—'}</td>`;
+      }
+    }
+    body += '</tr>';
+    prevParts = parts;
+  }
+
+  // ── Итоговая строка ──
+  body += '<tr class="pv-total-row">';
+  if (R) body += `<td colspan="${R}">Итого</td>`;
+  else   body += '<td>Итого</td>';
+  if (C === 0) {
+    for (const m of A.vals) {
+      const v = A.measFn(A.grand, m);
+      body += `<td class="num">${v ? fmt(Math.round(v)) + curSuffix(m) : '—'}</td>`;
+    }
+  } else {
+    for (const ck of A.colKeys) {
+      for (const m of A.vals) {
+        const v = A.measFn(A.colTotal[ck], m);
+        body += `<td class="num">${v ? fmt(Math.round(v)) + curSuffix(m) : '—'}</td>`;
+      }
+    }
+    const v = A.grand.total;
+    body += `<td class="num pv-total-col">${v ? fmt(Math.round(v)) + ' ₸' : '—'}</td>`;
+  }
+  body += '</tr>';
+
+  return `<table>
+    <thead>${head}</thead>
+    <tbody>${body}</tbody>
+  </table>`;
+}
+
+// Рендерит chart из pivot-данных. Берёт первую меру. Если есть col-dims → colKeys как серии (разбивка).
+function _vbPivotChart(A, view) {
+  const m = A.vals[0] || 'total';
+  const isHoriz = view === 'barH';
+  const isPie   = view === 'pie';
+  const isLine  = view === 'line';
+
+  // X = rowKeys
+  const xLabels = A.rowKeys.map(rk => {
+    const parts = _vbSplitKey(rk);
+    return parts.map((p, i) => _vbFormatLabel(p, A.rows[i] || 'sup', 15)).join(' · ');
+  });
+  const xFull = A.rowKeys.map(rk => {
+    const parts = _vbSplitKey(rk);
+    return parts.join(' · ');
+  });
+
+  // Series: если есть col-dims — одна серия per colKey; иначе — одна серия
+  let datasets;
+  if (A.cols.length) {
+    datasets = A.colKeys.map((ck, i) => {
+      const data = A.rowKeys.map(rk => {
+        const c = (A.buckets.get(rk) || new Map()).get(ck);
+        return A.measFn(c, m);
+      });
+      const color = VB_COLORS[i % VB_COLORS.length];
+      return {
+        label: _vbSplitKey(ck).map((p, j) => _vbFormatLabel(p, A.cols[j] || 'sup', 20)).join(' · '),
+        data,
+        backgroundColor: isLine ? color : color + 'cc',
+        borderColor: color,
+        borderWidth: 1.5,
+        borderRadius: isLine || isPie ? 0 : 4,
+        tension: 0.3, fill: false, pointRadius: isLine ? 3 : 0,
+      };
+    });
+  } else {
+    const data = A.rowKeys.map(rk => A.measFn(A.rowTotal[rk], m));
+    const singleColor = isPie ? A.rowKeys.map((_, i) => VB_COLORS[i % VB_COLORS.length]) : 'rgba(99,102,241,.7)';
+    datasets = [{
+      label: VB_MEAS_LBL[m], data,
+      backgroundColor: singleColor,
+      borderColor: isPie ? '#1a1d27' : '#6366f1',
+      borderWidth: isPie ? 2 : 1.5,
+      borderRadius: isLine || isPie ? 0 : 6,
+      tension: 0.3, fill: false, pointRadius: isLine ? 4 : 0,
+    }];
+  }
+
+  const chartType = view === 'barH' || view === 'bar' ? 'bar'
+                  : view === 'pie' ? 'pie'
+                  : view === 'line' ? 'line' : 'bar';
+
+  const unitSuffix = _vbCurrencyMeas.has(m) ? ' ₸' : '';
+  const canvasWrap = document.getElementById('vbCanvasWrap');
+  if (isHoriz && A.rowKeys.length > 12) {
+    canvasWrap.style.height = Math.min(900, 180 + A.rowKeys.length * 22) + 'px';
+  } else {
+    canvasWrap.style.height = '380px';
+  }
+
+  const ctx = document.getElementById('vbCanvas').getContext('2d');
+  window._vbChart = new Chart(ctx, {
+    type: chartType,
+    data: { labels: xLabels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: isHoriz ? 'y' : 'x',
+      plugins: {
+        legend: { display: isPie || A.cols.length > 0, position: isPie ? 'right' : 'top', labels: { color: TICK, font: FONT, boxWidth: 12 } },
+        tooltip: {
+          backgroundColor: TOOLTIP_BG,
+          callbacks: {
+            title: (items) => items.length ? xFull[items[0].dataIndex] : '',
+            label: (c) => {
+              const v = isHoriz ? c.parsed.x ?? c.parsed : c.parsed.y ?? c.parsed;
+              const lbl = A.cols.length ? c.dataset.label : VB_MEAS_LBL[m];
+              return `${lbl}: ${fmt(Math.round(v))}${unitSuffix}`;
+            },
+          },
+        },
+        datalabels: { display: false },
+      },
+      scales: isPie ? {} : (() => {
+        const valueAxis = {
+          type: 'linear', beginAtZero: true,
+          ticks: { color: TICK, font: FONT, callback: v => fmt(v) },
+          grid: { color: GRID },
+        };
+        const catAxis = {
+          type: 'category',
+          ticks: { color: TICK, font: FONT, autoSkip: false, maxRotation: isHoriz ? 0 : 45 },
+          grid: { color: GRID },
+        };
+        return isHoriz ? { x: valueAxis, y: catAxis } : { x: catAxis, y: valueAxis };
+      })(),
+    },
+  });
 }
 
 // Отдельный рендер истории цен (линия: дата × unit_price, по одной линии на (SKU × поставщик))
@@ -2995,32 +3012,53 @@ function vbDrill(dim, value) {
 
 function vbExport() {
   const A = _vbAgg();
-  const unitSuffix = _vbCurrencyMeas.has(A.meas) ? ' ₸' : '';
+  const M = A.vals.length;
   const rows = [];
-  if (A.brk) {
-    const header = ['"' + VB_DIM_LBL[A.dim] + '"', ...A.brkKeys.map(bk => '"' + String(bk).replace(/"/g,'""') + '"'), '"Всего"'];
-    rows.push(header.join(','));
-    A.dimKeys.forEach(dk => {
-      let rowTot = 0;
-      const vals = A.brkKeys.map(bk => {
-        const v = A.measFn(A.cells[dk] ? A.cells[dk][bk] : null);
-        rowTot += v;
-        return Math.round(v * 100) / 100;
-      });
-      rows.push(['"' + String(dk).replace(/"/g,'""') + '"', ...vals, Math.round(rowTot * 100) / 100].join(','));
-    });
+  const quote = s => '"' + String(s).replace(/"/g, '""') + '"';
+  const curSuffix = (m) => _vbCurrencyMeas.has(m) ? ' ₸' : '';
+
+  // Header: строковые измерения, затем [(col-ключ × мера)]*
+  const header = [];
+  for (const d of A.rows) header.push(quote(VB_DIM_SHORT[d] || d));
+  if (!A.rows.length) header.push('"Все"');
+  if (A.cols.length) {
+    for (const ck of A.colKeys) {
+      const ckLbl = _vbSplitKey(ck).join(' · ');
+      for (const m of A.vals) {
+        header.push(quote(`${ckLbl} — ${VB_MEAS_LBL[m]}`));
+      }
+    }
+    header.push('"Итого ₸"');
   } else {
-    rows.push(['"' + VB_DIM_LBL[A.dim] + '"', '"' + VB_MEAS_LBL[A.meas] + '"'].join(','));
-    A.dimKeys.forEach(dk => {
-      const v = A.measFn(A.cells[dk] ? A.cells[dk]['__single__'] : null);
-      rows.push(['"' + String(dk).replace(/"/g,'""') + '"', Math.round(v * 100) / 100].join(','));
-    });
+    for (const m of A.vals) header.push(quote(VB_MEAS_LBL[m]));
   }
-  // BOM + UTF-8 for Excel
+  rows.push(header.join(','));
+
+  // Строки
+  for (const rk of A.rowKeys) {
+    const parts = A.rows.length ? _vbSplitKey(rk) : ['Все'];
+    const row = parts.map(quote);
+    const rMap = A.buckets.get(rk) || new Map();
+    if (A.cols.length) {
+      for (const ck of A.colKeys) {
+        for (const m of A.vals) {
+          row.push(Math.round((A.measFn(rMap.get(ck), m) || 0) * 100) / 100);
+        }
+      }
+      row.push(Math.round(A.rowTotal[rk].total * 100) / 100);
+    } else {
+      for (const m of A.vals) {
+        row.push(Math.round((A.measFn(rMap.get('__all__'), m) || 0) * 100) / 100);
+      }
+    }
+    rows.push(row.join(','));
+  }
+
+  // BOM + UTF-8 для Excel
   const blob = new Blob(['﻿' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  const name = `youcook_${A.meas}_by_${A.dim}${A.brk ? '_x_' + A.brk : ''}_${new Date().toISOString().slice(0,10)}.csv`;
+  const name = `youcook_pivot_${new Date().toISOString().slice(0,10)}.csv`;
   a.href = url; a.download = name; document.body.appendChild(a); a.click();
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 }
@@ -3038,19 +3076,12 @@ function vbExport() {
     document.getElementById('vbFrom').value = dts[0];
     document.getElementById('vbTo').value   = dts[dts.length - 1];
   }
-  // Seed a few example presets on first load (only if user has no saved presets)
-  const existing = _vbLoadPresetMap();
-  if (!Object.keys(existing).length) {
-    _vbSavePresetMap({
-      'Расходы по поставщикам (круговая)': { meas:'total', dim:'sup', brk:'', type:'pie', topN:'20', sort:'valDesc', mode:'abs', other:false, labels:true, table:false, search:'', fSup:'', fCat:'', fFrom:dts[0]||'', fTo:dts[dts.length-1]||'' },
-      'Динамика закупок по неделям':         { meas:'total', dim:'week', brk:'sup', type:'barStack', topN:'0', sort:'valDesc', mode:'abs', other:false, labels:false, table:false, search:'', fSup:'', fCat:'', fFrom:dts[0]||'', fTo:dts[dts.length-1]||'' },
-      'Топ-10 товаров по сумме':             { meas:'total', dim:'sku', brk:'', type:'barH', topN:'10', sort:'valDesc', mode:'abs', other:true, labels:true, table:false, search:'', fSup:'', fCat:'', fFrom:dts[0]||'', fTo:dts[dts.length-1]||'' },
-      'Сравнение цен поставщиков':           { meas:'avgPrice', dim:'sup', brk:'cat', type:'bar', topN:'20', sort:'valDesc', mode:'abs', other:false, labels:false, table:false, search:'', fSup:'', fCat:'', fFrom:dts[0]||'', fTo:dts[dts.length-1]||'' },
-      'Доля категорий 100%':                 { meas:'total', dim:'month', brk:'cat', type:'bar100', topN:'0', sort:'valDesc', mode:'abs', other:false, labels:false, table:false, search:'', fSup:'', fCat:'', fFrom:dts[0]||'', fTo:dts[dts.length-1]||'' },
-    });
-  }
-  _vbRefreshPresetList();
-  // Initial render is sync (no debounce), no spinner
+  // Default: row = Поставщик, value = Сумма ₸ (уже checked в HTML, но дублируем на всякий)
+  const defRow = document.querySelector('.pv-chips[data-bucket="rows"] input[value="sup"]');
+  const defVal = document.querySelector('.pv-chips[data-bucket="vals"] input[value="total"]');
+  if (defRow && !defRow.checked) defRow.checked = true;
+  if (defVal && !defVal.checked) defVal.checked = true;
+
   const lwrap = document.getElementById('vbCanvasWrap');
   if (lwrap) lwrap.classList.remove('vb-loading');
   vbRender();
