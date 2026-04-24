@@ -211,106 +211,165 @@ try {
   .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
   .filter-btn:hover { border-color:var(--accent); color:var(--text); }
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
-  /* PowerBI clone v5 — orange bucket grids + right filter panel */
-  .pbi-card { background: #f4ece0; color: #2a2a2a; padding: 16px 18px; }
-  [data-theme="light"] .pbi-card { background: #f4ece0; }
-  .pbi-tabs { display:flex; align-items:center; gap:4px; margin-bottom:14px; border-bottom:1px solid #d4c8b5; padding-bottom:6px; }
-  .pbi-tab {
-    padding:7px 22px; background: #e9d9bd; border:1px solid #c8b08c; border-bottom:none;
-    color:#4a3a1e; font-size:12px; font-weight:600; cursor:pointer; border-radius:6px 6px 0 0;
-    transition: all .12s;
+  /* Constructor v6 — elegant indigo theme matching dashboard */
+  .pbi-card {
+    background: linear-gradient(145deg, var(--surf), color-mix(in srgb, var(--surf) 85%, var(--accent)));
+    border:1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+    padding:24px 26px; color:var(--text);
+    box-shadow: 0 16px 48px rgba(0,0,0,.28), 0 0 0 1px rgba(124,133,245,.1) inset;
+    margin-bottom: 22px;
   }
-  .pbi-tab:hover { background:#f0e1c8; }
-  .pbi-tab.active { background:#fff; color:#1c2540; border-color:#b89b72; font-weight:700; }
+  /* ORANGE THEME REMOVED — all .pbi-* styles below replaced by indigo: */
+  .orange-removed { display: none; }
+  .pbi-tabs {
+    display:flex; align-items:center; gap:8px; margin-bottom:20px;
+    border-bottom:1px solid var(--border); padding-bottom:0;
+  }
+  .pbi-tab {
+    padding:11px 28px; background:transparent; border:none;
+    color:var(--muted); font-size:14px; font-weight:600; cursor:pointer;
+    border-bottom:3px solid transparent; margin-bottom:-1px;
+    transition: all .18s ease; font-family:inherit; letter-spacing:-.2px;
+  }
+  .pbi-tab:hover { color: var(--text); background: rgba(124,133,245,.05); border-radius:8px 8px 0 0; }
+  .pbi-tab.active {
+    color:var(--text); border-bottom-color:var(--accent); font-weight:700;
+  }
   .pbi-spacer { flex:1; }
   .pbi-action {
-    padding:6px 14px; background:#fff; border:1px solid #c8b08c; color:#4a3a1e;
-    border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;
+    padding:8px 16px; background: rgba(124,133,245,.08);
+    border:1px solid var(--border); color:var(--text);
+    border-radius:10px; font-size:12px; font-weight:600; cursor:pointer;
+    transition: all .15s ease; font-family:inherit;
   }
-  .pbi-action:hover { background:#f0e1c8; }
+  .pbi-action:hover {
+    background: rgba(124,133,245,.18); border-color:var(--accent);
+    transform: translateY(-1px);
+  }
 
-  .pbi-layout { display:grid; grid-template-columns: 1fr 240px; gap:14px; align-items:start; }
+  .pbi-layout { display:grid; grid-template-columns: 1fr 280px; gap:20px; align-items:start; }
   @media (max-width: 900px) { .pbi-layout { grid-template-columns: 1fr; } }
   .pbi-main { min-width: 0; }
 
-  /* Three bucket grids (orange theme like PowerBI video) */
-  .pbi-buckets { display:grid; grid-template-columns: 1.3fr 1fr 1.3fr; gap:10px; margin-bottom:10px; }
+  /* Three bucket grids — indigo theme */
+  .pbi-buckets { display:grid; grid-template-columns: 1.3fr 1fr 1.3fr; gap:14px; margin-bottom:18px; }
   @media (max-width: 900px) { .pbi-buckets { grid-template-columns: 1fr; } }
-  .pbi-bucket { background:#fff; border:1px solid #c8b08c; border-radius:4px; overflow:hidden; }
+  .pbi-bucket {
+    background: rgba(13,17,23,.45);
+    border:1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+    border-radius:12px; overflow:hidden;
+    backdrop-filter: blur(10px);
+    transition: border-color .18s, box-shadow .18s;
+  }
+  .pbi-bucket:hover {
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+    box-shadow: 0 6px 18px rgba(124,133,245,.12);
+  }
   .pbi-bucket-hdr {
-    background: linear-gradient(180deg, #f2b870, #e5a050);
-    color:#fff; font-size:13px; font-weight:700; letter-spacing:.3px;
-    padding:7px 12px; border-bottom:1px solid #b8813d;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 55%, #000), var(--accent));
+    color:#fff; font-size:12px; font-weight:800; letter-spacing:.6px;
+    padding:10px 14px; text-transform: uppercase;
   }
   .pbi-grid {
     display:grid; grid-template-columns: repeat(2, 1fr);
-    gap:1px; background:#d4c1a2;
+    gap:1px; background: color-mix(in srgb, var(--accent) 12%, transparent); padding:1px;
   }
   .pbi-grid[data-bucket="cols"] { grid-template-columns: 1fr; }
   .pbi-cell {
-    background:#fff4e0; color:#3a2a15;
-    padding:8px 10px; font-size:12px; font-weight:500;
+    background: rgba(22,28,42,.82); color:var(--text);
+    padding:11px 14px; font-size:13px; font-weight:500;
     cursor:pointer; user-select:none;
-    border-right:1px solid #e8dab9; border-bottom:1px solid #e8dab9;
-    transition: background .12s;
+    transition: all .15s ease;
     white-space: nowrap; overflow:hidden; text-overflow:ellipsis;
+    position:relative;
   }
-  .pbi-cell:hover { background:#ffe9c4; }
+  .pbi-cell:hover {
+    background: rgba(124,133,245,.16); color:#fff;
+  }
   .pbi-cell.selected {
-    background: linear-gradient(180deg, #f2a860, #de8a38);
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #a78bfa));
     color:#fff; font-weight:700;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.18), 0 2px 10px rgba(124,133,245,.4);
   }
-  .pbi-cell.pbi-no { color:#8a7558; font-style: italic; }
+  .pbi-cell.selected::before {
+    content:'✓'; position:absolute; right:12px; top:50%; transform: translateY(-50%);
+    font-size:11px; opacity:.75;
+  }
+  .pbi-cell.pbi-no { color:var(--muted); font-style: italic; }
 
-  /* Right filter panel */
+  /* Right filter panel — glass */
   .pbi-filters {
-    background:#fff; border:1px solid #c8b08c; border-radius:4px;
-    padding:12px 14px; position:sticky; top:16px;
+    background: rgba(13,17,23,.6);
+    border:1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+    border-radius:12px; padding:16px 18px;
+    position:sticky; top:16px;
     max-height: calc(100vh - 40px); overflow:auto;
+    backdrop-filter: blur(14px);
   }
   .pbi-filt-hdr {
-    background: linear-gradient(180deg, #f2b870, #e5a050);
-    color:#fff; font-size:12px; font-weight:700; letter-spacing:.3px;
-    padding:6px 10px; margin:-12px -14px 10px; border-bottom:1px solid #b8813d;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 55%, #000), var(--accent));
+    color:#fff; font-size:12px; font-weight:800; letter-spacing:.5px;
+    text-transform:uppercase;
+    padding:10px 14px; margin:-16px -18px 16px; border-radius:12px 12px 0 0;
   }
-  .pbi-filt-group { margin-bottom:12px; }
+  .pbi-filt-group { margin-bottom:14px; }
   .pbi-filt-group label {
-    display:block; font-size:10px; font-weight:700; color:#8a6a3e;
-    text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;
+    display:block; font-size:10px; font-weight:700; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px;
   }
   .pbi-filt-group input, .pbi-filt-group select {
-    width:100%; background:#fff4e0; border:1px solid #c8b08c;
-    color:#2a2a2a; border-radius:4px; padding:6px 8px; font-size:12px; outline:none;
-    font-family:inherit;
+    width:100%; background: var(--surf); border:1px solid var(--border);
+    color:var(--text); border-radius:8px; padding:9px 12px; font-size:12px;
+    outline:none; font-family:inherit; transition: all .15s;
   }
-  .pbi-filt-group input:focus, .pbi-filt-group select:focus { border-color:#e5a050; }
+  .pbi-filt-group input:focus, .pbi-filt-group select:focus {
+    border-color:var(--accent); box-shadow: 0 0 0 3px rgba(124,133,245,.18);
+  }
 
-  /* Pivot table (light theme like PowerBI) */
-  .pbi-card .pv-tbl table { width:auto; min-width:100%; background:#fff; border:1px solid #c8b08c; }
+  /* Pivot table inside indigo card */
+  .pbi-card .pv-tbl table {
+    width:auto; min-width:100%;
+    background: rgba(13,17,23,.55);
+    border:1px solid var(--border); border-radius:12px; overflow:hidden;
+  }
   .pbi-card .pv-tbl th, .pbi-card .pv-tbl td {
-    padding:6px 10px; font-size:12px;
-    border-bottom:1px solid #e8dab9; border-right:1px solid #f0e4cc;
-    color:#2a2a2a; white-space:nowrap;
+    padding:9px 14px; font-size:13px;
+    border-bottom:1px solid rgba(124,133,245,.08);
+    border-right:1px solid rgba(124,133,245,.05);
+    color:var(--text); white-space:nowrap;
   }
   .pbi-card .pv-tbl thead th {
     position:sticky; top:0; z-index:2;
-    background: linear-gradient(180deg, #f2b870, #e5a050);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 55%, #000), var(--accent));
     color:#fff; font-size:10px; text-transform:uppercase;
-    font-weight:700; letter-spacing:.3px;
-    border-bottom:1px solid #b8813d;
+    font-weight:800; letter-spacing:.5px;
+    border-bottom:none;
   }
-  .pbi-card .pv-tbl .pv-row-hdr { font-weight:700; color:#1c2540; background:#fff4e0; }
-  .pbi-card .pv-tbl .pv-row-sub  { color:#5a4a30; padding-left:22px; background:#fff9ec; }
-  .pbi-card .pv-tbl .pv-row-sub2 { color:#5a4a30; padding-left:38px; font-size:11px; background:#fffbf3; }
-  .pbi-card .pv-tbl .pv-total-row { font-weight:800; background:#e5a050; color:#fff; border-top:2px solid #b8813d; }
-  .pbi-card .pv-tbl .pv-total-col { font-weight:800; background:#fce5c4; }
-  .pbi-card .pv-tbl tbody tr:hover td { background: #fff0d5; }
-  .pbi-card .pv-tbl .num { font-family: monospace; font-variant-numeric: tabular-nums; text-align:right; color:#1c2540; }
-  .pbi-card #vbTitle { color:#1c2540; }
-  .pbi-card #vbSubtitle { color:#5a4a30; }
-  .pbi-card #vbSummary { color:#5a4a30; }
-  .pbi-card .vb-pill { color:#4a3a1e; background:#fff; border:1px solid #c8b08c; }
-  .pbi-card .vb-pill.active { background: linear-gradient(135deg, #e5a050, #f2b870); color:#fff; border-color:#b8813d; }
+  .pbi-card .pv-tbl .pv-row-hdr { font-weight:700; color:var(--accent); background: rgba(124,133,245,.08); }
+  .pbi-card .pv-tbl .pv-row-sub  { color:var(--text); padding-left:24px; background: rgba(124,133,245,.03); }
+  .pbi-card .pv-tbl .pv-row-sub2 { color:var(--muted); padding-left:40px; font-size:12px; }
+  .pbi-card .pv-tbl .pv-total-row {
+    font-weight:800; color:#fff;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 70%, #000), var(--accent));
+    border-top:2px solid var(--accent);
+  }
+  .pbi-card .pv-tbl .pv-total-col { font-weight:800; background: rgba(124,133,245,.14); }
+  .pbi-card .pv-tbl tbody tr:hover td { background: rgba(124,133,245,.08); }
+  .pbi-card .pv-tbl .num { font-family: monospace; font-variant-numeric: tabular-nums; text-align:right; }
+  .pbi-card #vbTitle { color:var(--text); font-size:17px; font-weight:800; letter-spacing:-.3px; }
+  .pbi-card #vbSubtitle { color:var(--muted); font-size:12px; }
+  .pbi-card #vbSummary { color:var(--muted); font-size:12px; }
+  .pbi-card .vb-pill {
+    color:var(--muted); background: rgba(22,28,42,.6); border:1px solid var(--border);
+    padding:7px 14px; font-size:12px; font-weight:600;
+  }
+  .pbi-card .vb-pill:hover { color: var(--text); border-color: var(--accent); }
+  .pbi-card .vb-pill.active {
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #a78bfa));
+    color:#fff; border-color:var(--accent);
+    box-shadow: 0 3px 10px rgba(124,133,245,.35);
+  }
+  .pbi-card .cb-group { background: rgba(13,17,23,.4); border-color: var(--border); }
 
   /* Legacy — kept for backwards compat */
   .pv-buckets { display:none; }  /* old layout hidden */
@@ -581,6 +640,117 @@ try {
   <!-- ALERT STRIP -->
   <div class="alert-strip" id="alertStrip"></div>
 
+<!-- PIVOT CONSTRUCTOR — v5 (PowerBI-visual clone) -->
+  <div class="grp"><span class="grp-title">🧩 Конструктор — матрица</span></div>
+  <div class="card g-full pbi-card">
+
+    <!-- Top tabs: Матрица / Графики -->
+    <div class="pbi-tabs">
+      <button class="pbi-tab active" data-t="table" onclick="vbType(this)">Матрица</button>
+      <button class="pbi-tab"        data-t="bar"   onclick="vbType(this)">Графики</button>
+      <input type="hidden" id="vbType" value="table">
+      <div class="pbi-spacer"></div>
+      <button onclick="vbReset()"  class="pbi-action" title="Сбросить всё">↻ Сбросить</button>
+      <button onclick="vbExport()" class="pbi-action" title="Скачать CSV">⬇ CSV</button>
+    </div>
+
+    <!-- Main 2-column layout: buckets+result vs right filter panel -->
+    <div class="pbi-layout">
+      <div class="pbi-main">
+
+        <!-- Three orange bucket grids (like PowerBI video) -->
+        <div class="pbi-buckets">
+          <div class="pbi-bucket">
+            <div class="pbi-bucket-hdr">Строки</div>
+            <div class="pbi-grid" data-bucket="rows">
+              <div class="pbi-cell" data-v="sup"   onclick="pbToggle(this)">Поставщик</div>
+              <div class="pbi-cell" data-v="city"  onclick="pbToggle(this)">Город</div>
+              <div class="pbi-cell" data-v="cat"   onclick="pbToggle(this)">Категория</div>
+              <div class="pbi-cell" data-v="sku"   onclick="pbToggle(this)">Товар</div>
+              <div class="pbi-cell" data-v="day"   onclick="pbToggle(this)">День</div>
+              <div class="pbi-cell" data-v="week"  onclick="pbToggle(this)">Неделя</div>
+              <div class="pbi-cell" data-v="month" onclick="pbToggle(this)">Месяц</div>
+            </div>
+          </div>
+
+          <div class="pbi-bucket">
+            <div class="pbi-bucket-hdr">Колонки</div>
+            <div class="pbi-grid" data-bucket="cols">
+              <div class="pbi-cell pbi-no" data-v="__none__" onclick="pbToggle(this)">— без данных —</div>
+              <div class="pbi-cell" data-v="sup"   onclick="pbToggle(this)">Поставщик</div>
+              <div class="pbi-cell" data-v="city"  onclick="pbToggle(this)">Город</div>
+              <div class="pbi-cell" data-v="cat"   onclick="pbToggle(this)">Категория</div>
+              <div class="pbi-cell" data-v="day"   onclick="pbToggle(this)">День</div>
+              <div class="pbi-cell" data-v="week"  onclick="pbToggle(this)">Неделя</div>
+              <div class="pbi-cell" data-v="month" onclick="pbToggle(this)">Месяц</div>
+            </div>
+          </div>
+
+          <div class="pbi-bucket">
+            <div class="pbi-bucket-hdr">Значения</div>
+            <div class="pbi-grid" data-bucket="vals">
+              <div class="pbi-cell" data-v="total"        onclick="pbToggle(this)">Сумма ₸</div>
+              <div class="pbi-cell" data-v="qty"          onclick="pbToggle(this)">Количество</div>
+              <div class="pbi-cell" data-v="avgPrice"     onclick="pbToggle(this)">Цена ₸/ед</div>
+              <div class="pbi-cell" data-v="minPrice"     onclick="pbToggle(this)">Мин ₸/ед</div>
+              <div class="pbi-cell" data-v="maxPrice"     onclick="pbToggle(this)">Макс ₸/ед</div>
+              <div class="pbi-cell" data-v="count"        onclick="pbToggle(this)">Позиций</div>
+              <div class="pbi-cell" data-v="invoiceCount" onclick="pbToggle(this)">Накладных</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title + result -->
+        <div id="vbTitleBar" style="margin:14px 0 4px 0">
+          <div id="vbTitle" style="font-size:14px;font-weight:700;letter-spacing:-.3px"></div>
+          <div id="vbSubtitle" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
+        </div>
+        <div id="vbCanvasWrap" class="ch" style="height:380px;display:none"><canvas id="vbCanvas"></canvas><div class="vb-spinner"></div></div>
+        <div id="vbTableMain" class="tbl-wrap pv-tbl" style="margin-top:6px;max-height:640px;overflow:auto"></div>
+        <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
+
+        <!-- Price history (auto-shown when ≤5 SKUs) -->
+        <div id="vbHistWrap" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">📈 История цен (₸ за единицу)</div>
+          <div class="ch" style="height:260px"><canvas id="vbHistCanvas"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Right filter panel (like PowerBI slicer panel) -->
+      <aside class="pbi-filters">
+        <div class="pbi-filt-hdr">Фильтры</div>
+
+        <div class="pbi-filt-group">
+          <label>Поиск товара</label>
+          <input id="vbSearch" type="text" placeholder="мука, яйцо…" oninput="vbSchedule()">
+        </div>
+
+        <div class="pbi-filt-group">
+          <label>Период</label>
+          <div class="cb-group" style="background:#fff">
+            <button class="vb-pill active" data-per="all" onclick="vbPeriod(this)">Всё</button>
+            <button class="vb-pill"        data-per="30"  onclick="vbPeriod(this)">Месяц</button>
+            <button class="vb-pill"        data-per="7"   onclick="vbPeriod(this)">Неделя</button>
+          </div>
+        </div>
+
+        <div class="pbi-filt-group">
+          <label>Поставщик</label>
+          <select id="vbFiltSup" onchange="vbSchedule()"><option value="">Все</option></select>
+        </div>
+
+        <div class="pbi-filt-group">
+          <label>Категория</label>
+          <select id="vbFiltCat" onchange="vbSchedule()"><option value="">Все</option></select>
+        </div>
+
+        <!-- Hidden state -->
+        <input type="hidden" id="vbFrom" value="">
+        <input type="hidden" id="vbTo"   value="">
+      </aside>
+    </div>
+  </div>
+
   <!-- KPI CARDS -->
   <div class="grid-6">
     <div class="card">
@@ -782,117 +952,6 @@ try {
         </tr></thead>
         <tbody id="anomTbody"></tbody>
       </table>
-    </div>
-  </div>
-
-  <!-- PIVOT CONSTRUCTOR — v5 (PowerBI-visual clone) -->
-  <div class="grp"><span class="grp-title">🧩 Конструктор — матрица</span></div>
-  <div class="card g-full pbi-card">
-
-    <!-- Top tabs: Матрица / Графики -->
-    <div class="pbi-tabs">
-      <button class="pbi-tab active" data-t="table" onclick="vbType(this)">Матрица</button>
-      <button class="pbi-tab"        data-t="bar"   onclick="vbType(this)">Графики</button>
-      <input type="hidden" id="vbType" value="table">
-      <div class="pbi-spacer"></div>
-      <button onclick="vbReset()"  class="pbi-action" title="Сбросить всё">↻ Сбросить</button>
-      <button onclick="vbExport()" class="pbi-action" title="Скачать CSV">⬇ CSV</button>
-    </div>
-
-    <!-- Main 2-column layout: buckets+result vs right filter panel -->
-    <div class="pbi-layout">
-      <div class="pbi-main">
-
-        <!-- Three orange bucket grids (like PowerBI video) -->
-        <div class="pbi-buckets">
-          <div class="pbi-bucket">
-            <div class="pbi-bucket-hdr">Строки</div>
-            <div class="pbi-grid" data-bucket="rows">
-              <div class="pbi-cell" data-v="sup"   onclick="pbToggle(this)">Поставщик</div>
-              <div class="pbi-cell" data-v="city"  onclick="pbToggle(this)">Город</div>
-              <div class="pbi-cell" data-v="cat"   onclick="pbToggle(this)">Категория</div>
-              <div class="pbi-cell" data-v="sku"   onclick="pbToggle(this)">Товар</div>
-              <div class="pbi-cell" data-v="day"   onclick="pbToggle(this)">День</div>
-              <div class="pbi-cell" data-v="week"  onclick="pbToggle(this)">Неделя</div>
-              <div class="pbi-cell" data-v="month" onclick="pbToggle(this)">Месяц</div>
-            </div>
-          </div>
-
-          <div class="pbi-bucket">
-            <div class="pbi-bucket-hdr">Колонки</div>
-            <div class="pbi-grid" data-bucket="cols">
-              <div class="pbi-cell pbi-no" data-v="__none__" onclick="pbToggle(this)">— без данных —</div>
-              <div class="pbi-cell" data-v="sup"   onclick="pbToggle(this)">Поставщик</div>
-              <div class="pbi-cell" data-v="city"  onclick="pbToggle(this)">Город</div>
-              <div class="pbi-cell" data-v="cat"   onclick="pbToggle(this)">Категория</div>
-              <div class="pbi-cell" data-v="day"   onclick="pbToggle(this)">День</div>
-              <div class="pbi-cell" data-v="week"  onclick="pbToggle(this)">Неделя</div>
-              <div class="pbi-cell" data-v="month" onclick="pbToggle(this)">Месяц</div>
-            </div>
-          </div>
-
-          <div class="pbi-bucket">
-            <div class="pbi-bucket-hdr">Значения</div>
-            <div class="pbi-grid" data-bucket="vals">
-              <div class="pbi-cell" data-v="total"        onclick="pbToggle(this)">Сумма ₸</div>
-              <div class="pbi-cell" data-v="qty"          onclick="pbToggle(this)">Количество</div>
-              <div class="pbi-cell" data-v="avgPrice"     onclick="pbToggle(this)">Цена ₸/ед</div>
-              <div class="pbi-cell" data-v="minPrice"     onclick="pbToggle(this)">Мин ₸/ед</div>
-              <div class="pbi-cell" data-v="maxPrice"     onclick="pbToggle(this)">Макс ₸/ед</div>
-              <div class="pbi-cell" data-v="count"        onclick="pbToggle(this)">Позиций</div>
-              <div class="pbi-cell" data-v="invoiceCount" onclick="pbToggle(this)">Накладных</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Title + result -->
-        <div id="vbTitleBar" style="margin:14px 0 4px 0">
-          <div id="vbTitle" style="font-size:14px;font-weight:700;letter-spacing:-.3px"></div>
-          <div id="vbSubtitle" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
-        </div>
-        <div id="vbCanvasWrap" class="ch" style="height:380px;display:none"><canvas id="vbCanvas"></canvas><div class="vb-spinner"></div></div>
-        <div id="vbTableMain" class="tbl-wrap pv-tbl" style="margin-top:6px;max-height:640px;overflow:auto"></div>
-        <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
-
-        <!-- Price history (auto-shown when ≤5 SKUs) -->
-        <div id="vbHistWrap" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
-          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">📈 История цен (₸ за единицу)</div>
-          <div class="ch" style="height:260px"><canvas id="vbHistCanvas"></canvas></div>
-        </div>
-      </div>
-
-      <!-- Right filter panel (like PowerBI slicer panel) -->
-      <aside class="pbi-filters">
-        <div class="pbi-filt-hdr">Фильтры</div>
-
-        <div class="pbi-filt-group">
-          <label>Поиск товара</label>
-          <input id="vbSearch" type="text" placeholder="мука, яйцо…" oninput="vbSchedule()">
-        </div>
-
-        <div class="pbi-filt-group">
-          <label>Период</label>
-          <div class="cb-group" style="background:#fff">
-            <button class="vb-pill active" data-per="all" onclick="vbPeriod(this)">Всё</button>
-            <button class="vb-pill"        data-per="30"  onclick="vbPeriod(this)">Месяц</button>
-            <button class="vb-pill"        data-per="7"   onclick="vbPeriod(this)">Неделя</button>
-          </div>
-        </div>
-
-        <div class="pbi-filt-group">
-          <label>Поставщик</label>
-          <select id="vbFiltSup" onchange="vbSchedule()"><option value="">Все</option></select>
-        </div>
-
-        <div class="pbi-filt-group">
-          <label>Категория</label>
-          <select id="vbFiltCat" onchange="vbSchedule()"><option value="">Все</option></select>
-        </div>
-
-        <!-- Hidden state -->
-        <input type="hidden" id="vbFrom" value="">
-        <input type="hidden" id="vbTo"   value="">
-      </aside>
     </div>
   </div>
 
