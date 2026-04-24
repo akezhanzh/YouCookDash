@@ -585,8 +585,10 @@ try {
         <select id="vbMeasure" onchange="vbSchedule()">
           <option value="total">Сумма ₸</option>
           <option value="qty">Количество</option>
-          <option value="avgPrice">Средняя цена ₸</option>
-          <option value="count">Позиций</option>
+          <option value="avgPrice">Цена ₸/ед (средняя)</option>
+          <option value="minPrice">Мин. цена ₸</option>
+          <option value="maxPrice">Макс. цена ₸</option>
+          <option value="count">Позиций (записей)</option>
           <option value="invoiceCount">Накладных</option>
         </select>
       </div>
@@ -688,6 +690,12 @@ try {
     <div id="vbCanvasWrap" class="ch" style="height:380px"><canvas id="vbCanvas"></canvas><div class="vb-spinner"></div></div>
     <div id="vbTableMain" style="display:none;margin-top:10px" class="tbl-wrap"></div>
     <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
+
+    <!-- Price history — shown automatically when filter narrows to ≤5 SKUs -->
+    <div id="vbHistWrap" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">📈 История цен (₸ за единицу)</div>
+      <div class="ch" style="height:260px"><canvas id="vbHistCanvas"></canvas></div>
+    </div>
 
     <!-- Detail table — always on for SKU dim, else hidden -->
     <div id="vbDetailWrap" style="display:none;margin-top:20px">
@@ -2105,7 +2113,7 @@ window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e 
 
 // ── CONSTRUCTOR (Power BI-like) ──────────────────────────────────────────────
 const VB_MEAS_LBL = {
-  total:'Сумма ₸', qty:'Количество', avgPrice:'Ср. цена ₸',
+  total:'Сумма ₸', qty:'Количество', avgPrice:'Цена ₸/ед',
   minPrice:'Мин цена ₸', maxPrice:'Макс цена ₸',
   count:'Позиций', invoiceCount:'Накладных'
 };
@@ -2826,9 +2834,105 @@ function vbRender() {
   if (rows.length > MAX) detailHtml += `<div style="text-align:center;color:var(--muted);font-size:11px;padding:8px">показано ${MAX} из ${rows.length}</div>`;
   detail.innerHTML = detailHtml;
 
+  // ── Price history mini-chart: если после фильтров осталось 1-5 уникальных SKU ──
+  _vbRenderPriceHistory();
+
   // Remove loading overlay
   const lwrap = document.getElementById('vbCanvasWrap');
   if (lwrap) lwrap.classList.remove('vb-loading');
+}
+
+// Отдельный рендер истории цен (линия: дата × unit_price, по одной линии на (SKU × поставщик))
+function _vbRenderPriceHistory() {
+  const wrap = document.getElementById('vbHistWrap');
+  const canvas = document.getElementById('vbHistCanvas');
+  if (!wrap || !canvas) return;
+
+  const search = (_vbVal('vbSearch') || '').trim().toLowerCase();
+  const fSup   = _vbVal('vbFiltSup');
+  const fCat   = _vbVal('vbFiltCat');
+  const fFrom  = _vbVal('vbFrom');
+  const fTo    = _vbVal('vbTo');
+
+  let lines = ALL_LINES.filter(l => {
+    if (fSup && l[1] !== fSup) return false;
+    if (fCat && getCatCached(l[0]) !== fCat) return false;
+    if (fFrom && l[3] && l[3] < fFrom) return false;
+    if (fTo   && l[3] && l[3] > fTo)   return false;
+    if (search) {
+      const hay = (l[0] + ' ' + l[1] + ' ' + l[2]).toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  const skus = [...new Set(lines.map(l => l[0]))];
+  if (skus.length === 0 || skus.length > 5) {
+    wrap.style.display = 'none';
+    if (window._vbHistChart) { window._vbHistChart.destroy(); window._vbHistChart = null; }
+    return;
+  }
+
+  // Группировка: по (sku + supplier) → список {date, price}
+  const series = {};
+  lines.forEach(l => {
+    const sku = l[0], sup = l[1], date = l[3], price = +l[4], unit = l[8] || 'шт';
+    if (!date || !price) return;
+    const key = (skus.length > 1 ? sku + ' · ' : '') + sup;
+    if (!series[key]) series[key] = { unit, data: new Map() };
+    // Если в ту же дату несколько записей — берём среднюю
+    const cur = series[key].data.get(date);
+    if (cur) { cur.sum += price; cur.n++; }
+    else     { series[key].data.set(date, { sum: price, n: 1 }); }
+  });
+
+  const allDates = [...new Set(lines.map(l => l[3]).filter(Boolean))].sort();
+  if (!allDates.length) { wrap.style.display = 'none'; return; }
+
+  const colors = ['#7c85f5','#2dd4a0','#f4a942','#c084fc','#fb7185','#06b6d4','#eab308','#84cc16'];
+  const datasets = Object.keys(series).map((key, i) => {
+    const s = series[key];
+    const data = allDates.map(d => {
+      const cur = s.data.get(d);
+      return cur ? cur.sum / cur.n : null;
+    });
+    return {
+      label: key + (s.unit ? ' ₸/' + s.unit : ''),
+      data,
+      borderColor: colors[i % colors.length],
+      backgroundColor: colors[i % colors.length] + '22',
+      tension: 0.3, spanGaps: true,
+      pointRadius: 4, pointHoverRadius: 6,
+      borderWidth: 2, fill: false,
+    };
+  });
+
+  wrap.style.display = 'block';
+  if (window._vbHistChart) { window._vbHistChart.destroy(); }
+  window._vbHistChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels: allDates.map(d => d.split('-').reverse().slice(0, 2).join('.')), datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: TICK, font: FONT, boxWidth: 12 } },
+        tooltip: {
+          callbacks: {
+            label: (c) => `${c.dataset.label}: ${c.raw ? fmt(Math.round(c.raw)) + ' ₸' : '—'}`,
+          },
+        },
+        datalabels: { display: false },
+      },
+      scales: {
+        x: { ticks: { color: TICK, font: FONT }, grid: { color: GRID } },
+        y: {
+          ticks: { color: TICK, font: FONT, callback: v => fmt(v) + ' ₸' },
+          grid: { color: GRID },
+          beginAtZero: false,
+        },
+      },
+    },
+  });
 }
 
 function vbExportPNG() {
