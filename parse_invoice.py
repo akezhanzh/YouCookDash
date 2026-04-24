@@ -607,6 +607,32 @@ def parse_xlsx(xlsx_path: Path) -> dict:
                 if mo:
                     result["date"] = f"{m.group(3)}-{mo}-{m.group(1).zfill(2)}"
 
+    # ── Детектим колонки по заголовку З-2 (надёжнее триплет-угадывания) ─────
+    # Ищем строку с "Количество", "Цена", "Сумма" — это заголовок таблицы.
+    # Типичный layout: col 2 = название, col 19 = ед, col 22/27 = qty, col 31 = цена, col 37 = сумма.
+    col_map = None  # dict: {name, unit, qty, qty2, price, total}
+    for idx, row in enumerate(hdr):
+        rowtext = ' '.join(str(c or '') for c in row).lower()
+        if 'количество' in rowtext and 'цена' in rowtext and 'сумма' in rowtext:
+            cm = {}
+            for i, c in enumerate(row):
+                s = str(c or '').lower().strip()
+                if 'наименование' in s:              cm.setdefault('name', i)
+                elif s == 'ед' or 'единица' in s:    cm.setdefault('unit', i)
+                elif 'количество' in s:              cm.setdefault('qty', i)
+                elif 'цена' in s:                    cm.setdefault('price', i)
+                elif 'сумма с ндс' in s or (s == 'сумма'): cm.setdefault('total', i)
+            # Под-заголовок: "подлежит отпуску / отпущено" даёт вторую qty-колонку
+            if idx + 1 < len(hdr):
+                sub = hdr[idx + 1]
+                for i, c in enumerate(sub):
+                    s = str(c or '').lower().strip()
+                    if 'отпущено' in s:
+                        cm['qty2'] = i
+            if 'qty' in cm and 'price' in cm and 'total' in cm:
+                col_map = cm
+                break
+
     # ── Data rows (first cell = sequential row number 1,2,3…) ────────────────
     for row in rows:
         if not row or not row[0]:
@@ -614,63 +640,79 @@ def parse_xlsx(xlsx_path: Path) -> dict:
         if not re.match(r"^\d{1,3}$", str(row[0]).strip()):
             continue
 
-        # Gather non-empty indexed values (skip col 0)
-        cells = [(i, row[i]) for i in range(1, len(row)) if row[i] is not None and str(row[i]).strip()]
-        if len(cells) < 3:
-            continue
-
-        # Separate strings from numbers. Пропускаем длинные digit-only строки —
-        # это номенклатурные коды вроде '00000000259', они не число а ID.
-        strings, numbers = [], []
-        for i, v in cells:
-            s = str(v).strip()
-            if re.fullmatch(r"\d{7,}", s):  # 7+ цифр подряд = SKU-код
-                continue
-            try:
-                n = to_float(s)
-                numbers.append(n)
-            except (ValueError, TypeError):
-                if len(s) > 2:
-                    strings.append(s)
-
-        if not strings or len(numbers) < 2:
-            continue
-
-        sku_name = strings[0]
-        unit = next((s for s in strings[1:] if len(s) <= 5 and s.replace(".", "").isalpha()), "кг")
-        nums = [n for n in numbers if n > 0]
-
-        # Ищем тройку (qty, price, total) где qty*price ≈ total. Сначала точные
-        # совпадения (tolerance 0.01), только потом fuzzy. Это предотвращает
-        # случайные ложные совпадения вроде (3 × 259 ≈ 775.86) когда рядом есть
-        # настоящая точная пара (3 × 1875 = 5625).
+        sku_name = None; unit = "кг"
         qty = price = line_total = None
-        triplets = [(nums[i], nums[j], nums[k])
-                    for i in range(len(nums))
-                    for j in range(len(nums)) if j != i
-                    for k in range(len(nums)) if k != i and k != j]
-        for tol in (0.01, max(0.5, 0)):  # сначала точно, потом fuzzy
-            best = None
-            for a, b, c in triplets:
-                tolerance = max(tol, c * 0.002) if tol > 0.1 else tol
-                err = abs(a * b - c)
-                if err < tolerance:
-                    if best is None or err < best[3]:
-                        best = (a, b, c, err)
-            if best:
-                a, b, c, _ = best
-                qty, price, line_total = (a, b, c) if a <= b else (b, a, c)
-                break
 
-        if qty is None and len(nums) >= 2:
-            qty, price = nums[0], nums[1]
-            line_total = qty * price
+        # Приоритет 1: точное чтение по известным колонкам (после детекции header)
+        if col_map:
+            def _cell(i):
+                return row[i] if i < len(row) else None
+            try:
+                if 'name' in col_map and _cell(col_map['name']):
+                    sku_name = str(_cell(col_map['name'])).strip()
+                if 'unit' in col_map and _cell(col_map['unit']):
+                    u = str(_cell(col_map['unit'])).strip()
+                    if u and len(u) <= 10:
+                        unit = u
+                # qty: предпочитаем отпущено, иначе общее «Количество»
+                qty_raw = _cell(col_map.get('qty2')) if col_map.get('qty2') else None
+                if qty_raw in (None, ''):
+                    qty_raw = _cell(col_map.get('qty'))
+                if qty_raw is not None:
+                    qty = to_float(str(qty_raw))
+                if _cell(col_map['price']) is not None:
+                    price = to_float(str(_cell(col_map['price'])))
+                if _cell(col_map['total']) is not None:
+                    line_total = to_float(str(_cell(col_map['total'])))
+            except (ValueError, TypeError):
+                qty = price = line_total = None
 
-        if not qty or not price or price <= 0:
+        # Фолбэк: старый эвристический триплет-поиск (если колонки не детектировались)
+        if qty is None or price is None or line_total is None or price <= 0 or qty <= 0:
+            cells = [(i, row[i]) for i in range(1, len(row)) if row[i] is not None and str(row[i]).strip()]
+            if len(cells) < 3:
+                continue
+            strings, numbers = [], []
+            for i, v in cells:
+                s = str(v).strip()
+                if re.fullmatch(r"\d{7,}", s):
+                    continue
+                try:
+                    numbers.append(to_float(s))
+                except (ValueError, TypeError):
+                    if len(s) > 2:
+                        strings.append(s)
+            if not strings or len(numbers) < 2:
+                continue
+            sku_name = sku_name or strings[0]
+            if unit == 'кг':
+                unit = next((s for s in strings[1:] if len(s) <= 5 and s.replace(".", "").isalpha()), unit)
+            nums = [n for n in numbers if n > 0]
+            triplets = [(nums[i], nums[j], nums[k])
+                        for i in range(len(nums))
+                        for j in range(len(nums)) if j != i
+                        for k in range(len(nums)) if k != i and k != j]
+            for tol in (0.01, 0.5):
+                best = None
+                for a, b, c in triplets:
+                    tolerance = max(tol, c * 0.002) if tol > 0.1 else tol
+                    err = abs(a * b - c)
+                    if err < tolerance:
+                        if best is None or err < best[3]:
+                            best = (a, b, c, err)
+                if best:
+                    a, b, c, _ = best
+                    qty, price, line_total = (a, b, c) if a <= b else (b, a, c)
+                    break
+            if qty is None and len(nums) >= 2:
+                qty, price = nums[0], nums[1]
+                line_total = qty * price
+
+        if not sku_name or not qty or not price or price <= 0:
             continue
 
         result["lines"].append({"sku": sku_name, "qty": qty, "unit": unit,
-                                 "price": price, "total": line_total})
+                                "price": price, "total": line_total})
         result["total"] += line_total
 
     return result
