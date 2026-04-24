@@ -211,6 +211,110 @@ try {
   .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
   .filter-btn:hover { border-color:var(--accent); color:var(--text); }
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
+  /* PowerBI clone v5 — orange bucket grids + right filter panel */
+  .pbi-card { background: #f4ece0; color: #2a2a2a; padding: 16px 18px; }
+  [data-theme="light"] .pbi-card { background: #f4ece0; }
+  .pbi-tabs { display:flex; align-items:center; gap:4px; margin-bottom:14px; border-bottom:1px solid #d4c8b5; padding-bottom:6px; }
+  .pbi-tab {
+    padding:7px 22px; background: #e9d9bd; border:1px solid #c8b08c; border-bottom:none;
+    color:#4a3a1e; font-size:12px; font-weight:600; cursor:pointer; border-radius:6px 6px 0 0;
+    transition: all .12s;
+  }
+  .pbi-tab:hover { background:#f0e1c8; }
+  .pbi-tab.active { background:#fff; color:#1c2540; border-color:#b89b72; font-weight:700; }
+  .pbi-spacer { flex:1; }
+  .pbi-action {
+    padding:6px 14px; background:#fff; border:1px solid #c8b08c; color:#4a3a1e;
+    border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .pbi-action:hover { background:#f0e1c8; }
+
+  .pbi-layout { display:grid; grid-template-columns: 1fr 240px; gap:14px; align-items:start; }
+  @media (max-width: 900px) { .pbi-layout { grid-template-columns: 1fr; } }
+  .pbi-main { min-width: 0; }
+
+  /* Three bucket grids (orange theme like PowerBI video) */
+  .pbi-buckets { display:grid; grid-template-columns: 1.3fr 1fr 1.3fr; gap:10px; margin-bottom:10px; }
+  @media (max-width: 900px) { .pbi-buckets { grid-template-columns: 1fr; } }
+  .pbi-bucket { background:#fff; border:1px solid #c8b08c; border-radius:4px; overflow:hidden; }
+  .pbi-bucket-hdr {
+    background: linear-gradient(180deg, #f2b870, #e5a050);
+    color:#fff; font-size:13px; font-weight:700; letter-spacing:.3px;
+    padding:7px 12px; border-bottom:1px solid #b8813d;
+  }
+  .pbi-grid {
+    display:grid; grid-template-columns: repeat(2, 1fr);
+    gap:1px; background:#d4c1a2;
+  }
+  .pbi-grid[data-bucket="cols"] { grid-template-columns: 1fr; }
+  .pbi-cell {
+    background:#fff4e0; color:#3a2a15;
+    padding:8px 10px; font-size:12px; font-weight:500;
+    cursor:pointer; user-select:none;
+    border-right:1px solid #e8dab9; border-bottom:1px solid #e8dab9;
+    transition: background .12s;
+    white-space: nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .pbi-cell:hover { background:#ffe9c4; }
+  .pbi-cell.selected {
+    background: linear-gradient(180deg, #f2a860, #de8a38);
+    color:#fff; font-weight:700;
+  }
+  .pbi-cell.pbi-no { color:#8a7558; font-style: italic; }
+
+  /* Right filter panel */
+  .pbi-filters {
+    background:#fff; border:1px solid #c8b08c; border-radius:4px;
+    padding:12px 14px; position:sticky; top:16px;
+    max-height: calc(100vh - 40px); overflow:auto;
+  }
+  .pbi-filt-hdr {
+    background: linear-gradient(180deg, #f2b870, #e5a050);
+    color:#fff; font-size:12px; font-weight:700; letter-spacing:.3px;
+    padding:6px 10px; margin:-12px -14px 10px; border-bottom:1px solid #b8813d;
+  }
+  .pbi-filt-group { margin-bottom:12px; }
+  .pbi-filt-group label {
+    display:block; font-size:10px; font-weight:700; color:#8a6a3e;
+    text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;
+  }
+  .pbi-filt-group input, .pbi-filt-group select {
+    width:100%; background:#fff4e0; border:1px solid #c8b08c;
+    color:#2a2a2a; border-radius:4px; padding:6px 8px; font-size:12px; outline:none;
+    font-family:inherit;
+  }
+  .pbi-filt-group input:focus, .pbi-filt-group select:focus { border-color:#e5a050; }
+
+  /* Pivot table (light theme like PowerBI) */
+  .pbi-card .pv-tbl table { width:auto; min-width:100%; background:#fff; border:1px solid #c8b08c; }
+  .pbi-card .pv-tbl th, .pbi-card .pv-tbl td {
+    padding:6px 10px; font-size:12px;
+    border-bottom:1px solid #e8dab9; border-right:1px solid #f0e4cc;
+    color:#2a2a2a; white-space:nowrap;
+  }
+  .pbi-card .pv-tbl thead th {
+    position:sticky; top:0; z-index:2;
+    background: linear-gradient(180deg, #f2b870, #e5a050);
+    color:#fff; font-size:10px; text-transform:uppercase;
+    font-weight:700; letter-spacing:.3px;
+    border-bottom:1px solid #b8813d;
+  }
+  .pbi-card .pv-tbl .pv-row-hdr { font-weight:700; color:#1c2540; background:#fff4e0; }
+  .pbi-card .pv-tbl .pv-row-sub  { color:#5a4a30; padding-left:22px; background:#fff9ec; }
+  .pbi-card .pv-tbl .pv-row-sub2 { color:#5a4a30; padding-left:38px; font-size:11px; background:#fffbf3; }
+  .pbi-card .pv-tbl .pv-total-row { font-weight:800; background:#e5a050; color:#fff; border-top:2px solid #b8813d; }
+  .pbi-card .pv-tbl .pv-total-col { font-weight:800; background:#fce5c4; }
+  .pbi-card .pv-tbl tbody tr:hover td { background: #fff0d5; }
+  .pbi-card .pv-tbl .num { font-family: monospace; font-variant-numeric: tabular-nums; text-align:right; color:#1c2540; }
+  .pbi-card #vbTitle { color:#1c2540; }
+  .pbi-card #vbSubtitle { color:#5a4a30; }
+  .pbi-card #vbSummary { color:#5a4a30; }
+  .pbi-card .vb-pill { color:#4a3a1e; background:#fff; border:1px solid #c8b08c; }
+  .pbi-card .vb-pill.active { background: linear-gradient(135deg, #e5a050, #f2b870); color:#fff; border-color:#b8813d; }
+
+  /* Legacy — kept for backwards compat */
+  .pv-buckets { display:none; }  /* old layout hidden */
+
   /* Pivot constructor v4 — PowerBI-like field picker */
   .pv-buckets { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:12px; }
   @media (max-width: 900px) { .pv-buckets { grid-template-columns: 1fr; } }
@@ -681,94 +785,114 @@ try {
     </div>
   </div>
 
-  <!-- PIVOT CONSTRUCTOR — v4 (PowerBI-like field picker) -->
-  <div class="grp"><span class="grp-title">🧩 Конструктор — сравни что угодно с чем угодно</span></div>
-  <div class="card g-full">
+  <!-- PIVOT CONSTRUCTOR — v5 (PowerBI-visual clone) -->
+  <div class="grp"><span class="grp-title">🧩 Конструктор — матрица</span></div>
+  <div class="card g-full pbi-card">
 
-    <!-- Three field-pickers: Rows / Columns / Values (multi-select) -->
-    <div class="pv-buckets">
-      <div class="pv-bucket">
-        <div class="pv-bucket-hdr">📋 Строки <span class="pv-bucket-hint">(группировка по вертикали)</span></div>
-        <div class="pv-chips" data-bucket="rows">
-          <label><input type="checkbox" value="sup"   onchange="vbSchedule()"> Поставщик</label>
-          <label><input type="checkbox" value="city"  onchange="vbSchedule()"> Город</label>
-          <label><input type="checkbox" value="cat"   onchange="vbSchedule()"> Категория</label>
-          <label><input type="checkbox" value="sku"   onchange="vbSchedule()"> Товар</label>
-          <label><input type="checkbox" value="day"   onchange="vbSchedule()"> День</label>
-          <label><input type="checkbox" value="week"  onchange="vbSchedule()"> Неделя</label>
-          <label><input type="checkbox" value="month" onchange="vbSchedule()"> Месяц</label>
-        </div>
-      </div>
-
-      <div class="pv-bucket">
-        <div class="pv-bucket-hdr">📊 Колонки <span class="pv-bucket-hint">(группировка по горизонтали)</span></div>
-        <div class="pv-chips" data-bucket="cols">
-          <label><input type="checkbox" value="sup"   onchange="vbSchedule()"> Поставщик</label>
-          <label><input type="checkbox" value="city"  onchange="vbSchedule()"> Город</label>
-          <label><input type="checkbox" value="cat"   onchange="vbSchedule()"> Категория</label>
-          <label><input type="checkbox" value="sku"   onchange="vbSchedule()"> Товар</label>
-          <label><input type="checkbox" value="day"   onchange="vbSchedule()"> День</label>
-          <label><input type="checkbox" value="week"  onchange="vbSchedule()"> Неделя</label>
-          <label><input type="checkbox" value="month" onchange="vbSchedule()"> Месяц</label>
-        </div>
-      </div>
-
-      <div class="pv-bucket">
-        <div class="pv-bucket-hdr">💎 Значения <span class="pv-bucket-hint">(что считать)</span></div>
-        <div class="pv-chips" data-bucket="vals">
-          <label><input type="checkbox" value="total"        onchange="vbSchedule()" checked> Сумма ₸</label>
-          <label><input type="checkbox" value="qty"          onchange="vbSchedule()"> Количество</label>
-          <label><input type="checkbox" value="avgPrice"     onchange="vbSchedule()"> Цена ₸/ед</label>
-          <label><input type="checkbox" value="minPrice"     onchange="vbSchedule()"> Мин ₸/ед</label>
-          <label><input type="checkbox" value="maxPrice"     onchange="vbSchedule()"> Макс ₸/ед</label>
-          <label><input type="checkbox" value="count"        onchange="vbSchedule()"> Позиций</label>
-          <label><input type="checkbox" value="invoiceCount" onchange="vbSchedule()"> Накладных</label>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filters + view toggle -->
-    <div class="cb-row">
-      <div class="cb-group">
-        <button class="cb-t active" data-t="table" onclick="vbType(this)" title="Сводная таблица">📄 <span>Таблица</span></button>
-        <button class="cb-t"        data-t="bar"   onclick="vbType(this)" title="Столбцы">📊 <span>Столбцы</span></button>
-        <button class="cb-t"        data-t="barH"  onclick="vbType(this)" title="Горизонтальные">📋 <span>Горизонт.</span></button>
-        <button class="cb-t"        data-t="line"  onclick="vbType(this)" title="Линия">📈 <span>Линия</span></button>
-        <button class="cb-t"        data-t="pie"   onclick="vbType(this)" title="Круговая">🥧 <span>Круг</span></button>
-      </div>
+    <!-- Top tabs: Матрица / Графики -->
+    <div class="pbi-tabs">
+      <button class="pbi-tab active" data-t="table" onclick="vbType(this)">Матрица</button>
+      <button class="pbi-tab"        data-t="bar"   onclick="vbType(this)">Графики</button>
       <input type="hidden" id="vbType" value="table">
+      <div class="pbi-spacer"></div>
+      <button onclick="vbReset()"  class="pbi-action" title="Сбросить всё">↻ Сбросить</button>
+      <button onclick="vbExport()" class="pbi-action" title="Скачать CSV">⬇ CSV</button>
+    </div>
 
-      <input id="vbSearch" type="text" class="cb-search" placeholder="🔍 поиск товара: мука, яйцо…" oninput="vbSchedule()">
+    <!-- Main 2-column layout: buckets+result vs right filter panel -->
+    <div class="pbi-layout">
+      <div class="pbi-main">
 
-      <select id="vbFiltSup" class="cb-filt" onchange="vbSchedule()"><option value="">Все поставщики</option></select>
-      <select id="vbFiltCat" class="cb-filt" onchange="vbSchedule()"><option value="">Все категории</option></select>
+        <!-- Three orange bucket grids (like PowerBI video) -->
+        <div class="pbi-buckets">
+          <div class="pbi-bucket">
+            <div class="pbi-bucket-hdr">Строки</div>
+            <div class="pbi-grid" data-bucket="rows">
+              <div class="pbi-cell" data-v="sup"   onclick="pbToggle(this)">Поставщик</div>
+              <div class="pbi-cell" data-v="city"  onclick="pbToggle(this)">Город</div>
+              <div class="pbi-cell" data-v="cat"   onclick="pbToggle(this)">Категория</div>
+              <div class="pbi-cell" data-v="sku"   onclick="pbToggle(this)">Товар</div>
+              <div class="pbi-cell" data-v="day"   onclick="pbToggle(this)">День</div>
+              <div class="pbi-cell" data-v="week"  onclick="pbToggle(this)">Неделя</div>
+              <div class="pbi-cell" data-v="month" onclick="pbToggle(this)">Месяц</div>
+            </div>
+          </div>
 
-      <div class="cb-group">
-        <button class="vb-pill active" data-per="all" onclick="vbPeriod(this)">Всё</button>
-        <button class="vb-pill"        data-per="30"  onclick="vbPeriod(this)">Месяц</button>
-        <button class="vb-pill"        data-per="7"   onclick="vbPeriod(this)">Неделя</button>
+          <div class="pbi-bucket">
+            <div class="pbi-bucket-hdr">Колонки</div>
+            <div class="pbi-grid" data-bucket="cols">
+              <div class="pbi-cell pbi-no" data-v="__none__" onclick="pbToggle(this)">— без данных —</div>
+              <div class="pbi-cell" data-v="sup"   onclick="pbToggle(this)">Поставщик</div>
+              <div class="pbi-cell" data-v="city"  onclick="pbToggle(this)">Город</div>
+              <div class="pbi-cell" data-v="cat"   onclick="pbToggle(this)">Категория</div>
+              <div class="pbi-cell" data-v="day"   onclick="pbToggle(this)">День</div>
+              <div class="pbi-cell" data-v="week"  onclick="pbToggle(this)">Неделя</div>
+              <div class="pbi-cell" data-v="month" onclick="pbToggle(this)">Месяц</div>
+            </div>
+          </div>
+
+          <div class="pbi-bucket">
+            <div class="pbi-bucket-hdr">Значения</div>
+            <div class="pbi-grid" data-bucket="vals">
+              <div class="pbi-cell" data-v="total"        onclick="pbToggle(this)">Сумма ₸</div>
+              <div class="pbi-cell" data-v="qty"          onclick="pbToggle(this)">Количество</div>
+              <div class="pbi-cell" data-v="avgPrice"     onclick="pbToggle(this)">Цена ₸/ед</div>
+              <div class="pbi-cell" data-v="minPrice"     onclick="pbToggle(this)">Мин ₸/ед</div>
+              <div class="pbi-cell" data-v="maxPrice"     onclick="pbToggle(this)">Макс ₸/ед</div>
+              <div class="pbi-cell" data-v="count"        onclick="pbToggle(this)">Позиций</div>
+              <div class="pbi-cell" data-v="invoiceCount" onclick="pbToggle(this)">Накладных</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title + result -->
+        <div id="vbTitleBar" style="margin:14px 0 4px 0">
+          <div id="vbTitle" style="font-size:14px;font-weight:700;letter-spacing:-.3px"></div>
+          <div id="vbSubtitle" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
+        </div>
+        <div id="vbCanvasWrap" class="ch" style="height:380px;display:none"><canvas id="vbCanvas"></canvas><div class="vb-spinner"></div></div>
+        <div id="vbTableMain" class="tbl-wrap pv-tbl" style="margin-top:6px;max-height:640px;overflow:auto"></div>
+        <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
+
+        <!-- Price history (auto-shown when ≤5 SKUs) -->
+        <div id="vbHistWrap" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">📈 История цен (₸ за единицу)</div>
+          <div class="ch" style="height:260px"><canvas id="vbHistCanvas"></canvas></div>
+        </div>
       </div>
 
-      <button onclick="vbReset()"  class="vb-btn" title="Сбросить всё">↻</button>
-      <button onclick="vbExport()" class="vb-btn" title="Скачать CSV">⬇ CSV</button>
-    </div>
+      <!-- Right filter panel (like PowerBI slicer panel) -->
+      <aside class="pbi-filters">
+        <div class="pbi-filt-hdr">Фильтры</div>
 
-    <!-- Hidden state -->
-    <input type="hidden" id="vbFrom" value="">
-    <input type="hidden" id="vbTo"   value="">
+        <div class="pbi-filt-group">
+          <label>Поиск товара</label>
+          <input id="vbSearch" type="text" placeholder="мука, яйцо…" oninput="vbSchedule()">
+        </div>
 
-    <div id="vbTitleBar" style="margin:14px 0 4px 0;text-align:center">
-      <div id="vbTitle" style="font-size:15px;font-weight:800;letter-spacing:-.3px"></div>
-      <div id="vbSubtitle" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
-    </div>
-    <div id="vbCanvasWrap" class="ch" style="height:380px;display:none"><canvas id="vbCanvas"></canvas><div class="vb-spinner"></div></div>
-    <div id="vbTableMain" style="margin-top:10px;max-height:600px;overflow:auto" class="tbl-wrap pv-tbl"></div>
-    <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
+        <div class="pbi-filt-group">
+          <label>Период</label>
+          <div class="cb-group" style="background:#fff">
+            <button class="vb-pill active" data-per="all" onclick="vbPeriod(this)">Всё</button>
+            <button class="vb-pill"        data-per="30"  onclick="vbPeriod(this)">Месяц</button>
+            <button class="vb-pill"        data-per="7"   onclick="vbPeriod(this)">Неделя</button>
+          </div>
+        </div>
 
-    <!-- Price history (auto-shown when ≤5 SKUs) -->
-    <div id="vbHistWrap" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
-      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">📈 История цен (₸ за единицу)</div>
-      <div class="ch" style="height:260px"><canvas id="vbHistCanvas"></canvas></div>
+        <div class="pbi-filt-group">
+          <label>Поставщик</label>
+          <select id="vbFiltSup" onchange="vbSchedule()"><option value="">Все</option></select>
+        </div>
+
+        <div class="pbi-filt-group">
+          <label>Категория</label>
+          <select id="vbFiltCat" onchange="vbSchedule()"><option value="">Все</option></select>
+        </div>
+
+        <!-- Hidden state -->
+        <input type="hidden" id="vbFrom" value="">
+        <input type="hidden" id="vbTo"   value="">
+      </aside>
     </div>
   </div>
 
@@ -2200,9 +2324,9 @@ function vbRenderDebounced() {
 // Alias: all controls use this (smooth, no stutter)
 function vbSchedule() { vbRenderDebounced(); }
 function vbMark(el) { if (el && el.dataset) el.dataset.userPicked = '1'; vbSchedule(); }
-// Клик по кнопке типа графика (.cb-t или .vb-pill[data-t]) → записываем в hidden input
+// Клик по кнопке типа графика (.cb-t / .pbi-tab / .vb-pill[data-t]) → hidden input
 function vbType(btn) {
-  document.querySelectorAll('.cb-t, .vb-pill[data-t]').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.cb-t, .vb-pill[data-t], .pbi-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const ti = document.getElementById('vbType');
   ti.value = btn.dataset.t;
@@ -2301,13 +2425,14 @@ function vbPeriod(btn) {
 }
 
 function vbReset() {
-  // Снимаем все чекбоксы в Строки / Колонки / Значения
+  // Снимаем все выделения ячеек в bucket-сетках
+  document.querySelectorAll('.pbi-cell.selected').forEach(c => c.classList.remove('selected'));
   document.querySelectorAll('.pv-chips input[type=checkbox]').forEach(i => { i.checked = false; });
   // Дефолт: строка = Поставщик, значение = Сумма ₸
-  const defRow = document.querySelector('.pv-chips[data-bucket="rows"] input[value="sup"]');
-  const defVal = document.querySelector('.pv-chips[data-bucket="vals"] input[value="total"]');
-  if (defRow) defRow.checked = true;
-  if (defVal) defVal.checked = true;
+  const defRowCell = document.querySelector('.pbi-grid[data-bucket="rows"] .pbi-cell[data-v="sup"]');
+  const defValCell = document.querySelector('.pbi-grid[data-bucket="vals"] .pbi-cell[data-v="total"]');
+  if (defRowCell) defRowCell.classList.add('selected');
+  if (defValCell) defValCell.classList.add('selected');
   _vbSet('vbType', 'table');
   _vbSet('vbSearch', '');
   _vbSet('vbFiltSup', '');
@@ -2405,7 +2530,29 @@ function vbFullscreen() {
 
 // ── Pivot aggregation (multi-dim rows × multi-dim cols × multi measures) ────
 function _vbGetChecked(bucket) {
+  // Новый PowerBI-клон: .pbi-cell.selected в .pbi-grid[data-bucket=...]
+  const pbi = [...document.querySelectorAll(`.pbi-grid[data-bucket="${bucket}"] .pbi-cell.selected`)]
+    .map(el => el.dataset.v).filter(v => v && v !== '__none__');
+  if (pbi.length) return pbi;
+  // Совместимость со старым UI (если остались чекбоксы)
   return [...document.querySelectorAll(`.pv-chips[data-bucket="${bucket}"] input:checked`)].map(i => i.value);
+}
+
+// Клик по ячейке bucket-сетки — toggle .selected, затем перерисовка
+function pbToggle(el) {
+  const grid   = el.closest('.pbi-grid');
+  const bucket = grid && grid.dataset.bucket;
+  // В «Колонки» ячейка «— без данных —» эксклюзивная: снимает все другие
+  if (el.dataset.v === '__none__') {
+    grid.querySelectorAll('.pbi-cell.selected').forEach(c => c.classList.remove('selected'));
+    el.classList.remove('selected'); // no-cell остаётся невыделенной → «нет колонок»
+  } else {
+    // Клик на обычной — снимаем «— без данных —» (если была выбрана) и тогглим эту
+    const noneCell = grid.querySelector('.pbi-cell[data-v="__none__"]');
+    if (noneCell) noneCell.classList.remove('selected');
+    el.classList.toggle('selected');
+  }
+  vbSchedule();
 }
 function _vbKey(line, dims) {
   return dims.map(d => _vbDimValue(line, d) ?? '—').join('|||');
@@ -2586,8 +2733,8 @@ function vbRender() {
 
   const typeIn = document.getElementById('vbType');
   const view   = typeIn.value || 'table';
-  // Синхронизация пилл-кнопки типа
-  document.querySelectorAll('.cb-t, .vb-pill[data-t]').forEach(b =>
+  // Синхронизация активной вкладки/кнопки типа
+  document.querySelectorAll('.cb-t, .vb-pill[data-t], .pbi-tab').forEach(b =>
     b.classList.toggle('active', b.dataset.t === view));
 
   // Автоматом ставим «Товар» в Строки при поиске если ни одного в Строках не выбрано
@@ -3076,11 +3223,11 @@ function vbExport() {
     document.getElementById('vbFrom').value = dts[0];
     document.getElementById('vbTo').value   = dts[dts.length - 1];
   }
-  // Default: row = Поставщик, value = Сумма ₸ (уже checked в HTML, но дублируем на всякий)
-  const defRow = document.querySelector('.pv-chips[data-bucket="rows"] input[value="sup"]');
-  const defVal = document.querySelector('.pv-chips[data-bucket="vals"] input[value="total"]');
-  if (defRow && !defRow.checked) defRow.checked = true;
-  if (defVal && !defVal.checked) defVal.checked = true;
+  // Default: строка=Поставщик, значение=Сумма ₸ в PBI-гриде
+  const defRowCell = document.querySelector('.pbi-grid[data-bucket="rows"] .pbi-cell[data-v="sup"]');
+  const defValCell = document.querySelector('.pbi-grid[data-bucket="vals"] .pbi-cell[data-v="total"]');
+  if (defRowCell) defRowCell.classList.add('selected');
+  if (defValCell) defValCell.classList.add('selected');
 
   const lwrap = document.getElementById('vbCanvasWrap');
   if (lwrap) lwrap.classList.remove('vb-loading');
