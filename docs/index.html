@@ -211,7 +211,63 @@ try {
   .filter-btn { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; }
   .filter-btn:hover { border-color:var(--accent); color:var(--text); }
   .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
-  /* Power BI-like constructor — polished */
+  /* Constructor v3 — крупная фраза-конструктор + компактная строка фильтров */
+  .cb-sentence {
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+    padding:16px 18px; margin-bottom:12px;
+    background: linear-gradient(135deg, rgba(124,133,245,.1), rgba(124,133,245,.03));
+    border:1px solid var(--border); border-radius:12px;
+    font-size:17px; font-weight:700; letter-spacing:-.2px;
+  }
+  .cb-word { color: var(--muted); }
+  .cb-opt { opacity: .85; }
+  .cb-pick {
+    background: var(--surf); color: var(--accent); font-weight:700;
+    border:2px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+    border-radius:10px; padding:7px 32px 7px 12px; font-size:16px;
+    outline:none; cursor:pointer; font-family:inherit;
+    transition: all .15s ease;
+    appearance:none; -webkit-appearance:none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%), linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+    background-position: calc(100% - 14px) 50%, calc(100% - 8px) 50%;
+    background-size: 6px 6px; background-repeat: no-repeat;
+  }
+  .cb-pick:hover  { border-color: var(--accent); transform: translateY(-1px); }
+  .cb-pick:focus  { box-shadow: 0 0 0 3px rgba(124,133,245,.2); }
+
+  .cb-row {
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+    padding:10px 12px; margin-bottom:12px;
+    border:1px solid var(--border); border-radius:10px; background: var(--surf);
+  }
+  .cb-group { display:inline-flex; gap:4px; border:1px solid var(--border); border-radius:10px; padding:2px; background: var(--bg); }
+  .cb-t {
+    background: transparent; border:none; color:var(--muted);
+    padding:7px 12px; border-radius:8px; font-size:12px; font-weight:600;
+    cursor:pointer; display:inline-flex; gap:6px; align-items:center;
+    transition: all .15s;
+  }
+  .cb-t:hover { color: var(--text); background: rgba(255,255,255,.03); }
+  .cb-t.active {
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #fff));
+    color:#fff; box-shadow: 0 3px 10px rgba(124,133,245,.35);
+  }
+  .cb-t span { font-size:11px; }
+  .cb-search {
+    flex:1; min-width:180px;
+    background:var(--bg); border:1px solid var(--border); border-radius:10px;
+    padding:8px 12px; color:var(--text); font-size:13px; outline:none; font-family:inherit;
+    transition: all .15s;
+  }
+  .cb-search:focus { border-color:var(--accent); box-shadow: 0 0 0 3px rgba(124,133,245,.15); }
+  .cb-filt {
+    background:var(--bg); color:var(--text); border:1px solid var(--border);
+    border-radius:10px; padding:7px 10px; font-size:12px; outline:none; cursor:pointer;
+    min-width:140px; font-family:inherit;
+  }
+  .cb-filt:focus { border-color: var(--accent); }
+
+  /* Legacy vb-row (may still be used elsewhere) */
   .vb-row {
     display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px;
     padding:12px 14px;
@@ -575,115 +631,77 @@ try {
     </div>
   </div>
 
-  <!-- SIMPLE CONSTRUCTOR -->
-  <div class="grp"><span class="grp-title">🧩 Конструктор — сравни что угодно с чем угодно</span></div>
+  <!-- SIMPLE CONSTRUCTOR — v3 (Metabase-like sentence) -->
+  <div class="grp"><span class="grp-title">🧩 Конструктор</span></div>
   <div class="card g-full">
-    <!-- Row 1: фраза-конструктор -->
-    <div class="vb-row">
-      <div class="vb-ctrl">
-        <div class="vb-label">Что показать</div>
-        <select id="vbMeasure" onchange="vbSchedule()">
-          <option value="total">Сумма ₸</option>
-          <option value="qty">Количество</option>
-          <option value="avgPrice">Цена ₸/ед (средняя)</option>
-          <option value="minPrice">Мин. цена ₸</option>
-          <option value="maxPrice">Макс. цена ₸</option>
-          <option value="count">Позиций (записей)</option>
-          <option value="invoiceCount">Накладных</option>
-        </select>
-      </div>
-      <div class="vb-ctrl">
-        <div class="vb-label">По чему сгруппировать</div>
-        <select id="vbDim" onchange="vbMark(this)">
-          <option value="sup">Поставщик</option>
-          <option value="city">Город</option>
-          <option value="cat">Категория</option>
-          <option value="sku">Товар</option>
-          <option value="day">День</option>
-          <option value="week">Неделя</option>
-          <option value="month">Месяц</option>
-        </select>
-      </div>
-      <div class="vb-ctrl">
-        <div class="vb-label">Разбить цветом на</div>
-        <select id="vbBreak" onchange="vbSchedule()">
-          <option value="">— одноцветно —</option>
-          <option value="sup">Поставщик</option>
-          <option value="city">Город</option>
-          <option value="cat">Категория</option>
-        </select>
-      </div>
-      <div class="vb-ctrl" style="margin-left:auto">
-        <div class="vb-label">Тип</div>
-        <div class="vb-pills">
-          <button class="vb-pill" data-t="bar"   onclick="vbType(this)" title="Столбцы">📊</button>
-          <button class="vb-pill" data-t="barH"  onclick="vbType(this)" title="Горизонтальные">📋</button>
-          <button class="vb-pill" data-t="line"  onclick="vbType(this)" title="Линия">📈</button>
-          <button class="vb-pill" data-t="pie"   onclick="vbType(this)" title="Круговая">🥧</button>
-          <button class="vb-pill" data-t="table" onclick="vbType(this)" title="Таблица">📄</button>
-        </div>
-        <input type="hidden" id="vbType" value="bar">
-      </div>
+    <!-- Live sentence: "Покажи X по Y цветом Z" -->
+    <div class="cb-sentence">
+      <span class="cb-word">Покажи</span>
+      <select id="vbMeasure" class="cb-pick" onchange="vbSchedule()">
+        <option value="total">сумму ₸</option>
+        <option value="qty">количество</option>
+        <option value="avgPrice">цену ₸ за ед.</option>
+        <option value="minPrice">мин. цену ₸</option>
+        <option value="maxPrice">макс. цену ₸</option>
+        <option value="count">число позиций</option>
+        <option value="invoiceCount">число накладных</option>
+      </select>
+      <span class="cb-word">по</span>
+      <select id="vbDim" class="cb-pick" onchange="vbSchedule()">
+        <option value="sup">поставщику</option>
+        <option value="city">городу</option>
+        <option value="cat">категории</option>
+        <option value="sku">товару</option>
+        <option value="day">дням</option>
+        <option value="week">неделям</option>
+        <option value="month">месяцам</option>
+      </select>
+      <span class="cb-word cb-opt">цветом по</span>
+      <select id="vbBreak" class="cb-pick" onchange="vbSchedule()">
+        <option value="">— —</option>
+        <option value="sup">поставщику</option>
+        <option value="city">городу</option>
+        <option value="cat">категории</option>
+      </select>
     </div>
 
-    <!-- Row 2: фильтры -->
-    <div class="vb-row">
-      <div class="vb-ctrl" style="flex:2;min-width:220px">
-        <div class="vb-label">🔍 Поиск товара</div>
-        <input id="vbSearch" type="text" placeholder="мука, яйцо, масло, ..." oninput="vbSchedule()">
+    <!-- Chart type + quick filters -->
+    <div class="cb-row">
+      <div class="cb-group">
+        <button class="cb-t" data-t="bar"   onclick="vbType(this)" title="Столбцы">📊 <span>Столбцы</span></button>
+        <button class="cb-t" data-t="barH"  onclick="vbType(this)" title="Горизонтальные">📋 <span>Горизонт.</span></button>
+        <button class="cb-t" data-t="line"  onclick="vbType(this)" title="Линия">📈 <span>Линия</span></button>
+        <button class="cb-t" data-t="pie"   onclick="vbType(this)" title="Круговая">🥧 <span>Круг</span></button>
+        <button class="cb-t" data-t="table" onclick="vbType(this)" title="Таблица">📄 <span>Таблица</span></button>
       </div>
-      <div class="vb-ctrl">
-        <div class="vb-label">Поставщик</div>
-        <select id="vbFiltSup" onchange="vbSchedule()"><option value="">Все</option></select>
+      <input type="hidden" id="vbType" value="bar">
+
+      <input id="vbSearch" type="text" class="cb-search" placeholder="🔍 поиск товара: мука, яйцо…" oninput="vbSchedule()">
+
+      <select id="vbFiltSup" class="cb-filt" onchange="vbSchedule()"><option value="">Все поставщики</option></select>
+      <select id="vbFiltCat" class="cb-filt" onchange="vbSchedule()"><option value="">Все категории</option></select>
+
+      <div class="cb-group">
+        <button class="vb-pill active" data-per="all" onclick="vbPeriod(this)">Всё</button>
+        <button class="vb-pill"        data-per="30"  onclick="vbPeriod(this)">Месяц</button>
+        <button class="vb-pill"        data-per="7"   onclick="vbPeriod(this)">Неделя</button>
       </div>
-      <div class="vb-ctrl">
-        <div class="vb-label">Категория</div>
-        <select id="vbFiltCat" onchange="vbSchedule()"><option value="">Все</option></select>
-      </div>
-      <div class="vb-ctrl">
-        <div class="vb-label">Период</div>
-        <div class="vb-pills">
-          <button class="vb-pill active" data-per="all" onclick="vbPeriod(this)">Всё</button>
-          <button class="vb-pill" data-per="30" onclick="vbPeriod(this)">Месяц</button>
-          <button class="vb-pill" data-per="7"  onclick="vbPeriod(this)">Неделя</button>
-        </div>
-      </div>
-      <div class="vb-ctrl">
-        <div class="vb-label">Топ</div>
-        <select id="vbTopN" onchange="vbSchedule()">
-          <option value="10">10</option>
-          <option value="20" selected>20</option>
-          <option value="50">50</option>
-          <option value="0">Все</option>
-        </select>
-      </div>
-      <div class="vb-ctrl">
-        <div class="vb-label">Показ</div>
-        <select id="vbMode" onchange="vbSchedule()">
-          <option value="abs">Значения</option>
-          <option value="pct">% от общего</option>
-        </select>
-      </div>
-      <div class="vb-ctrl" style="margin-left:auto">
-        <div class="vb-label">Действия</div>
-        <div style="display:flex;gap:6px">
-          <button onclick="vbExport()"    class="vb-btn" title="Скачать CSV">⬇</button>
-          <button onclick="vbExportPNG()" class="vb-btn" title="Скачать PNG">🖼</button>
-          <button onclick="vbReset()"     class="vb-btn" title="Сбросить">↻</button>
-        </div>
-      </div>
+
+      <button onclick="vbReset()"  class="vb-btn" title="Сбросить всё">↻</button>
+      <button onclick="vbExport()" class="vb-btn" title="Скачать CSV">⬇ CSV</button>
     </div>
 
-    <!-- Hidden pass-throughs -->
-    <input type="hidden" id="vbSort"   value="valDesc">
-    <input type="hidden" id="vbFrom"   value="">
-    <input type="hidden" id="vbTo"     value="">
-    <input type="hidden" id="vbOther"  data-checkbox="1">
-    <input type="hidden" id="vbLabels" data-checkbox="1">
+    <!-- Hidden pass-throughs (internal state) -->
+    <input type="hidden" id="vbSort"      value="valDesc">
+    <input type="hidden" id="vbFrom"      value="">
+    <input type="hidden" id="vbTo"        value="">
+    <input type="hidden" id="vbTopN"      value="20">
+    <input type="hidden" id="vbMode"      value="abs">
+    <input type="hidden" id="vbOther"     data-checkbox="1">
+    <input type="hidden" id="vbLabels"    data-checkbox="1">
     <input type="hidden" id="vbShowTable" data-checkbox="1">
 
-    <!-- Chart -->
-    <div id="vbTitleBar" style="margin:14px 0 6px 0;text-align:center">
+    <div id="vbTitleBar" style="margin:14px 0 4px 0;text-align:center">
       <div id="vbTitle" style="font-size:15px;font-weight:800;letter-spacing:-.3px"></div>
       <div id="vbSubtitle" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
     </div>
@@ -691,13 +709,13 @@ try {
     <div id="vbTableMain" style="display:none;margin-top:10px" class="tbl-wrap"></div>
     <div id="vbSummary" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center"></div>
 
-    <!-- Price history — shown automatically when filter narrows to ≤5 SKUs -->
+    <!-- Price history (auto-shown when ≤5 SKUs) -->
     <div id="vbHistWrap" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
       <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">📈 История цен (₸ за единицу)</div>
       <div class="ch" style="height:260px"><canvas id="vbHistCanvas"></canvas></div>
     </div>
 
-    <!-- Detail table — always on for SKU dim, else hidden -->
+    <!-- Detail table (auto for dim=Товар or search) -->
     <div id="vbDetailWrap" style="display:none;margin-top:20px">
       <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;border-top:1px solid var(--border);padding-top:16px">Детали закупок</div>
       <div id="vbDetail" class="tbl-wrap"></div>
@@ -3359,9 +3377,9 @@ function vbRenderDebounced() {
 // Alias: all controls use this (smooth, no stutter)
 function vbSchedule() { vbRenderDebounced(); }
 function vbMark(el) { if (el && el.dataset) el.dataset.userPicked = '1'; vbSchedule(); }
-// Клик по пиллу типа графика → записываем в hidden input
+// Клик по кнопке типа графика (.cb-t или .vb-pill[data-t]) → записываем в hidden input
 function vbType(btn) {
-  document.querySelectorAll('.vb-pill[data-t]').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.cb-t, .vb-pill[data-t]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const ti = document.getElementById('vbType');
   ti.value = btn.dataset.t;
@@ -3719,8 +3737,8 @@ function vbRender() {
   if (dimSel.value === 'sku' && typeIn.value === 'bar' && !typeIn.dataset.userPicked) {
     typeIn.value = 'barH';
   }
-  // Синхронизация активной пилл-кнопки типа с hidden input (после авто-swap)
-  document.querySelectorAll('.vb-pill[data-t]').forEach(b =>
+  // Синхронизация активной кнопки типа с hidden input (.cb-t + legacy .vb-pill)
+  document.querySelectorAll('.cb-t, .vb-pill[data-t]').forEach(b =>
     b.classList.toggle('active', b.dataset.t === typeIn.value));
 
   const A = _vbAgg();
