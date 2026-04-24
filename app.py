@@ -544,7 +544,8 @@ def telegram_webhook():
     if text.startswith("/start") or text.startswith("/help"):
         tg_send(chat_id,
             "YouCook Procurement Bot\n\n"
-            "Отправь PDF или XLSX накладную — добавлю в базу и обновлю дашборд.\n\n"
+            "📦 Отправь PDF или XLSX накладную — добавлю в базу и обновлю дашборд.\n"
+            "📋 Отправь акт сверки (PDF/XLSX) — сравню с базой и покажу расхождения.\n\n"
             "/stats — статистика закупок\n"
             "/help — эта справка"
         )
@@ -595,7 +596,7 @@ def telegram_webhook():
         tg_send(chat_id, "⚠️ Поддерживаются только PDF и XLSX файлы.")
         return "ok"
 
-    status_id = tg_send(chat_id, "⏳ Обрабатываю накладную...")
+    status_id = tg_send(chat_id, "⏳ Обрабатываю файл...")
 
     tmp_dir  = Path(tempfile.mkdtemp())
     tmp_path = tmp_dir / fname
@@ -610,7 +611,25 @@ def telegram_webhook():
         ).content
         tmp_path.write_bytes(content)
 
-        # Парсинг
+        # Проверка: акт сверки?
+        try:
+            from reconcile import is_akt, parse_akt, reconcile, format_report
+        except Exception:
+            is_akt = None
+        if is_akt and is_akt(tmp_path):
+            tg_edit(chat_id, status_id, "🔍 Распознал акт сверки, сравниваю с базой...")
+            akt = parse_akt(tmp_path)
+            conn = sqlite3.connect(PROC_DB)
+            result = reconcile(conn, akt)
+            conn.close()
+            report = format_report(result)
+            # Telegram message limit ~4096 chars
+            if len(report) > 3800:
+                report = report[:3800] + '\n\n…(сообщение обрезано)'
+            tg_edit(chat_id, status_id, report)
+            return "ok"
+
+        # Парсинг накладной
         from parse_invoice import parse_pdf, parse_xlsx
         parsed = parse_pdf(tmp_path) if ext == ".pdf" else parse_xlsx(tmp_path)
 
