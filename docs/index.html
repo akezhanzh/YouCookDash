@@ -41,6 +41,13 @@ try {
     --shadow-1:   0 6px 18px rgba(0,0,0,.28);
     --shadow-2:   0 16px 48px rgba(0,0,0,.38);
     --glow:       0 0 0 1px rgba(139,143,245,.22), 0 8px 28px rgba(139,143,245,.18);
+    /* PBI surfaces — themeable */
+    --pbi-cell-bg:       rgba(22,28,42,.82);
+    --pbi-cell-bg-hover: rgba(139,143,245,.16);
+    --pbi-bucket-bg:     rgba(13,17,23,.45);
+    --pbi-grid-gap-bg:   rgba(139,143,245,.12);
+    --pbi-filt-bg:       rgba(13,17,23,.6);
+    --pbi-tbl-bg:        rgba(13,17,23,.55);
   }
   [data-theme="light"] {
     --bg:         #eef1fb;
@@ -63,6 +70,12 @@ try {
     --shadow-1:   0 4px 14px rgba(99,102,241,.08);
     --shadow-2:   0 12px 36px rgba(99,102,241,.14);
     --glow:       0 0 0 1px rgba(99,102,241,.2), 0 8px 22px rgba(99,102,241,.12);
+    --pbi-cell-bg:       #ffffff;
+    --pbi-cell-bg-hover: rgba(99,102,241,.10);
+    --pbi-bucket-bg:     rgba(255,255,255,.7);
+    --pbi-grid-gap-bg:   rgba(99,102,241,.18);
+    --pbi-filt-bg:       rgba(255,255,255,.85);
+    --pbi-tbl-bg:        #ffffff;
   }
   .theme-btn {
     background: var(--surf); border: 1px solid var(--border);
@@ -316,7 +329,7 @@ try {
   .pbi-buckets { display:grid; grid-template-columns: 1.3fr 1fr 1.3fr; gap:14px; margin-bottom:18px; }
   @media (max-width: 900px) { .pbi-buckets { grid-template-columns: 1fr; } }
   .pbi-bucket {
-    background: rgba(13,17,23,.45);
+    background: var(--pbi-bucket-bg);
     border:1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
     border-radius:12px; overflow:hidden;
     backdrop-filter: blur(10px);
@@ -339,11 +352,11 @@ try {
   }
   .pbi-grid {
     display:grid; grid-template-columns: repeat(2, 1fr);
-    gap:1px; background: color-mix(in srgb, var(--accent) 12%, transparent); padding:1px;
+    gap:1px; background: var(--pbi-grid-gap-bg); padding:1px;
   }
   .pbi-grid[data-bucket="cols"] { grid-template-columns: 1fr; }
   .pbi-cell {
-    background: rgba(22,28,42,.82); color:var(--text);
+    background: var(--pbi-cell-bg); color:var(--text);
     padding:11px 14px; font-size:13px; font-weight:500;
     cursor:pointer; user-select:none;
     transition: all .15s ease;
@@ -351,8 +364,9 @@ try {
     position:relative;
   }
   .pbi-cell:hover {
-    background: rgba(124,133,245,.16); color:#fff;
+    background: var(--pbi-cell-bg-hover); color: var(--text);
   }
+  [data-theme="dark"] .pbi-cell:hover, :root:not([data-theme="light"]) .pbi-cell:hover { color:#fff; }
   .pbi-cell.selected {
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
     color:#fff; font-weight:700;
@@ -367,7 +381,7 @@ try {
 
   /* Right filter panel — glass */
   .pbi-filters {
-    background: rgba(13,17,23,.6);
+    background: var(--pbi-filt-bg);
     border:1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
     border-radius:12px; padding:16px 18px;
     position:sticky; top:16px;
@@ -403,7 +417,7 @@ try {
   /* Pivot table inside indigo card */
   .pbi-card .pv-tbl table {
     width:auto; min-width:100%;
-    background: rgba(13,17,23,.55);
+    background: var(--pbi-tbl-bg);
     border:1px solid var(--border); border-radius:12px; overflow:hidden;
   }
   .pbi-card .pv-tbl th, .pbi-card .pv-tbl td {
@@ -434,7 +448,7 @@ try {
   .pbi-card #vbSubtitle { color:var(--muted); font-size:12px; }
   .pbi-card #vbSummary { color:var(--muted); font-size:12px; }
   .pbi-card .vb-pill {
-    color:var(--muted); background: rgba(22,28,42,.6); border:1px solid var(--border);
+    color:var(--text); background: var(--pbi-cell-bg); border:1px solid var(--border);
     padding:7px 14px; font-size:12px; font-weight:600;
   }
   .pbi-card .vb-pill:hover { color: var(--text); border-color: var(--accent); }
@@ -443,7 +457,7 @@ try {
     color:#fff; border-color:var(--accent);
     box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 40%, transparent);
   }
-  .pbi-card .cb-group { background: rgba(13,17,23,.4); border-color: var(--border); }
+  .pbi-card .cb-group { background: var(--pbi-cell-bg); border-color: var(--border); }
 
   /* Legacy — kept for backwards compat */
   .pv-buckets { display:none; }  /* old layout hidden */
