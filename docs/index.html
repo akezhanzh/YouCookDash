@@ -135,35 +135,31 @@ try {
   .grid-equal3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
   .g-full { margin-bottom: 20px; }
 
-  /* Card — glass + gradient border */
+  /* Card — glass (simple, no mask effects) */
   .card {
     background: linear-gradient(160deg,
       color-mix(in srgb, var(--surf) 94%, var(--accent)) 0%,
       var(--surf) 70%);
     border: 1px solid var(--border);
-    border-radius: 18px;
+    border-radius: 16px;
     padding: 22px;
     position: relative;
     transition: transform .22s cubic-bezier(.4,0,.2,1), box-shadow .22s, border-color .22s;
     box-shadow: var(--shadow-1);
-    backdrop-filter: blur(8px);
-  }
-  .card::after {
-    content:''; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none;
-    padding:1px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 35%, transparent), transparent 40%, color-mix(in srgb, var(--accent-2) 25%, transparent));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude; opacity:.5;
   }
   .card:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-2);
     border-color: var(--border-strong);
   }
+  .grid-6 .card { overflow:hidden; }
   .grid-6 .card::before {
     content:''; position:absolute; inset:0; border-radius:inherit;
     background: radial-gradient(85% 60% at 0% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%);
     pointer-events:none;
+    z-index: 0;
   }
+  .grid-6 .card > * { position: relative; z-index: 1; }
   .card-title {
     font-size: 10px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 1px; color: var(--muted); margin-bottom: 12px;
@@ -283,16 +279,8 @@ try {
     box-shadow: var(--shadow-2), inset 0 1px 0 rgba(255,255,255,.04);
     margin-bottom: 24px; position: relative;
   }
-  .pbi-card::before {
-    content:''; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none;
-    padding:1px;
-    background: linear-gradient(135deg,
-      color-mix(in srgb, var(--accent) 50%, transparent),
-      transparent 30%, transparent 70%,
-      color-mix(in srgb, var(--accent-2) 40%, transparent));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-  }
+  .pbi-card { overflow: hidden; }
+  .pbi-card > * { position: relative; z-index: 1; }
   .orange-removed { display: none; }
   .pbi-tabs {
     display:flex; align-items:center; gap:8px; margin-bottom:20px;
