@@ -292,8 +292,6 @@ try {
     box-shadow: var(--shadow-2), inset 0 1px 0 rgba(255,255,255,.04);
     margin-bottom: 24px; position: relative;
   }
-  .pbi-card { overflow: hidden; }
-  .pbi-card > * { position: relative; z-index: 1; }
   .orange-removed { display: none; }
   .pbi-tabs {
     display:flex; align-items:center; gap:8px; margin-bottom:20px;
@@ -3934,6 +3932,19 @@ function _vbAgg() {
   let   vals = _vbGetChecked('vals');
   if (!vals.length) vals = ['total'];  // всегда что-то показываем
 
+  // Ранний выход: нет данных — пустая структура (защита от ошибок в downstream)
+  if (typeof ALL_LINES === 'undefined' || !ALL_LINES || !ALL_LINES.length) {
+    const empty = { total:0, qty:0, priceSum:0, priceCnt:0, minP:Infinity, maxP:-Infinity, invIds:new Set() };
+    return {
+      rows, cols, vals,
+      rowKeys: [], colKeys: [],
+      buckets: new Map(),
+      rowTotal: {}, colTotal: {}, grand: empty,
+      measFn: () => 0,
+      totalLines: 0, filteredTotal: 0, modeVals: [],
+    };
+  }
+
   const lines = _vbFilteredLines();
 
   // Bucket[rowKey][colKey] = агрегатор
@@ -4079,73 +4090,99 @@ function _vbAgg() {
 const VB_DIM_SHORT = { sup:'Поставщик', city:'Город', cat:'Категория', sku:'Товар', day:'День', week:'Неделя', month:'Месяц' };
 
 function vbRender() {
-  if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) return;
-
-  const typeIn = document.getElementById('vbType');
-  const view   = typeIn.value || 'table';
-  // Синхронизация активной вкладки/кнопки типа
-  document.querySelectorAll('.cb-t, .vb-pill[data-t], .pbi-tab').forEach(b =>
-    b.classList.toggle('active', b.dataset.t === view));
-
-  // Автоматом ставим «Товар» в Строки при поиске если ни одного в Строках не выбрано
-  const searchVal = (_vbVal('vbSearch') || '').trim();
-  if (searchVal) {
-    const rowsPicked = _vbGetChecked('rows');
-    if (!rowsPicked.length) {
-      const skuChk = document.querySelector('.pv-chips[data-bucket="rows"] input[value="sku"]');
-      if (skuChk) skuChk.checked = true;
-    }
-  }
-
-  const A = _vbAgg();
-  const canvasWrap = document.getElementById('vbCanvasWrap');
-  const tableWrap  = document.getElementById('vbTableMain');
-
-  // Заголовок
-  const titleEl = document.getElementById('vbTitle');
-  const subEl   = document.getElementById('vbSubtitle');
-  const partsT = [];
-  if (A.vals.length) partsT.push(A.vals.map(v => VB_MEAS_LBL[v]).join(' + '));
-  if (A.rows.length) partsT.push('по ' + A.rows.map(d => VB_DIM_SHORT[d]).join(' × '));
-  if (A.cols.length) partsT.push('с разбивкой по ' + A.cols.map(d => VB_DIM_SHORT[d]).join(' × '));
-  titleEl.textContent = partsT.join(' ') || 'Выбери что показать';
-
-  const fFrom = _vbVal('vbFrom'), fTo = _vbVal('vbTo');
-  const fSup = _vbVal('vbFiltSup'), fCat = _vbVal('vbFiltCat');
-  const subParts = [];
-  if (fFrom && fTo) subParts.push(`${fFrom.split('-').reverse().join('.')} — ${fTo.split('-').reverse().join('.')}`);
-  if (fSup) subParts.push(`поставщик: ${fSup}`);
-  if (fCat) subParts.push(`категория: ${fCat}`);
-  if (searchVal) subParts.push(`поиск: «${searchVal}»`);
-  subEl.textContent = subParts.join(' · ') || 'все данные';
-
-  // Уничтожим старый график если есть
-  if (window._vbChart) { window._vbChart.destroy(); window._vbChart = null; }
-
-  if (view === 'table') {
-    canvasWrap.style.display = 'none';
-    tableWrap.style.display  = 'block';
-    tableWrap.innerHTML = _vbPivotTableHtml(A);
-  } else {
-    tableWrap.style.display  = 'none';
-    canvasWrap.style.display = 'block';
-    _vbPivotChart(A, view);
-  }
-
-  // Summary
-  const sumEl = document.getElementById('vbSummary');
-  const totN  = fmt(Math.round(A.grand.total));
-  sumEl.textContent = `${A.rowKeys.length} строк × ${A.colKeys.length} колонок · итого ${totN} ₸ · на основе ${A.totalLines} записей`;
-
-  // Price history + detail
-  _vbRenderPriceHistory();
-
   const lwrap = document.getElementById('vbCanvasWrap');
+  try {
+    if (typeof ALL_LINES === 'undefined' || !ALL_LINES.length) {
+      const tEl = document.getElementById('vbTitle');
+      if (tEl) tEl.textContent = 'Нет данных';
+      return;
+    }
+
+    const typeIn = document.getElementById('vbType');
+    const view   = typeIn.value || 'table';
+    // Синхронизация активной вкладки/кнопки типа
+    document.querySelectorAll('.cb-t, .vb-pill[data-t], .pbi-tab').forEach(b =>
+      b.classList.toggle('active', b.dataset.t === view));
+
+    // Автоматом ставим «Товар» в Строки при поиске если ни одного в Строках не выбрано
+    const searchVal = (_vbVal('vbSearch') || '').trim();
+    if (searchVal) {
+      const rowsPicked = _vbGetChecked('rows');
+      if (!rowsPicked.length) {
+        const skuCell = document.querySelector('.pbi-grid[data-bucket="rows"] .pbi-cell[data-v="sku"]');
+        if (skuCell) skuCell.classList.add('selected');
+      }
+    }
+
+    const A = _vbAgg();
+    const canvasWrap = document.getElementById('vbCanvasWrap');
+    const tableWrap  = document.getElementById('vbTableMain');
+
+    // Заголовок
+    const titleEl = document.getElementById('vbTitle');
+    const subEl   = document.getElementById('vbSubtitle');
+    const partsT = [];
+    if (A.vals.length) partsT.push(A.vals.map(v => VB_MEAS_LBL[v]).join(' + '));
+    if (A.rows.length) partsT.push('по ' + A.rows.map(d => VB_DIM_SHORT[d]).join(' × '));
+    if (A.cols.length) partsT.push('с разбивкой по ' + A.cols.map(d => VB_DIM_SHORT[d]).join(' × '));
+    titleEl.textContent = partsT.join(' ') || 'Выбери что показать';
+
+    const fFrom = _vbVal('vbFrom'), fTo = _vbVal('vbTo');
+    const fSup = _vbVal('vbFiltSup'), fCat = _vbVal('vbFiltCat');
+    const subParts = [];
+    if (fFrom && fTo) subParts.push(`${fFrom.split('-').reverse().join('.')} — ${fTo.split('-').reverse().join('.')}`);
+    if (fSup) subParts.push(`поставщик: ${fSup}`);
+    if (fCat) subParts.push(`категория: ${fCat}`);
+    if (searchVal) subParts.push(`поиск: «${searchVal}»`);
+    subEl.textContent = subParts.join(' · ') || 'все данные';
+
+    // Уничтожим старый график если есть
+    if (window._vbChart) { window._vbChart.destroy(); window._vbChart = null; }
+
+    if (view === 'table') {
+      canvasWrap.style.display = 'none';
+      tableWrap.style.display  = 'block';
+      tableWrap.innerHTML = _vbPivotTableHtml(A);
+    } else {
+      tableWrap.style.display  = 'none';
+      canvasWrap.style.display = 'block';
+      _vbPivotChart(A, view);
+    }
+
+    // Summary
+    const sumEl = document.getElementById('vbSummary');
+    const totN  = fmt(Math.round(A.grand.total || 0));
+    sumEl.textContent = `${A.rowKeys.length} строк × ${A.colKeys.length} колонок · итого ${totN} ₸ · на основе ${A.totalLines} записей`;
+
+    // Price history — изолируем чтобы её ошибка не ломала основной рендер
+    try { _vbRenderPriceHistory(); }
+    catch (phErr) { console.warn('price history render failed:', phErr); }
+
+  } catch (err) {
+    console.error('vbRender failed:', err);
+    const tEl = document.getElementById('vbTitle');
+    const sEl = document.getElementById('vbSubtitle');
+    const tWrap = document.getElementById('vbTableMain');
+    const cWrap = document.getElementById('vbCanvasWrap');
+    const sumEl = document.getElementById('vbSummary');
+    if (tEl) tEl.textContent = '❌ Ошибка рендера: ' + (err.message || err);
+    if (sEl) sEl.textContent = (err.stack || '').split('\n').slice(0,2).join(' → ');
+    if (tWrap) {
+      tWrap.style.display = 'block';
+      tWrap.innerHTML = '<div style="padding:20px;color:var(--red);font-family:monospace;font-size:12px;white-space:pre-wrap">' +
+        String(err && err.stack ? err.stack : err).replace(/</g,'&lt;') + '</div>';
+    }
+    if (cWrap) cWrap.style.display = 'none';
+    if (sumEl) sumEl.textContent = 'Скинь этот текст в чат — починю.';
+  }
   if (lwrap) lwrap.classList.remove('vb-loading');
 }
 
 // Рендерит pivot-таблицу с иерархическими строками и колонками и несколькими мерами
 function _vbPivotTableHtml(A) {
+  if (!A.rowKeys.length) {
+    return '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Нет данных по выбранным фильтрам.<br><span style="font-size:11px;opacity:.7">Попробуй сбросить фильтры или выбери другие поля в Строках.</span></div>';
+  }
   const M = A.vals.length;
   const R = A.rows.length;
   const C = A.cols.length;
