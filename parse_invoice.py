@@ -533,16 +533,26 @@ def parse_pdf(pdf_path: Path) -> dict:
         result.update({k: v for k, v in meta.items() if v})
 
         for row in all_rows:
-            # Expected: [№, КОД, НАИМЕНОВАНИЕ, КОЛ-ВО, ЕД, ЦЕНА, СУММА]
+            # Автоопределение формата таблицы 1С:
+            #   7 колонок (с КОД): [№, КОД, НАИМЕНОВАНИЕ, КОЛ-ВО, ЕД, ЦЕНА, СУММА]
+            #   6 колонок (без КОД): [№, НАИМЕНОВАНИЕ, КОЛ-ВО, ЕД, ЦЕНА, СУММА]
             if len(row) < 6:
                 continue
             try:
-                sku_name = str(row[2]).strip()
-                qty      = to_float(row[3])
-                unit     = str(row[4]).strip() if row[4] else "кг"
-                price    = to_float(row[5])
+                col1 = str(row[1] or '').strip().replace('\xa0', '').replace(' ', '')
+                has_code = bool(re.match(r'^\d{6,}$', col1))
+                if has_code and len(row) >= 7:
+                    sku_name = str(row[2]).strip()
+                    qty      = to_float(row[3])
+                    unit     = str(row[4]).strip() if row[4] else "кг"
+                    price    = to_float(row[5])
+                else:
+                    sku_name = str(row[1]).strip()
+                    qty      = to_float(row[2])
+                    unit     = str(row[3]).strip() if row[3] else "кг"
+                    price    = to_float(row[4])
 
-                if not sku_name or price <= 0:
+                if not sku_name or price <= 0 or qty <= 0:
                     continue
 
                 line_total = price * qty
