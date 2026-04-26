@@ -2947,51 +2947,6 @@ anomalies.forEach((r) => {
   </tr>`;
 });
 
-// ── INVOICES TABLE (with filter) ─────────────────────────────────────────────
-let _activeMonth = 'all';
-
-function setFilter(btn) {
-  _activeMonth = btn.dataset.m;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderInvTable();
-}
-
-function renderInvTable() {
-  const tbody = document.getElementById('invTbody');
-  tbody.innerHTML = '';
-  const q = (document.getElementById('invSearch')?.value || '').trim().toLowerCase();
-  let list = _activeMonth === 'all'
-    ? invoices
-    : invoices.filter(r => r[3].split('.')[1] === _activeMonth);
-  if (q) list = list.filter(r => r[1].toLowerCase().includes(q) || r[2].toLowerCase().includes(q) || r[3].includes(q) || String(r[0]).includes(q));
-
-  if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Нет накладных за этот период</td></tr>';
-    return;
-  }
-  const periodTotal = list.reduce((s,r) => s + r[4], 0);
-  list.forEach(r => {
-    const [inv, sup, city, dt, sum, lines] = r;
-    const pct = (sum / TOTAL * 100).toFixed(1);
-    const bw  = Math.min(100, parseFloat(pct) * 1.5);
-    const col = supColor(sup);
-    tbody.innerHTML += `<tr>
-      <td><span class="${supTagClass(sup)}">${sup}</span></td>
-      <td style="color:var(--muted)">${city}</td>
-      <td>${dt}</td>
-      <td class="num"><strong style="color:${sum>900000?'#ef4444':col}">${fmt(sum)} ₸</strong></td>
-      <td class="num">${lines}</td>
-      <td><div style="display:flex;align-items:center;gap:7px;">
-        <div class="bar-bg" style="width:110px"><div class="bar-fill" style="width:${bw}%;background:${col}"></div></div>
-        <span style="color:var(--muted);font-size:10px">${pct}%</span>
-      </div></td>
-    </tr>`;
-  });
-}
-renderInvTable();
-
-
 // ── TIMESTAMP ─────────────────────────────────────────────────────────────────
 { const _ts = document.getElementById('ts');
   if (_ts) _ts.textContent = new Date().toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'}); }
