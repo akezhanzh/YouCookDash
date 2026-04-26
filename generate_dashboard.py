@@ -45,6 +45,14 @@ def fmt_date_short(d):
     except Exception:
         return d or "—"
 
+def clean_sku(name):
+    """Синтетические OCR-агрегаты [OCR-скан scanN] → одна общая группа."""
+    if not name:
+        return name
+    if str(name).startswith('[OCR-скан'):
+        return '[Скан без позиций]'
+    return name
+
 def clean_sup(name):
     """Сокращает полные юридические формы до аббревиатур."""
     import re as _re
@@ -447,6 +455,7 @@ def js_anomaly_detail():
 def js_freq_sku():
     rows = []
     for name, cnt, avg_p in freq_sku_raw:
+        name = clean_sku(name)
         cat = get_category(name)
         rows.append(f'  [{js_str(name)}, {int(cnt)}, {int(avg_p or 0)}, {js_str(cat)}]')
     return "const freqSku = [\n" + ",\n".join(rows) + "\n];"
@@ -470,7 +479,7 @@ def js_detail_lines():
     rows = []
     for sku, sup, city, dt, price, qty, total, inv_id, unit in detail_lines_raw:
         rows.append(
-            f'  [{js_str(sku)},{js_str(clean_sup(sup))},{js_str(city or "—")},'
+            f'  [{js_str(clean_sku(sku))},{js_str(clean_sup(sup))},{js_str(city or "—")},'
             f'{js_str(dt or "")},{float(price or 0):.2f},{float(qty or 0):.3f},'
             f'{int(total or 0)},{js_str(str(inv_id or ""))},{js_str(unit or "кг")}]'
         )
