@@ -12,6 +12,7 @@ Table format (fixed column positions):
 """
 
 import argparse
+import os
 import re
 import sqlite3
 import sys
@@ -26,6 +27,11 @@ if hasattr(sys.stdout, "reconfigure"):
 
 DB_PATH      = Path(__file__).parent / "data" / "YouCookDashOG.db"
 INVOICES_DIR = Path(__file__).parent / "invoices"
+
+# OCR settings — set TESSERACT_CMD env var to override (Windows: full path to tesseract.exe)
+_TESSERACT_CMD = os.environ.get("TESSERACT_CMD") or (
+    r"C:\Program Files\Tesseract-OCR\tesseract.exe" if sys.platform == "win32" else "tesseract"
+)
 
 # Russian month name → zero-padded number
 RU_MONTHS = {
@@ -129,6 +135,179 @@ def extract_meta(lines: list[str]) -> dict:
                 break
 
     return meta
+
+
+# ── OCR fallback (для сканов PDF без текстового слоя) ──────────────────────────
+
+_RU_NUM_UNIT = {
+    'ноль':0,'один':1,'одна':1,'одно':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,
+    'шесть':6,'семь':7,'восемь':8,'девять':9,
+    'десять':10,'одиннадцать':11,'двенадцать':12,'тринадцать':13,'четырнадцать':14,
+    'пятнадцать':15,'шестнадцать':16,'семнадцать':17,'восемнадцать':18,'девятнадцать':19,
+    'двадцать':20,'тридцать':30,'сорок':40,'пятьдесят':50,'шестьдесят':60,
+    'семьдесят':70,'восемьдесят':80,'девяносто':90,
+    'сто':100,'двести':200,'триста':300,'четыреста':400,'пятьсот':500,
+    'шестьсот':600,'семьсот':700,'восемьсот':800,'девятьсот':900,
+}
+_RU_NUM_SCALE = {
+    'тысяча':1000,'тысячи':1000,'тысяч':1000,
+    'миллион':1_000_000,'миллиона':1_000_000,'миллионов':1_000_000,
+    'миллиард':1_000_000_000,'миллиарда':1_000_000_000,'миллиардов':1_000_000_000,
+}
+
+
+def words_to_number_ru(text: str) -> int | None:
+    """«Сто девяносто восемь тысяч четыреста шестьдесят пять» → 198465.
+
+    Возвращает None если текст не похож на число прописью.
+    Останавливается на «тенге»/«рубл»/«тиын», игнорирует тысячные доли.
+    """
+    if not text:
+        return None
+    words = re.findall(r'[а-яё]+', text.lower())
+    if not words:
+        return None
+    total = current = 0
+    found = False
+    for w in words:
+        if w in _RU_NUM_UNIT:
+            current += _RU_NUM_UNIT[w]
+            found = True
+        elif w in _RU_NUM_SCALE:
+            scale = _RU_NUM_SCALE[w]
+            if current == 0:
+                current = 1
+            total += current * scale
+            current = 0
+            found = True
+        elif w.startswith('тенге') or w.startswith('тиын') or w in ('рублей','рубль','рубля'):
+            break
+    total += current
+    return total if found and total > 0 else None
+
+
+def _ocr_pdf_text(pdf_path: Path, dpi: int = 300, lang: str = 'rus+eng') -> str:
+    """Render PDF pages → image → tesseract OCR → joined text. Returns '' on import failure."""
+    try:
+        import fitz  # pymupdf
+        import pytesseract
+        from PIL import Image
+        import io
+    except ImportError as e:
+        print(f"[OCR] missing dep: {e} — install pymupdf, pytesseract, Pillow", file=sys.stderr)
+        return ""
+
+    pytesseract.pytesseract.tesseract_cmd = _TESSERACT_CMD
+    try:
+        doc = fitz.open(pdf_path)
+    except Exception as e:
+        print(f"[OCR] cannot open {pdf_path}: {e}", file=sys.stderr)
+        return ""
+
+    parts = []
+    for page in doc:
+        pix = page.get_pixmap(dpi=dpi)
+        img = Image.open(io.BytesIO(pix.tobytes('png')))
+        try:
+            t = pytesseract.image_to_string(img, lang=lang, config='--psm 6')
+        except pytesseract.TesseractNotFoundError:
+            print(f"[OCR] tesseract binary not found at {_TESSERACT_CMD}", file=sys.stderr)
+            doc.close()
+            return ""
+        parts.append(t)
+    doc.close()
+    return "\n".join(parts)
+
+
+def _ocr_meta(text: str) -> dict:
+    """Extract supplier/BIN/dates/invoice_id/total from OCR'd З-2 form text."""
+    meta = {"supplier": None, "supplier_bin": None, "supplier_city": None,
+            "date": None, "invoice_id": None, "total_words": None}
+    lines = text.splitlines()
+
+    # Supplier line: «Организация (индивидуальный предприниматель) ИП «Абай» ИИНБИН 880827302807»
+    for line in lines:
+        bin_m = re.search(r'(?:ИИН|БИН|ИИНБИН|ИИНЪИН|ИИНЛБИН|ИИНЛЬИН|ИИНЪН)[А-ЯA-Z]*\s*(\d{12})', line)
+        if bin_m and not meta["supplier_bin"]:
+            meta["supplier_bin"] = bin_m.group(1)
+        # «ИП «Абай»» / «ИП "Абай"» / «ТОО "GKGM"»
+        sup_m = re.search(r'\b(ИП|ТОО|АО|ООО|ОАО)\s+[«"“]([^»"”]+)[»"”]', line)
+        if sup_m and not meta["supplier"]:
+            # Skip the buyer line («ТОО "GKGM"» = receiver)
+            if 'GKGM' in sup_m.group(2).upper() or 'ЮКУК' in sup_m.group(2).upper():
+                continue
+            meta["supplier"] = f'{sup_m.group(1)} «{sup_m.group(2)}»'
+
+    # Date: первая строка вида «DD.MM.YYYY» (но не 20.12.2012 — это дата приказа Минфина в шапке)
+    for line in lines:
+        for d in re.findall(r'\b(\d{2})\.(\d{2})\.(\d{4})\b', line):
+            day, mon, year = d
+            if (day, mon, year) == ("20", "12", "2012"):
+                continue
+            if int(year) < 2020 or int(year) > 2099:
+                continue
+            meta["date"] = f"{year}-{mon}-{day}"
+            break
+        if meta["date"]:
+            break
+
+    # Invoice number: ищем рядом с «Номер документа» / перед датой в шапке
+    # OCR часто даёт «| 19 |[ 24.04.2026» или «| 132 |[ 24.04.2026»
+    for line in lines:
+        m = re.search(r'(\d{1,4})\s*[|\]\[\s_]+\s*\d{2}\.\d{2}\.\d{4}', line)
+        if m:
+            n = m.group(1)
+            if n != "2012" and 1 <= int(n) <= 9999:
+                meta["invoice_id"] = str(int(n))
+                break
+
+    # Total прописью: «Сто девяносто восемь тысяч четыреста шестьдесят пять тенге»
+    # OCR часто склеивает в одну строку фразу о весе («Пятьсот девяносто девять...»)
+    # с фразой об итоге («Сто девяносто восемь...»). Старт — последнее число-слово
+    # с заглавной буквы перед «тенге».
+    for line in lines:
+        if 'тенге' not in line.lower():
+            continue
+        tenge_idx = line.lower().rfind('тенге')
+        head = line[:tenge_idx]
+        start = 0
+        for m in re.finditer(r'\b([А-ЯЁ][а-яё]+)\b', head):
+            w = m.group(1).lower()
+            if w in _RU_NUM_UNIT or w in _RU_NUM_SCALE:
+                start = m.start()
+        phrase = head[start:]
+        n = words_to_number_ru(phrase)
+        if n and n > 100:
+            meta["total_words"] = n
+            break
+
+    return meta
+
+
+def _ocr_z2_lines(text: str) -> list[dict]:
+    """Best-effort парсинг строк-позиций З-2 из OCR-текста.
+
+    OCR теряет запятые-разделители тысяч и иногда десятичные. Используем _z2_data
+    после очистки шума ([], |, _) — он сам подбирает тройку qty*price≈total.
+    """
+    cleaned = []
+    for raw in text.splitlines():
+        s = re.sub(r'[\[\]|_]+', ' ', raw)
+        s = re.sub(r'\s+', ' ', s).strip()
+        if not s:
+            continue
+        # Откидываем явно не-табличные строки (заголовки, итоги, прописи)
+        low = s.lower()
+        if any(k in low for k in ('накладная','организация','наименование','итого',
+                                   'разрешил','отпустил','доверенности','тенге','прописью',
+                                   'выданной','форма','припожение','приложение','министр',
+                                   'республики','казахстан','главный бухгалтер','м.п.',
+                                   'базарбаев','подпись','расшифровка','запасы получил',
+                                   'ответственный','транспортная','предприниматель',
+                                   'количество','единица')):
+            continue
+        cleaned.append(s)
+    return _z2_data(cleaned)
 
 
 # ── З-2 «Накладная на отпуск запасов» — PDF helpers ──────────────────────────
@@ -259,6 +438,50 @@ def parse_pdf(pdf_path: Path) -> dict:
             for row in table:
                 if row and row[0] and str(row[0]).strip().isdigit():
                     all_rows.append(row)
+
+        # ── OCR fallback: scanned PDF без текстового слоя ────────────────────
+        # Считаем «без текста» если все строки пустые ИЛИ суммарно меньше 50 символов
+        non_empty = [l for l in all_lines if l.strip()]
+        if not non_empty or sum(len(l) for l in non_empty) < 50:
+            ocr_text = _ocr_pdf_text(pdf_path)
+            if ocr_text:
+                meta = _ocr_meta(ocr_text)
+                result.update({k: v for k, v in meta.items() if v and k != 'total_words'})
+                items = _ocr_z2_lines(ocr_text)
+                items_sum = sum(it['total'] for it in items)
+                tw = meta.get('total_words')
+
+                # Стратегия для total: доверяем сумме прописью > сумме позиций > 0
+                # Стратегия для lines: только если они в пределах 2% от прописи
+                if tw and items and abs(items_sum - tw) / tw < 0.02:
+                    result["total"] = items_sum
+                    result["lines"] = items
+                else:
+                    result["total"] = float(tw) if tw else items_sum
+                    # Заменяем ненадёжные OCR-позиции одной агрегатной — только сумма верна.
+                    # Имя SKU делаем уникальным (по файлу) чтобы фейковая запись не порождала
+                    # ложных аномалий «переплата» при сравнении с другими OCR-накладными.
+                    if result["total"] > 0:
+                        result["lines"] = [{
+                            "sku":   f"[OCR-скан {pdf_path.stem}]",
+                            "qty":   1.0,
+                            "unit":  "накл",
+                            "price": result["total"],
+                            "total": result["total"],
+                        }]
+                    else:
+                        result["lines"] = []
+
+                result["source"] = "pdf-ocr"
+                result["ocr"] = True
+                if not items:
+                    result["ocr_warning"] = "Позиции не распознаны — сохранена только сумма"
+                elif tw and abs(items_sum - tw) / max(tw, 1) > 0.02:
+                    result["ocr_warning"] = (
+                        f"OCR: сумма позиций ({items_sum:,.0f}₸) не совпала с прописью "
+                        f"({tw:,.0f}₸) — детали отброшены, сохранена только итоговая сумма"
+                    ).replace(',', ' ')
+                return result
 
         # Определяем формат: З-2 или 1С
         is_z2 = any("Форма З-2" in l or "НАКЛАДНАЯ НА ОТПУСК ЗАПАСОВ" in l for l in all_lines)

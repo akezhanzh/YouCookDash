@@ -515,6 +515,11 @@ def _process_invoice(chat_id, parsed, status_id):
     ovr = (f"\n⚠️ Переплата по {len(summary['overpriced'])} позициям"
            if summary["overpriced"] else "")
 
+    ocr_note = ""
+    if parsed.get("ocr"):
+        warn = parsed.get("ocr_warning") or "распознан скан, проверь данные"
+        ocr_note = f"\n📷 Скан: {warn}"
+
     total_fmt = f"{int(parsed.get('total', 0)):,}".replace(",", " ")
     tg_edit(chat_id, status_id,
         f"✅ Накладная добавлена!\n"
@@ -522,6 +527,7 @@ def _process_invoice(chat_id, parsed, status_id):
         f"🏢 {parsed.get('supplier','—')}\n"
         f"💰 {total_fmt} ₸ · {len(parsed.get('lines', []))} позиций"
         + ovr
+        + ocr_note
     )
 
 
